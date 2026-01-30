@@ -6,7 +6,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { ArrowRight, Loader2, MailCheck } from "lucide-react";
 import { UserVerifyEmail } from "@/hooks/sign-up/use-verify-email";
-import { ButtonGroup } from "@/components/ui/button-group";
+import { Controller } from "react-hook-form";
 
 const VerifyOTP = () => {
   const {
@@ -17,10 +17,11 @@ const VerifyOTP = () => {
     resendLoading,
   } = UserVerifyEmail();
   const {
-    register,
+    control,
     formState: { errors },
     watch
   } = methods;
+  const otpValue = watch("code") ?? "";
   const currentEmail = localStorage.getItem("pending_verification_email") || "";
 
 
@@ -64,23 +65,31 @@ const VerifyOTP = () => {
           <form onSubmit={onHandleSubmit} className="space-y-8">
             <div className="space-y-4">
               <div className="flex flex-col items-center">
-                <InputOTP
-                  maxLength={6}
-                  {...register('code')}
-                  containerClassName="group flex items-center"
-                  autoFocus
-                >
-                  <InputOTPGroup className="gap-3">
-                    <InputOTPSlot index={0} className="h-12 w-12 text-lg text-center border-orange-200 focus:border-orange-500" />
-                    <InputOTPSlot index={1} className="h-12 w-12 text-lg text-center border-orange-200 focus:border-orange-500" />
-                    <InputOTPSlot index={2} className="h-12 w-12 text-lg text-center border-orange-200 focus:border-orange-500" />
-                    <InputOTPSlot index={3} className="h-12 w-12 text-lg text-center border-orange-200 focus:border-orange-500" />
-                    <InputOTPSlot index={4} className="h-12 w-12 text-lg text-center border-orange-200 focus:border-orange-500" />
-                    <InputOTPSlot index={5} className="h-12 w-12 text-lg text-center border-orange-200 focus:border-orange-500" />
-                  </InputOTPGroup>
-                </InputOTP>
+                <Controller
+                  name="code"
+                  control={control}
+                  render={({ field }) => (
+                    <InputOTP
+                      maxLength={6}
+                      {...field}
+                      containerClassName="group flex items-center"
+                      autoFocus
+                    >
+                      <InputOTPGroup className="gap-3">
+                        {[...Array(6)].map((_, index) => (
+                          <InputOTPSlot
+                            key={index}
+                            index={index}
+                            className="h-12 w-12 text-lg text-center border-orange-200 focus:border-orange-500"
+                          />
+                        ))}
+                      </InputOTPGroup>
+                    </InputOTP>
+                  )}
+                />
+
                 {errors.code && (
-                  <p className="text-sm text-red-600 text-center">
+                  <p className="text-sm text-red-600 text-center mt-2">
                     {errors.code.message}
                   </p>
                 )}
@@ -90,10 +99,10 @@ const VerifyOTP = () => {
                 </p>
               </div>
 
-              <Button 
-                type="submit" 
-                className="w-full bg-orange-500 hover:bg-orange-400 hover:cursor-pointer"
-                disabled={loading || watch('code').length !== 6}
+              <Button
+                type="submit"
+                className="w-full bg-orange-500 hover:bg-orange-600"
+                disabled={loading || otpValue.length !== 6}
               >
                 {loading ? (
                   <>

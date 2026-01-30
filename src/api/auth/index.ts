@@ -19,5 +19,5 @@ export const authApi = {
   resendVerificationCode: (data: { email: string }) =>
     apiClient.post<AuthResponse>("/resend-verification-code", data),
 
-  me: (token: string) => apiClient.get<{ user: User }>("/me", token),
+  me: (token: string) => apiClient.get<User>("/me", token),
 };
