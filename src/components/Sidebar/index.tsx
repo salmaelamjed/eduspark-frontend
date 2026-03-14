@@ -2,10 +2,13 @@
 
 import { useSidebar } from '@/context/SidebarContext';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
-import { PanelLeftClose, PanelLeft, GraduationCap } from "lucide-react";
+import { PanelLeftClose, PanelLeft, GraduationCap, LogOut } from "lucide-react";
 import Link from 'next/link';
 import { cn } from "@/lib/utils";
 import { usePathname } from "next/navigation";
+import { useState } from 'react';
+import ConfirmSignOutModal from '@/components/confirm-signout-modal'; 
+
 
 interface NavItem {
   title: string;
@@ -19,6 +22,7 @@ interface SidebarProps {
 
 export function Sidebar({ navItems }: SidebarProps) {
   const { isMinimized, toggleMinimize } = useSidebar();
+  const [showLogoutModal, setShowLogoutModal] = useState(false);
   const pathname = usePathname();
 
   return (
@@ -30,7 +34,7 @@ export function Sidebar({ navItems }: SidebarProps) {
         "transition-all duration-300 ease-in-out",
         "flex flex-col",
         "shadow-sm",
-        isMinimized ? "w-[72px]" : "w-[260px]"
+        isMinimized ? "w-18" : "w-65"
       )}
     >
       {/* Header with Logo */}
@@ -137,14 +141,55 @@ export function Sidebar({ navItems }: SidebarProps) {
             );
           })}
         </div>
-      </nav>
-
+        
+        </nav>
+       {isMinimized ? (
+  <Tooltip>
+    <TooltipTrigger asChild>
+      <button
+        onClick={() => setShowLogoutModal(true)}
+        className={cn(
+          "group relative flex items-center justify-center",
+          "w-10 h-10 mx-auto my-3",
+          "rounded-xl",
+          "text-red-600 hover:text-red-700",
+          "hover:bg-red-50/70",
+          "transition-colors duration-200",
+          "focus:outline-none focus:ring-2 focus:ring-red-400 focus:ring-offset-2"
+        )}
+        aria-label="Déconnexion"
+      >
+        <LogOut className="h-5 w-5" />
+      </button>
+    </TooltipTrigger>
+    <TooltipContent side="right" className="text-sm">
+      Déconnexion
+    </TooltipContent>
+  </Tooltip>
+) : (
+  <button
+    onClick={() => setShowLogoutModal(true)}
+    className={cn(
+      "group relative flex  gap-3 rounded-xl items-center ",
+      "mx-3 my-4 px-4 py-3",
+      "bg-white text-red-600 hover:text-red-700",
+      "hover:bg-red-50/80 active:bg-red-100 hover:cursor-pointer",
+      "rounded-xl border border-red-200/70",
+      "transition-all duration-200 ease-out",
+      "font-medium text-sm",
+      "focus:outline-none focus:ring-2 focus:ring-red-400 focus:ring-offset-2"
+    )}
+  >
+    <LogOut className="h-5 w-5" />
+    <span>Déconnexion</span>
+  </button>
+)}
       <div
         className={cn(
           "absolute top-4",
           isMinimized
-            ? "right-[-18px] w-[26px] h-[26px]"  
-            : "right-[-20px] w-[30px] h-[30px]",  
+            ? "-right-4.5 w-6.5 h-6.5"  
+            : "-right-5 w-7.5 h-7.5",  
           "z-40 flex items-center justify-center",
           "rounded-full bg-background border border-sidebar-border shadow-md",
           "cursor-pointer transition-all duration-200",
@@ -160,6 +205,8 @@ export function Sidebar({ navItems }: SidebarProps) {
           <PanelLeftClose className="w-4 h-4 text-muted-foreground" />
         )}
       </div>
+        <ConfirmSignOutModal open={showLogoutModal} onOpenChange={setShowLogoutModal} />
     </aside>
+
   );
 }

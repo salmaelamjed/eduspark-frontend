@@ -90,7 +90,7 @@ const SignIn = () => {
             <Button 
             type="submit"
             disabled={loading}
-            className="w-full bg-orange-500 hover:bg-orange-600 text-white transition-colors"
+            className="w-full bg-orange-500 hover:bg-orange-400 text-white transition-colors hover:cursor-pointer "
           >
              {loading ? (
               <span className="flex items-center justify-center gap-2">

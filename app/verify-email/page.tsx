@@ -101,7 +101,7 @@ const VerifyOTP = () => {
 
               <Button
                 type="submit"
-                className="w-full bg-orange-500 hover:bg-orange-600"
+                className="w-full bg-orange-500 hover:bg-orange-400 hover:cursor-pointer"
                 disabled={loading || otpValue.length !== 6}
               >
                 {loading ? (
@@ -122,22 +122,15 @@ const VerifyOTP = () => {
           <div className="mt-6 text-center text-sm text-muted-foreground space-y-2">
             <p>
               Tu  {"n'as"} pas reçu le code ?{" "}
-              <Button
+              <button
                 onClick={onResendCode}
                 disabled={resendLoading}
-                className="text-orange-500 hover:underline font-medium bg-transparent border-none cursor-pointer p-0"
+                className="text-orange-500 hover:underline font-medium border-none cursor-pointer p-0"
               >
-                {resendLoading ? (
-                      <div className="min-h-screen flex items-center justify-center">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-orange-500 mx-auto mb-4"></div>
-          <p>Chargement de la session...</p>
-        </div>
-      </div>
-                  ) : (
-                    'Renvoyer le code'
-                  )}
-              </Button>
+                
+                    Renvoyer le code
+              
+              </button>
             </p>
 
             <p>

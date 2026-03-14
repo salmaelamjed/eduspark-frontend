@@ -16,7 +16,7 @@ import { BookOpen, Heart, LogOut } from 'lucide-react';
 import { useAuth } from '@/context/auth-context';
 import { useState } from 'react';
 
-import ConfirmSignOutModal from '@/components/confirm-signout-modal'; // adjust path
+import ConfirmSignOutModal from '@/components/confirm-signout-modal'; 
 
 export default function Navbar() {
   const { user, isAuthenticated, loading } = useAuth();
@@ -30,7 +30,6 @@ export default function Navbar() {
       : user.name.charAt(0).toUpperCase();
   };
 
-  // Stabilize conditional content to help avoid React DevTools children warning
   const authContent = loading ? (
     <div className="h-12 w-12 rounded-full bg-gray-200 animate-pulse" />
   ) : isAuthenticated && user ? (
@@ -117,22 +116,22 @@ export default function Navbar() {
             {/* Center links */}
             <div className="hidden md:flex items-center gap-8">
               <Link
-                href="/"
+                href="/courses"
                 className="text-gray-700 hover:text-orange-500 font-medium transition-colors duration-200"
               >
                 Cours
               </Link>
               <Link
-                href="/pricing"
+                href="/about-us"
                 className="text-gray-700 hover:text-orange-500 font-medium transition-colors duration-200"
               >
                 À propos
               </Link>
               <Link
-                href="/news"
+                href="/contact"
                 className="text-gray-700 hover:text-orange-500 font-medium transition-colors duration-200"
               >
-                Teachers
+                Contact
               </Link>
             </div>
 

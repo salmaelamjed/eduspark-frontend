@@ -18,10 +18,13 @@ class ApiClient {
     const { token, ...fetchOptions } = options;
 
     const headers: Record<string, string> = {
-      "Content-Type": "application/json",
+      // "Content-Type": "application/json",
       Accept: "application/json",
       ...(fetchOptions.headers as Record<string, string>),
     };
+     if (!(fetchOptions.body instanceof FormData)) {
+       headers["Content-Type"] = "application/json";
+     }
 
     if (token) {
       headers["Authorization"] = `Bearer ${token}`;
@@ -49,7 +52,7 @@ class ApiClient {
   async post<T>(endpoint: string, data?: unknown, token?: string): Promise<T> {
     return this.request<T>(endpoint, {
       method: "POST",
-      body: JSON.stringify(data),
+      body: data instanceof FormData ? data : JSON.stringify(data),
       token,
     });
   }
@@ -58,6 +61,14 @@ class ApiClient {
     return this.request<T>(endpoint, {
       method: "PUT",
       body: JSON.stringify(data),
+      token,
+    });
+  }
+
+  async patch<T>(endpoint: string, data?: unknown, token?: string): Promise<T> {
+    return this.request<T>(endpoint, {
+      method: "PATCH",
+      body: data ? JSON.stringify(data) : undefined,
       token,
     });
   }

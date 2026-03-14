@@ -66,7 +66,7 @@ export default function ConfirmSignOutModal({ open, onOpenChange }: ConfirmSignO
         <AlertDialogFooter>
           <AlertDialogCancel 
             disabled={isLoggingOut}
-            className="mt-2 sm:mt-0"
+            className="mt-2 sm:mt-0 hover:cursor-pointer"
           >
             Annuler
           </AlertDialogCancel>
@@ -85,10 +85,10 @@ export default function ConfirmSignOutModal({ open, onOpenChange }: ConfirmSignO
                 <span>Déconnexion...</span>
               </>
             ) : (
-              <>
+              <div className=' hover:cursor-pointer flex items-center gap-2' >
                 <LogOut className="h-4 w-4" />
                 <span>Se déconnecter</span>
-              </>
+              </div>
             )}
           </AlertDialogAction>
         </AlertDialogFooter>
