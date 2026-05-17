@@ -71,37 +71,46 @@ export default function HomePage(){
     </section>
 
        
-        <section className="py-16 px-4 bg-background">
-      <div className="container mx-auto max-w-4xl">
-        <h2 className="text-3xl md:text-4xl font-bold text-center text-foreground mb-4">
-          A propos {"d'EduSpark"}
-        </h2>
-        <p className="text-center text-muted-foreground mb-12 max-w-3xl mx-auto">
-          EduSpark est une plateforme {"d'apprentissage "} moderne conçue pour aider chacun à développer ses compétences,
-           quel que soit son niveau. Notre mission est de rendre  {"l'éducation"} accessible, pratique et orientée 
-           vers le monde réel.
-        </p>
-        
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-          {features.map((feature, index) => (
-            <div
-              key={index}
-              className="flex flex-col items-center text-center p-8 rounded-xl border-2 border-orange-500 bg-background hover:shadow-lg transition-shadow"
-            >
-              <div className="mb-4 text-primary">
-                <feature.icon className="w-10 h-10 text-orange-500" strokeWidth={1.5} />
-              </div>
-              <h3 className="text-lg font-semibold text-foreground mb-2">
-                {feature.title}
-              </h3>
-              <p className="text-muted-foreground text-sm">
-                {feature.description}
-              </p>
-            </div>
-          ))}
+        <section className="relative py-20 px-4 bg-background overflow-hidden">
+  {/* Optionnel : Un léger halo lumineux en arrière-plan pour dynamiser la section */}
+  <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-125 h-125 bg-orange-500/5 rounded-full blur-3xl pointer-events-none" />
+
+  <div className="container relative mx-auto max-w-5xl">
+    {/* En-tête de la section */}
+    <div className="text-center max-w-3xl mx-auto mb-16">
+      <h2  className="text-3xl md:text-4xl font-bold text-foreground mb-4 tracking-tight">
+        À propos {" d'EduSpark"}
+      </h2>
+      <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
+        EduSpark est une plateforme {"d'apprentissage"} moderne conçue pour aider chacun à développer ses compétences, 
+        quel que soit son niveau. Notre mission est de rendre {"l'éducation"} accessible, pratique et orientée vers le monde réel.
+      </p>
+    </div>
+    
+    {/* Grille des fonctionnalités */}
+    <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+      {features.map((feature, index) => (
+        <div
+          key={index}
+          className="group flex flex-col items-center text-center p-8 rounded-2xl border border-border bg-card/50 backdrop-blur-sm transition-all duration-300 ease-out hover:-translate-y-1 hover:border-orange-500/50 hover:bg-card  "
+        >
+          {/* Conteneur de l'icône avec effet de background au survol */}
+          <div className="mb-5 p-4 rounded-xl bg-orange-50 text-orange-500 dark:bg-orange-950/30 transition-colors duration-300 group-hover:bg-orange-500 group-hover:text-white">
+            <feature.icon className="w-8 h-8 transition-transform duration-300 group-hover:scale-110" strokeWidth={1.75} />
+          </div>
+
+          <h3 className="text-xl font-bold text-foreground mb-3 tracking-tight">
+            {feature.title}
+          </h3>
+          
+          <p className="text-muted-foreground text-sm leading-relaxed">
+            {feature.description}
+          </p>
         </div>
-      </div>
-    </section>
+      ))}
+    </div>
+  </div>
+</section>
     <DomainsSection/>
 
 

@@ -37,7 +37,7 @@ export default function DomainPage() {
   } = useDomainsManagement();
 
   return (
-    <div className="min-h-screen flex flex-col container mx-auto py-6 px-4">
+    <div className="min-h-screen flex flex-col container mx-auto ">
       {/* Header */}
       <div className="flex justify-between items-center mb-8">
         <div>

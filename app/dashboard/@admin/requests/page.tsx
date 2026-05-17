@@ -66,8 +66,16 @@ export default function TeacherRequestsPage() {
   };
 
   return (
-    <div className="min-h-screen flex flex-col container mx-auto py-6 px-4">
-      <h1 className="text-3xl font-bold mb-6">Demandes{" d'enseignants"}</h1>
+    <div className="min-h-screen flex flex-col container mx-auto  ">
+       <div className="flex justify-between items-center mb-8">
+              <div>
+                <h1 className="text-3xl font-bold">Gestion des demandes</h1>
+                <p className="text-muted-foreground mt-1">
+                  Gérez et suivez vos demandes 
+                </p>
+              </div>
+
+            </div>
 
       <div className="flex-1">
         {isPageLoading ? (
