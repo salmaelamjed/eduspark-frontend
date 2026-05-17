@@ -11,6 +11,7 @@ import { DomainsSection } from "@/components/domain-section";
   AccordionItem,
   AccordionTrigger,
 } from "@/components/ui/accordion"
+import { Briefcase, Percent } from "lucide-react";
 
 export default function HomePage(){
    const faqs = [
@@ -41,29 +42,34 @@ export default function HomePage(){
     <main>
       <Navbar/>
      
-      <section className="p-4 flex justify-between items-center">
-         <div className="">
-          <h1 className="text-orange-500 font-extrabold text-5xl">
-            Le code {" n'est"} plus un mystère. <br />
-            Il est ton super-pouvoir.
-          </h1>
-          <p className="text-gray-400 text-xl mt-2">
-            Maîtrise les langages stars (Python IA,
-            Rust sécurité, JS/TS web) , <br />
-            stack moderne + mindset dev pro
-          </p>
+     <section className="p-10 flex flex-col md:flex-row justify-between items-center bg-background">
+  <div className="max-w-xl">
+    <h1 className="text-orange-500 font-extrabold text-5xl leading-tight">
+      Apprends. Progresse. <br />
+      <span className="text-foreground">Libère ton potentiel.</span>
+    </h1>
 
-          <Button className="mt-6 text-white font-bold  bg-orange-500  py-8 px-8 cursor-pointer hover:bg-orange-400">Commencer à apprendre</Button>
-         </div>
-         <div>
-          <Image 
-          src='/images/imgl1.jpg'
-          alt='landing image'
-          width={600}
-          height={3000}
-          />
-         </div>
-      </section>
+    <p className="text-gray-500 text-xl mt-6">
+      Une plateforme unique pour explorer <span className="font-semibold text-orange-500">la programmation, le design, le business, les langues et bien plus encore</span>. 
+      Découvre des parcours variés, des outils modernes et un mindset qui t’accompagne vers la réussite.
+    </p>
+
+    <Button className="mt-10 text-white font-bold bg-orange-500 py-5 px-10 text-lg rounded-lg shadow-md hover:bg-orange-400 transition-all">
+      Commencer ton aventure
+    </Button>
+  </div>
+
+  <div className="mt-10 md:mt-0 md:ml-12">
+    <Image 
+      src="/images/imgl1.jpg"
+      alt="Landing image"
+      width={500}
+      height={400}
+      className=" object-cover"
+    />
+  </div>
+    </section>
+
        
         <section className="py-16 px-4 bg-background">
       <div className="container mx-auto max-w-4xl">
@@ -98,60 +104,125 @@ export default function HomePage(){
     </section>
     <DomainsSection/>
 
-    <section className="py-16 px-4 bg-background">
-       <h2 className="text-3xl md:text-4xl font-bold text-center text-foreground mb-4">
-            Comment ca marche ?
-         </h2>
-        <p className="text-center text-muted-foreground  max-w-3xl mx-auto">
-          Commence ton apprentissage en 3 étapes simples        
+
+    <section className="py-16 px-4 md:py-24 bg-background">
+      <div className="max-w-6xl mx-auto">
+        {/* En-tête */}
+        <div className="text-center mb-16">
+          <h2 className="text-3xl md:text-4xl font-bold text-foreground mb-4 tracking-tight">
+            Comment ça marche ?
+          </h2>
+          <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
+            Commence ton apprentissage en 3 étapes simples et rapides.
           </p>
-    <div className="flex  gap-20 items-center justify-center min-w-full mx-auto">
-      <Image
-      src={'/images/commentimag.png'}
+        </div>
+
+        {/* Contenu */}
+        <div className="flex flex-col md:flex-row items-center justify-center gap-12 lg:gap-20">
+          {/* Bloc Image */}
+          <div className="relative w-full max-w-89 aspect-4/3 md:max-w-100">
+            <Image
+      src="/images/commentimag.png"
       alt="Comment"
       width={300}
-      height={200}
-      />
-      <div className="ml-8">
-        <ol className="list-decimal text-xl font-normal text-gray-700">
-          <li className="mb-4">Inscris-toi :  Creer ton compte gratuitement en quelques seconds</li>
-          <li className="">Choisis ton parcours: Selectionne le demaine qui {"t’interesse"}.</li>
-           <li className="mt-4">Apprends et progresse : Suis es cours, pratique, et avance a ton rythme</li>
-        </ol>
-          <Button className="mt-10 text-white font-bold  bg-orange-500  py-8 px-8 cursor-pointer hover:bg-orange-400">Commencer maintenant</Button>
+      height={150}
+      className="rounded-lg "
+    />
+          </div>
+
+          {/* Bloc Liste & Action */}
+          <div className="flex-1 max-w-xl">
+            <ol className="space-y-6 list-none counter-reset">
+              {/* Étape 1 */}
+              <li className="flex gap-4 items-start">
+                <span className="flex items-center justify-center bg-orange-100 text-orange-600 font-bold rounded-full h-8 w-8 shrink-0 text-sm mt-1">
+                  1
+                </span>
+                <div>
+                  <h3 className="text-xl font-semibold text-foreground mb-1">Inscris-toi</h3>
+                  <p className="text-muted-foreground">Crée ton compte gratuitement en quelques secondes.</p>
+                </div>
+              </li>
+
+              {/* Étape 2 */}
+              <li className="flex gap-4 items-start">
+                <span className="flex items-center justify-center bg-orange-100 text-orange-600 font-bold rounded-full h-8 w-8 shrink-0 text-sm mt-1">
+                  2
+                </span>
+                <div>
+                  <h3 className="text-xl font-semibold text-foreground mb-1">Choisis ton parcours</h3>
+                  <p className="text-muted-foreground">Sélectionne le domaine qui {"t'intéresse"}.</p>
+                </div>
+              </li>
+
+              {/* Étape 3 */}
+              <li className="flex gap-4 items-start">
+                <span className="flex items-center justify-center bg-orange-100 text-orange-600 font-bold rounded-full h-8 w-8 shrink-0 text-sm mt-1">
+                  3
+                </span>
+                <div>
+                  <h3 className="text-xl font-semibold text-foreground mb-1">Apprends et progresse</h3>
+                  <p className="text-muted-foreground">Suis les cours, pratique et avance à ton rythme.</p>
+                </div>
+              </li>
+            </ol>
+
+            {/* Bouton d'action */}
+            <div className="mt-10 text-center md:text-left">
+              <Button className="text-white font-bold bg-orange-500 hover:bg-orange-600 h-12 px-8 rounded-xl transition-all shadow-md hover:shadow-lg">
+                Commencer maintenant
+              </Button>
+            </div>
+          </div>
+        </div>
       </div>
-    </div>
     </section>
 
-    <section className="py-16 bg-background px-12">
-  <div className="w-full  mx-auto">
-    <h2 className="text-3xl md:text-4xl font-bold text-center text-foreground mb-4">
-      Devenez enseignant sur EduSpark
-    </h2>
-    
-    <p className="text-center text-muted-foreground mb-12 max-w-3xl mx-auto">
-      Partagez votre expertise, créez vos propres cours payants et formez des milliers {"d’apprenants."}
-      <br />
-      Rejoignez la communauté des formateurs EduSpark en quelques clics.
-    </p>
 
-    <div className="flex flex-col lg:flex-row items-center justify-center gap-4 lg:gap-4">
-      <div className="">
-        <Image
-          src="/images/pr.png"
-          width={700}
-          height={600}
-          alt="Professeur partageant son savoir sur EduSpark"
-          className="object-contain rounded-lg"
-          priority
-        />
+ <section className="py-20 bg-slate-50 px-6 sm:px-12 border-t border-b border-slate-100">
+      <div className="max-w-5xl mx-auto">
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-12 items-start">
+          
+          {/* Colonne Gauche : Textes & Arguments (5 cols) */}
+          <div className="lg:col-span-5 space-y-6 lg:sticky lg:top-12">
+            <div>
+              <p className="text-xs font-semibold uppercase tracking-wider text-orange-600 mb-2">
+                Opportunité de carrière
+              </p>
+              <h2 className="text-3xl md:text-4xl font-bold text-slate-900 tracking-tight mb-4">
+                Devenez enseignant sur EduSpark
+              </h2>
+              <p className="text-base text-slate-600 leading-relaxed">
+                Partagez votre expertise avec notre communauté. Créez vos cours en toute autonomie, 
+                générez des revenus et accompagnez des milliers {"d'apprenants"} dans leur développement.
+              </p>
+            </div>
+
+            {/* Petits indicateurs discrets et pros pour meubler l'espace de manière utile */}
+            <div className="pt-6 border-t border-slate-200 space-y-4 hidden sm:block">
+              <div className="flex items-center gap-3 text-sm text-slate-600">
+                <div className="w-8 h-8 rounded bg-white border border-slate-200 flex items-center justify-center text-slate-700 shrink-0">
+                  <Briefcase className="w-4 h-4" />
+                </div>
+                <span>Flexibilité totale sur vos horaires et vos contenus</span>
+              </div>
+              <div className="flex items-center gap-3 text-sm text-slate-600">
+                <div className="w-8 h-8 rounded bg-white border border-slate-200 flex items-center justify-center text-slate-700 shrink-0">
+                  <Percent className="w-4 h-4" />
+                </div>
+                <span>Rémunération attractive et transparente</span>
+              </div>
+            </div>
+          </div>
+
+          {/* Colonne Droite : Formulaire épuré (7 cols) */}
+          <div className="lg:col-span-7 w-full">
+            <RequestForm />
+          </div>
+
+        </div>
       </div>
-      <div className="w-full lg:w-1/2 max-w-lg lg:max-w-none mx-auto lg:mx-0">
-        <RequestForm />
-      </div>
-    </div>
-  </div>
-</section>
+    </section>
     
   
 

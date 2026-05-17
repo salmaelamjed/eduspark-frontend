@@ -29,6 +29,9 @@ const Page = () => {
   }, []);
 
   useEffect(() => {
+     console.log("Course data:", course);
+  console.log("Modules:", course?.modules);
+  console.log("First lesson:", course?.modules?.[0]?.lessons?.[0]);
     if (loading || !course) return;
   }, [course, loading, selectedLessonId]);
 

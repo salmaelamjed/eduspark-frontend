@@ -10,11 +10,20 @@ const nextConfig: NextConfig = {
         pathname: "/storage/**",
       },
       {
-        protocol: "https",
-        hostname: "ton-domaine.com", 
+        protocol: "http",
+        hostname: "127.0.0.1",
+        port: "8000",
         pathname: "/storage/**",
       },
     ],
+  },
+  async rewrites() {
+    return [
+      {
+        source: "/api/proxy/storage/:path*",
+        destination: "http://localhost:8000/storage/:path*",
+      },
+    ];
   },
 };
 

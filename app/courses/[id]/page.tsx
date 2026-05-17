@@ -43,21 +43,25 @@ const CourseDetails = () => {
   return (
     <div className="min-h-screen ">
       <Navbar/>
-      <div className="container flex  mx-auto p-4">
-       <div className='border rounded-lg w-120'>
-        {course.thumbnail ? (
-            <Image
-        src={`http://localhost:8000/storage/${course.thumbnail}`}
-        alt="aaaa"
-        width={150}
-        height={150}
-        className='border rounded-lg'
-        />
-        ):(
-            <div className="flex h-[80vh] w-100 items-center justify-center">
-                      <Book className="h-12 w-12 text-gray-400" />
-                    </div>
-        )}
+      <div className="container flex  mx-auto pt-4">
+       <div className='border rounded-2xl  h-128 w-110'>
+       {course.thumbnail ? (
+  <div className="relative w-full h-128 rounded-2xl overflow-hidden">
+    <Image
+      src={course.thumbnail}
+      alt={course.title}
+      fill
+      sizes="(max-width: 768px) 100vw, 800px"
+      className="object-cover"
+      priority
+    />
+  </div>
+) : (
+  <div className="w-full  h-128 rounded-2xl bg-muted flex items-center justify-center">
+    <BookOpen className="w-16 h-16 text-muted-foreground" />
+  </div>
+)}
+
        </div>
        <div className=' bottom-2 left-0 right-0 p-6 md:p-10 z-10'>
         <h1 className="text-2xl  font-bold leading-tight">
