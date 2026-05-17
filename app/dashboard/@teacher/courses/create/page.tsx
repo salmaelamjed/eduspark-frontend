@@ -1,17 +1,17 @@
+import CreationCourseFormStep from "@/components/course/creation-step-form"
 import CreateCourseFormProvider from "@/components/course/form-provider"
-import CourseInfo from "@/components/courses/course-info"
-import ButtonHandler from "@/components/courses/handle-btn/index"
+import ButtonHandler from "@/components/course/handlerButton"
 import { WorkflowStepper } from "@/components/WorkflowStepper"
 
 const Page = () => {
   return (
      <div className="h-screen ">
-      <div className="  ">
+      <div className="">
         <CreateCourseFormProvider>
             <WorkflowStepper/>
           <div className="flex flex-col ">
-            <CourseInfo/>
-            {/* <CreationCourseFormStep/> */}
+            <CreationCourseFormStep/>
+            
             <ButtonHandler/>
           </div>
         </CreateCourseFormProvider>

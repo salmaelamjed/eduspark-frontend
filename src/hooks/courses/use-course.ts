@@ -1,19 +1,19 @@
 "use client";
 
-import { coursesApi , PaginatedCourses,CourseListFilters, CourseDetail } from "@/api/courses";
-import { useAuth } from "@/context/auth-context";
 import {
-  CourseCreationProps,
-  CourseCreationSchema,
-} from "@/schema/course.schema";
-import {  CourseRequestPayload } from "@/types/course";
+  coursesApi,
+  PaginatedCourses,
+  CourseListFilters,
+  CourseDetail,
+} from "@/api/courses";
+import { useAuth } from "@/context/auth-context";
+import { CourseCreationProps, CourseCreationSchema } from "@/schema/course.schema";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useState } from "react";
 import { useForm } from "react-hook-form";
 import { toast } from "sonner";
 
-// Modifier pour accepter des paramètres
 interface UseCoursesProps {
   getModulesForBackend?: () => any[];
 }
@@ -40,7 +40,6 @@ export const UseCourses = ({ getModulesForBackend }: UseCoursesProps = {}) => {
 
   // Fonction de création qui accepte les données directement
   const createCourse = async (formData: CourseCreationProps) => {
-    console.log("🔵 createCourse appelé avec:", formData);
     setLoading(true);
 
     try {
@@ -57,7 +56,6 @@ export const UseCourses = ({ getModulesForBackend }: UseCoursesProps = {}) => {
       }
 
       const modules = getModulesForBackend();
-      console.log("📦 Modules récupérés:", modules);
 
       if (!modules || modules.length === 0) {
         toast.error("Le cours doit contenir au moins un module");
@@ -77,32 +75,49 @@ export const UseCourses = ({ getModulesForBackend }: UseCoursesProps = {}) => {
         return;
       }
 
-      // Gérer l'upload de l'image
-      let thumbnailUrl = "";
-      if (formData.thumbnail && formData.thumbnail.length > 0) {
-        const file = formData.thumbnail[0];
-        console.log("🖼️ Fichier thumbnail:", file.name);
-        thumbnailUrl = URL.createObjectURL(file);
-        // TODO: Remplacer par un vrai upload
+      const formDataPayload = new FormData();
+      // 2. On ajoute les champs simples
+      formDataPayload.append("title", formData.title.trim());
+      formDataPayload.append("description", formData.description.trim());
+      formDataPayload.append("level", formData.level);
+      formDataPayload.append("language", formData.language);
+      // Normalisation pro pour les booleans/numbers en FormData
+      const isFreeValue = String(formData.is_free) === "true";
+      formDataPayload.append("is_free", isFreeValue ? "1" : "0");
+      formDataPayload.append(
+        "price",
+        isFreeValue ? "0" : String(formData.price),
+      );
+
+      // 3. FIX DU BUG : On ajoute le FICHIER binaire, pas l'URL
+      if (formData.thumbnail && formData.thumbnail[0]) {
+        formDataPayload.append("thumbnail", formData.thumbnail[0]);
       }
+      // 4. On ajoute les modules (objets complexes) en les sérialisant en JSON
+      formDataPayload.append("modules", JSON.stringify(modules));
+
+      // 5. On envoie formDataPayload au lieu du payload JSON habituel
+      // Note: On cast en 'any' si ton type CourseRequestPayload n'accepte pas FormData
+      const response = await coursesApi.create(formDataPayload as any, token);
+      // Gérer l'upload de l'image
+      // let thumbnailUrl = "";
+      // if (formData.thumbnail && formData.thumbnail.length > 0) {
+      //   const file = formData.thumbnail[0];
+      //   thumbnailUrl = URL.createObjectURL(file);
+      // }
 
       // Préparer le payload
-      const payload: CourseRequestPayload = {
-        title: formData.title.trim(),
-        description: formData.description.trim(),
-        level: formData.level,
-        language: formData.language,
-        is_free: formData.is_free,
-        price: formData.is_free ? undefined : Number(formData.price),
-        thumbnail: thumbnailUrl,
-        modules: modules,
-      };
-
-      console.log("📤 Payload envoyé:", payload);
-
-      const response = await coursesApi.create(payload, token);
-      console.log("✅ Réponse API:", response);
-
+      // const payload: CourseRequestPayload = {
+      //   title: formData.title.trim(),
+      //   description: formData.description.trim(),
+      //   level: formData.level,
+      //   language: formData.language,
+      //   is_free: String(formData.is_free) === "true" ,
+      //   price: String(formData.is_free) === "true" ? 0 : Number(formData.price),
+      //   thumbnail: thumbnailUrl,
+      //   modules: modules,
+      // };
+      // const response = await coursesApi.create(payload, token);
       if (response?.course?.id) {
         toast.success(response.message || "Cours créé avec succès");
         router.push(`/dashboard/courses`);
@@ -111,20 +126,18 @@ export const UseCourses = ({ getModulesForBackend }: UseCoursesProps = {}) => {
         toast.error("Erreur lors de la création du cours");
       }
     } catch (error: any) {
-      console.error("❌ Course creation failed:", error);
       toast.error(error.message || "Erreur lors de la création");
     } finally {
       setLoading(false);
     }
   };
 
-  // Version handleSubmit pour utilisation avec RHF
   const onHandleCreateCourse = methods.handleSubmit(createCourse);
 
   return {
     loading,
     onHandleCreateCourse,
-    createCourse, // Exportez aussi la fonction directe
+    createCourse, 
     methods,
   };
 };
@@ -134,20 +147,25 @@ export const UseGetCourses = (initialFilters?: CourseListFilters) => {
   const [courses, setCourses] = useState<PaginatedCourses | null>(null);
   const [error, setError] = useState<string | null>(null);
 
-  const getCourses = useCallback(async (filters?: CourseListFilters) => {
-    setLoading(true);
-    setError(null);
+  const getCourses = useCallback(
+    async (filters?: CourseListFilters) => {
+      setLoading(true);
+      setError(null);
 
-    try {
-      const response = await coursesApi.getAll(filters || initialFilters);
-      setCourses(response);
-    } catch (err) {
-      setError(err instanceof Error ? err.message : "Une erreur est survenue");
-      setCourses(null); 
-    } finally {
-      setLoading(false);
-    }
-  },[initialFilters]);
+      try {
+        const response = await coursesApi.getAll(filters || initialFilters);
+        setCourses(response);
+      } catch (err) {
+        setError(
+          err instanceof Error ? err.message : "Une erreur est survenue",
+        );
+        setCourses(null);
+      } finally {
+        setLoading(false);
+      }
+    },
+    [initialFilters],
+  );
 
   useEffect(() => {
     getCourses(initialFilters);
@@ -161,7 +179,7 @@ export const UseGetCourses = (initialFilters?: CourseListFilters) => {
   };
 };
 
-export const useCourseDetail = (courseId: number | string | null) => {
+export const useCourseDetail = (courseId: number|string | null) => {
   const [course, setCourse] = useState<CourseDetail | null>(null);
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
@@ -177,8 +195,9 @@ export const useCourseDetail = (courseId: number | string | null) => {
 
     try {
       const response = await coursesApi.getOne(Number(courseId));
-      // Comme ton endpoint retourne { data: [course] }
-      const courseData = response.data?.[0] ?? null;
+      const courseData = response ?? null;
+      console.log("API Response:", response);
+
       setCourse(courseData);
     } catch (err: any) {
       setError(err?.message || "Impossible de charger les détails du cours");
@@ -200,5 +219,3 @@ export const useCourseDetail = (courseId: number | string | null) => {
     isSuccess: !!course && !error,
   };
 };
-
-

@@ -1,7 +1,7 @@
 import { Block } from "./block";
 
 export interface Lesson {
-  id: number;
+  id: number ;
   title: string;
   description?: string;
   order: number;

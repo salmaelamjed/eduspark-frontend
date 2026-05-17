@@ -288,7 +288,7 @@ const Page = () => {
                       {course.is_free ? 'Gratuit' : `${course.price} €`}
                     </div>
                   </div>
-
+                    
                   {/* Overlay on hover */}
                   <div className="absolute inset-0 bg-black/50 opacity-0 transition-opacity duration-300 group-hover:opacity-100 flex items-center justify-center">
                     <Link 

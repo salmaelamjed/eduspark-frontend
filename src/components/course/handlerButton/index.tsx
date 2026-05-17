@@ -6,6 +6,8 @@ import { useSharedCourseContent } from '@/context/create-course-context'
 import { UseCourses } from '@/hooks/courses/use-course'
 import { Loader2 } from 'lucide-react'
 
+
+
 const ButtonHandler = () => {
   const { currentStep, setCurrentStep } = useStepContextHook()
   const { watch, formState: { errors }, getValues } = useFormContext() 
@@ -13,31 +15,41 @@ const ButtonHandler = () => {
   const { loading, createCourse } = UseCourses({ getModulesForBackend }) 
 
   const formValues = watch();
-  
+    const isFree = formValues.is_free === true || formValues.is_free === "true";
+
   const canProceedToStep2 = (() => {
     const hasTitle = formValues.title?.trim().length > 0;
     const hasDescription = formValues.description?.trim().length > 0;
     const hasLevel = formValues.level && formValues.level !== "";
     const hasLanguage = formValues.language?.trim().length > 0;
-    const hasIsFree = formValues.is_free !== undefined;
-    const hasThumbnail = formValues.thumbnail && formValues.thumbnail.length > 0;
-    const hasNoErrors = !errors.title && !errors.description && !errors.level && 
-                       !errors.language && !errors.is_free && !errors.thumbnail;
-    return hasTitle && hasDescription && hasLevel && hasLanguage && 
-           hasIsFree && hasThumbnail && hasNoErrors;
-  })();
+    // FIX: Validate price only when course is NOT free
+    let hasValidPrice = true;
+    if (!isFree) {
+      // Check if price exists and is greater than 0
+      const price = formValues.price;
+      hasValidPrice = price && Number(price) > 0;
+    }
 
+     const hasThumbnail = formValues.thumbnail && formValues.thumbnail.length > 0;
+     const hasNoErrors = !errors.title && !errors.description && !errors.level && 
+                       !errors.language && !errors.thumbnail;
+      // Also check for price errors when not free
+    const hasNoPriceErrors = isFree ? true : !errors.price;                 
+    
+    return hasTitle && hasDescription && hasLevel && hasLanguage && 
+           hasThumbnail && hasValidPrice && hasNoErrors && hasNoPriceErrors;
+  })();
   const canProceedToStep3 = (() => {
     if (modules.length === 0) {
       return false;
     }
 
-    for (const module of modules) {
-      if (module.lessons.length === 0) {
+    for (const courseModule of modules) {
+      if (courseModule.lessons.length === 0) {
         return false;
       }
 
-      for (const lesson of module.lessons) {
+      for (const lesson of courseModule.lessons) {
         if (!lesson.blocks || lesson.blocks.length === 0) {
           return false;
         }
@@ -76,29 +88,20 @@ const ButtonHandler = () => {
   
   const canPublish = currentStep === 3 && canProceedToStep2 && canProceedToStep3;
 
-  // Fonction de publication directe
   const handlePublish = async () => {
-    console.log("🟢 handlePublish appelé");
-    console.log("canPublish:", canPublish);
-    console.log("loading:", loading);
-    
     if (!canPublish || loading) {
-      console.log("❌ Publication bloquée");
       return;
     }
 
     try {
-      // Récupérer les valeurs actuelles du formulaire
-      const currentValues = getValues();
-      console.log("📋 Valeurs du formulaire:", currentValues);
+      const currentValues = getValues()
+      currentValues.is_free = String(currentValues.is_free) === "true"
       
-      // Appeler createCourse directement avec les valeurs
-      await createCourse(currentValues);
-      
+      await createCourse(currentValues)
     } catch (error) {
-      console.error("❌ Erreur dans handlePublish:", error);
+      console.error(" Erreur dans handlePublish:", error)
     }
-  };
+  }
 
   if (currentStep === 1) {
     return (

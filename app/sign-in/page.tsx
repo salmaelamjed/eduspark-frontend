@@ -6,12 +6,14 @@ import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
 import { Button } from "@/components/ui/button";
 import { useSignInForm } from "@/hooks/sign-in/use-sign-in";
+import { useAuth } from "@/context/auth-context";
 
 
 const SignIn = () => {
 
   const {methods,onHandleSubmit,loading }=useSignInForm();
   const {register,formState:{errors}}=methods;
+  const {token}=useAuth();
 
   return (
     <div className="min-h-screen flex">
@@ -87,11 +89,11 @@ const SignIn = () => {
               </Link>
             </div>
 
-            <Button 
-            type="submit"
-            disabled={loading}
-            className="w-full bg-orange-500 hover:bg-orange-400 text-white transition-colors hover:cursor-pointer "
-          >
+            <Button
+  type="submit"
+  disabled={loading || !!token}
+  className="w-full bg-orange-500 hover:bg-orange-400 text-white transition-colors hover:cursor-pointer"
+>
              {loading ? (
               <span className="flex items-center justify-center gap-2">
                 <svg className="animate-spin h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">

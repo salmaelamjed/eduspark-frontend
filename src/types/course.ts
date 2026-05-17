@@ -5,6 +5,10 @@ export interface Course {
   title: string;
   description: string;
   thumbnail?: string;
+  level?: string;
+  language?: string;
+  is_free?: boolean;
+  price:number;
   modules: Module[];
   status: "draft" | "published";
   createdAt: Date;

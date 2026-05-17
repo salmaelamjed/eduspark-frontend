@@ -11,7 +11,7 @@ const nextConfig: NextConfig = {
       },
       {
         protocol: "https",
-        hostname: "ton-domaine.com", // ← à remplir plus tard
+        hostname: "ton-domaine.com", 
         pathname: "/storage/**",
       },
     ],

@@ -8,12 +8,12 @@ const Page = () => {
     <div className="">
       <div className="flex justify-between items-center mb-8">
               <div>
-                <h1 className="text-3xl font-bold">Rapports </h1>
+                <h1 className="text-3xl font-bold">Gestion des Étudiants</h1>
                 <p className="text-muted-foreground mt-1">
-                  Analysez, suivez et maîtrisez vos données
+                  Gérez et suivez vos étudiants 
                 </p>
               </div>
-                  <Link href={''}
+                  <Link href={'courses/create'}
                   className=''
                   >
                   <Button
@@ -32,7 +32,7 @@ const Page = () => {
                     "
                   >
                     <PlusCircle className="h-5 w-5" />
-                    Ajouter un cours
+                    Ajouter un étudiant
                   </Button>
                   </Link>
 

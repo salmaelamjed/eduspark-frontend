@@ -17,11 +17,24 @@ const protectedRoutesPatterns = ["/dashboard", "/profile"];
 export function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
   const token = request.cookies.get("auth_token")?.value;
+  const authUserCookie = request.cookies.get("auth_user")?.value;
 
-  // 1. Protéger les routes privées → rediriger vers login si pas de token
+  let userRole: string | null = null;
+
+  if (authUserCookie) {
+    try {
+      const decoded = decodeURIComponent(authUserCookie);
+      const user = JSON.parse(decoded);
+      userRole = user?.role || user?.Role;
+    } catch (error) {
+      console.error("Failed to parse auth_user cookie:", error);
+    }
+  }
+  // 1. Routes protégées (besoin d'être connecté)
   const isProtected = protectedRoutesPatterns.some(
     (pattern) => pathname === pattern || pathname.startsWith(pattern),
   );
+ 
 
   if (isProtected && !token) {
     const redirectUrl = new URL("/sign-in", request.url);
@@ -31,14 +44,31 @@ export function middleware(request: NextRequest) {
 
   // 2. Utilisateur CONNECTÉ sur une page publique-only (login, register, etc.)
   // → rediriger vers /dashboard (pas vers /)
-  const isPublicOnly = publicOnlyRoutes.some(
-    (route) => pathname === route || pathname.startsWith(route),
-  );
+ const isPublicOnly = publicOnlyRoutes.some(
+   (route) => pathname === route || pathname.startsWith(route),
+ );
 
-  if (isPublicOnly && token) {
-    // ← CHANGEMENT ICI : rediriger vers /dashboard au lieu de /
-    return NextResponse.redirect(new URL("/dashboard", request.url));
+ if (isPublicOnly && token) {
+   return NextResponse.redirect(new URL("/dashboard", request.url));
+ }
+
+if (token && userRole) {
+  const restrictedRoles = ["admin", "teacher"];
+
+  if (restrictedRoles.includes(userRole.toLowerCase())) {
+    const isRestrictedPublic =
+      pathname === "/" ||
+      publicOnlyRoutes.some(
+        (route) => pathname === route || pathname.startsWith(route),
+      );
+
+    if (isRestrictedPublic) {
+      return NextResponse.redirect(new URL("/dashboard", request.url));
+    }
   }
+}
+
+
 
   // Tout OK
   return NextResponse.next();

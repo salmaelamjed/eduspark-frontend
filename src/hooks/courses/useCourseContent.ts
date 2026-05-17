@@ -1,7 +1,7 @@
 "use client";
 
-import { Block } from "@/types/block";
-import { TextBlock, VideoBlock } from "@/types/block";
+import { AudioBlock, Block, CalloutBlock, DividerBlock, EmbedBlock, FileBlock, HeadingBlock, ImageBlock, ListBlock, ParagraphBlock, QuoteBlock } from "@/types/block";
+import {  VideoBlock } from "@/types/block";
 import { Lesson } from "@/types/lesson";
 import { Module } from "@/types/module";
 import { useState, useCallback } from "react";
@@ -23,12 +23,12 @@ export interface LocalLesson extends Omit<Lesson, 'id' | 'blocks'> {
 
 export function useCourseContent() {
   const [modules, setModules] = useState<LocalModule[]>([]);
-  const [selectedModuleId, setSelectedModuleId] = useState<TempId | null>(
-    modules[0]?.id ?? null,
-  );
-  const [selectedLessonId, setSelectedLessonId] = useState<TempId | null>(
-    modules[0]?.lessons[0]?.id ?? null,
-  );
+  const [selectedModuleId, setSelectedModuleId] = useState<
+    string | number | null
+  >(modules[0]?.id ?? null);
+  const [selectedLessonId, setSelectedLessonId] = useState<
+    string | number | null
+  >(modules[0]?.lessons[0]?.id ?? null);
 
   // Ajouter un module
   const addModule = useCallback(() => {
@@ -46,7 +46,7 @@ export function useCourseContent() {
   }, [modules.length]);
 
   // Ajouter une leçon dans un module
-  const addLesson = useCallback((moduleId: string) => {
+  const addLesson = useCallback((moduleId: string |number) => {
     setModules((prev) =>
       prev.map((mod) => {
         if (mod.id !== moduleId) return mod;
@@ -72,7 +72,7 @@ export function useCourseContent() {
   }, []);
 
   // Renommer un module
-  const renameModule = useCallback((moduleId: string, newTitle: string) => {
+  const renameModule = useCallback((moduleId: string |number, newTitle: string) => {
     setModules((prev) =>
       prev.map((m) =>
         m.id === moduleId
@@ -83,7 +83,11 @@ export function useCourseContent() {
   }, []);
   // Renommer une leçon
   const renameLesson = useCallback(
-    (moduleId: string, lessonId: string, newTitle: string) => {
+    (
+      moduleId: string | number,
+      lessonId: string | number,
+      newTitle: string,
+    ) => {
       setModules((prev) =>
         prev.map((m) =>
           m.id === moduleId
@@ -103,7 +107,7 @@ export function useCourseContent() {
   );
   // Supprimer un module
   const deleteModule = useCallback(
-    (moduleId: string) => {
+    (moduleId: string | number) => {
       setModules((prev) => prev.filter((m) => m.id !== moduleId));
 
       if (selectedModuleId === moduleId) {
@@ -116,7 +120,7 @@ export function useCourseContent() {
 
   // Supprimer une leçon
   const deleteLesson = useCallback(
-    (moduleId: string, lessonId: string) => {
+    (moduleId: string | number, lessonId: string | number) => {
       setModules((prev) =>
         prev.map((m) =>
           m.id === moduleId
@@ -136,22 +140,25 @@ export function useCourseContent() {
   );
 
   // Sélectionner un module
-  const selectModule = useCallback((id: string) => {
-    setSelectedModuleId(id);
-    setSelectedLessonId(null);
-  }, []);
+ const selectModule = useCallback((id: string | number) => {
+   setSelectedModuleId(id);
+   setSelectedLessonId(null);
+ }, []);
 
   // Sélectionner une leçon
-  const selectLesson = useCallback((moduleId: string, lessonId: string) => {
-    setSelectedModuleId(moduleId);
-    setSelectedLessonId(lessonId);
-  }, []);
+ const selectLesson = useCallback(
+   (moduleId: string | number, lessonId: string | number) => {
+     setSelectedModuleId(moduleId);
+     setSelectedLessonId(lessonId);
+   },
+   [],
+ );
 
   // Préparer les modules pour l’envoi au backend (sans IDs)
   const getModulesForBackend = useCallback(() => {
     return modules.map((mod) => ({
       title: mod.title.trim(),
-      description: mod.description.trim(),
+      description: mod.description?.trim(),
       lessons: mod.lessons.map((les) => ({
         title: les.title.trim(),
         is_preview: les.is_preview,
@@ -182,10 +189,68 @@ export function useCourseContent() {
               let newBlock: Block;
 
               switch (type) {
-                case "text":
+                // case "text":
+                //   newBlock = {
+                //     type: "text",
+                //     content_text: (initialData as TextBlock).content_text || "",
+                //   };
+                //   break;
+
+                case "heading":
                   newBlock = {
-                    type: "text",
-                    content_text: (initialData as TextBlock).content_text || "",
+                    type: "heading",
+                    content_text:
+                      (initialData as HeadingBlock).content_text || "",
+                    level: (initialData as HeadingBlock).level || 2, 
+                  };
+                  break;
+
+                case "paragraph":
+                  newBlock = {
+                    type: "paragraph",
+                    content_text:
+                      (initialData as ParagraphBlock).content_text || "",
+                  };
+                  break;
+
+                case "list":
+                  newBlock = {
+                    type: "list",
+                    content_text: (initialData as ListBlock).content_text || "",
+                  };
+                  break;
+
+                case "quote":
+                  newBlock = {
+                    type: "quote",
+                    content_text:
+                      (initialData as QuoteBlock).content_text || "",
+                  };
+                  break;
+
+                case "image":
+                  newBlock = {
+                    type: "image",
+                    media_url: (initialData as ImageBlock).media_url || "",
+                    alt_text: (initialData as ImageBlock).alt_text || "",
+                    caption: (initialData as ImageBlock).caption || "",
+                  };
+                  break;
+
+                case "audio":
+                  newBlock = {
+                    type: "audio",
+                    media_url: (initialData as AudioBlock).media_url || "",
+                    duration_seconds:
+                      (initialData as AudioBlock).duration_seconds || 0,
+                  };
+                  break;
+
+                case "file":
+                  newBlock = {
+                    type: "file",
+                    file_url: (initialData as FileBlock).file_url || "",
+                    file_name: (initialData as FileBlock).file_name || "",
                   };
                   break;
 
@@ -224,17 +289,33 @@ export function useCourseContent() {
                   };
                   break;
 
-                case "file":
+                case "embed":
                   newBlock = {
-                    type: "file",
-                    file_url: "",
-                    file_name: "Nouveau fichier",
+                    type: "embed",
+                    media_url: (initialData as EmbedBlock).media_url || "",
+                    embed_type:
+                      (initialData as EmbedBlock).embed_type || "other",
                   };
                   break;
 
+                case "divider":
+                  newBlock = {
+                    type: "divider",
+                    style: (initialData as DividerBlock).style || "solid",
+                  };
+                  break;
+                case "callout":
+                  newBlock = {
+                    type: "callout",
+                    content_text:
+                      (initialData as CalloutBlock).content_text || "",
+                    callout_type:
+                      (initialData as CalloutBlock).callout_type || "info",
+                  };
+                  break;
                 default:
                   newBlock = {
-                    type: "text",
+                    type: "paragraph",
                     content_text: "",
                   };
                   break;
@@ -261,7 +342,7 @@ export function useCourseContent() {
     [],
   );
 
-  const toggleExpand = useCallback((moduleId: string) => {
+  const toggleExpand = useCallback((moduleId: string|number) => {
     setModules((prev) =>
       prev.map((m) =>
         m.id === moduleId ? { ...m, isExpanded: !m.isExpanded } : m,

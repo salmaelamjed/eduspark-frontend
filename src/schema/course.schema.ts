@@ -2,25 +2,51 @@ import { BlockType, CodeData, QuizData } from "@/hooks/blocks/use-blocks";
 import { z } from "zod";
 
 const thumbnailSchema = z
-  .instanceof(FileList)
-  .nullish()
-  .refine((files) => !files || files.length === 1, {
-    message: "Une seule image est autorisée",
-  })
+  .any() // or z.unknown()
+  .nullable()
+  .optional()
   .refine(
-    (files) => !files || files.length === 0 || files[0].size <= 5 * 1024 * 1024,
-    { message: "L’image ne doit pas dépasser 5 Mo" },
+    (val) => {
+      // On server we accept File | null | undefined
+      if (typeof window === "undefined") {
+        return val === null || val === undefined || val instanceof File;
+      }
+      // On client we expect FileList from input
+      return (
+        val === null ||
+        val === undefined ||
+        (val instanceof FileList && val.length === 1)
+      );
+    },
+    {
+      message: "Une seule image est autorisée (JPEG, PNG, WebP)",
+    },
   )
   .refine(
-    (files) =>
-      !files ||
-      files.length === 0 ||
-      ["image/jpeg", "image/png", "image/webp", "image/gif"].includes(
-        files[0].type,
-      ),
-    { message: "Format non supporté" },
+    (val) => {
+      if (!val || val.length === 0) return true;
+
+      const file = val instanceof FileList ? val[0] : val;
+      if (!(file instanceof File)) return false;
+
+      const allowedTypes = ["image/jpeg", "image/png", "image/webp"];
+      return allowedTypes.includes(file.type);
+    },
+    {
+      message: "Format d'image non supporté",
+    },
   )
-  .transform((files) => (files?.length ? files[0] : undefined));
+  .refine(
+    (val) => {
+      if (!val || val.length === 0) return true;
+
+      const file = val instanceof FileList ? val[0] : val;
+      return file.size <= 5 * 1024 * 1024; // 5MB
+    },
+    {
+      message: "L'image doit faire moins de 5 Mo",
+    },
+  );
 
 // Bloc schema basé sur la migration lesson_blocks
 const blockSchema = z.discriminatedUnion("type", [

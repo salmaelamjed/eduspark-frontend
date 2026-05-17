@@ -1,12 +1,12 @@
 "use client";
 import { useStepContextHook } from '@/context/use-step-context'
 import { useFormContext } from 'react-hook-form'
-import { CourseSetup } from './CourseSetup'
 import { ContentEditor } from './ContentEditor'
 import { ModuleSidebar } from '@/components/course/ModuleSidebar'
 import { PublishView } from './PublishView'
 import { Course } from '@/types/course'
 import { useSharedCourseContent } from '@/context/create-course-context';
+import CourseInfo from './course-info';
 
 const CreationCourseFormStep = () => {
 
@@ -37,8 +37,10 @@ const CreationCourseFormStep = () => {
 
   const selectedModule = modules.find((m) => m.id === selectedModuleId);
   const selectedLesson = selectedModule?.lessons.find((l) => l.id === selectedLessonId);
+
   const formValues = watch();
     const course: Course = {
+    id:0,
     title: formValues.title || "",
     description: formValues.description || "",
     level: formValues.level,
@@ -49,19 +51,24 @@ const CreationCourseFormStep = () => {
     status: "draft",
     createdAt: new Date(),
     updatedAt: new Date(),
-    modules: modules.map(module => ({
-      id: module.id,
+    modules: modules.map(module => (
+      {
+      id: typeof module.id === "string" && module.id.startsWith("temp-")
+      ? 0  
+      : Number(module.id),
       title: module.title,
       description: module.description || "",
       order: module.order || 0,
       lessons: module.lessons.map(lesson => ({
-        id: lesson.id,
+        id: typeof lesson.id === "string" && lesson.id.startsWith("temp-")
+        ? 0 
+        : Number(lesson.id),
         title: lesson.title,
         description: "",
         order: lesson.order || 0,
         duration_minutes: 0,
         is_preview: lesson.is_preview || false,
-        type: "text", 
+        type: lesson.type, 
         media_url: lesson.media_url || "",
         content: "",
         blocks: lesson.blocks || [],
@@ -83,7 +90,7 @@ const CreationCourseFormStep = () => {
   switch(currentStep){
     case 1:
       return(
-        <CourseSetup
+        <CourseInfo
           register={register}
           errors={errors}
         />

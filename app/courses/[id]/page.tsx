@@ -54,7 +54,7 @@ const CourseDetails = () => {
         className='border rounded-lg'
         />
         ):(
-            <div className="flex h-[80vh] w-[400px] items-center justify-center">
+            <div className="flex h-[80vh] w-100 items-center justify-center">
                       <Book className="h-12 w-12 text-gray-400" />
                     </div>
         )}

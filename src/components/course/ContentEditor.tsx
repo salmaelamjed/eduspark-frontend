@@ -11,24 +11,16 @@ import {
 } from "@/components/ui/select";
 import {
   Trash2,
-  MoveUp,
-  MoveDown,
-  Code,
   FileText,
-  Video,
   File,
-  HelpCircle,
   Upload,
-  X,
-  Play,
   Download,
 } from "lucide-react";
 import { Lesson, Block, BlockType } from "@/types/block";
 import { useState, useRef, ChangeEvent } from "react";
 import { cn } from "@/lib/utils";
 import Image from "next/image";
-import { ACCEPTED_FILE_TYPES, ACCEPTED_IMAGE_TYPES, ACCEPTED_VIDEO_TYPES, codeLanguages, getFileIcon, getFileIconBg } from "@/constants/content-editor";
-import { downloadFile } from "@/constants/landing";
+import { ACCEPTED_FILE_TYPES, ACCEPTED_IMAGE_TYPES, ACCEPTED_VIDEO_TYPES, getFileIcon, getFileIconBg } from "@/constants/content-editor";
 import { formatFileSize } from "@/constants/content-editor";
 import { blockIcons } from "@/constants/content-editor";
 import { blockLabels } from "@/constants/content-editor";
@@ -58,7 +50,6 @@ export function ContentEditor({
 }: ContentEditorProps) {
   const [uploading, setUploading] = useState<string | null>(null);
   const videoRef = useRef<HTMLInputElement>(null);
-  const fileRef = useRef<HTMLInputElement>(null);
 
   if (!lesson || !module) {
     return (
@@ -80,13 +71,16 @@ export function ContentEditor({
     if (!module?.id || !lesson?.id) return;
 
     let initialData: Partial<Block> = {};
+    
+    console.log("Type du bloc cliqué :", type);
 
     switch (type) {
       case "paragraph":
+        
         initialData = { content_text: "" };
         break;
       case "heading":
-        initialData = { content_text: "", level: 2 };
+        initialData = { content_text: ""};
         break;
       case "list":
         initialData = { content_text: "", list_type: "unordered" };
@@ -165,10 +159,7 @@ export function ContentEditor({
   const simulateFileUpload = async (file: File, blockIndex: number, type: 'video' | 'file') => {
     setUploading(`${type}-${blockIndex}`);
     
-    // Simulation d'un upload
     await new Promise(resolve => setTimeout(resolve, 1500));
-    
-    // Générer une URL locale pour la prévisualisation
     const objectUrl = URL.createObjectURL(file);
     
     if (type === 'video') {
@@ -231,464 +222,412 @@ export function ContentEditor({
 
 
 return (
-    <div className="flex-1 flex bg-background  ">
-      {/* Main content area */}
-      <div className="flex-1 flex flex-col ">
-        {/* Header */}
-        <div className="sticky top-0 z-50 bg-background border-b">
-          <div className="px-6 py-4 border-b bg-card/80 backdrop-blur-sm sticky top-0 z-10">
-            <div className="flex items-center justify-between">
-              <div>
-                <h3 className="font-semibold text-lg">{module.title}</h3>
-                <p className="text-sm text-muted-foreground mt-0.5">• {lesson.title}</p>
-              </div>
-            </div>
-          </div>
-        </div>
-              <ScrollArea >
-                   <div className="flex-1 overflow-y-auto mt-3 p-3">
-          <input
-            type="file"
-            ref={videoRef}
-            className="hidden"
-            accept="video/*"
-            onChange={(e) => {
-              const blockIndex = parseInt(videoRef.current?.dataset.index || '0');
-              handleFileUpload(e, blockIndex, 'video');
-            }}
-          />
-          <input
-            type="file"
-            ref={fileRef}
-            className="hidden"
-            accept=".pdf,.doc,.docx,.ppt,.pptx,.xls,.xlsx,.csv,.txt,.zip,.rar,.png,.jpg,.jpeg,.gif,.webp"
-            onChange={(e) => {
-              const blockIndex = parseInt(fileRef.current?.dataset.index || '0');
-              handleFileUpload(e, blockIndex, 'file');
-            }}
-          />
+    <div className="flex flex-col h-screen from-gray-50 w-full  ">
+  {/* Header */}
+  <header className=" bg-white/90 backdrop-blur-md shadow-md border-b">
+    <div className="px-6 py-4 flex items-center justify-between">
+      <div>
+        <h3 className="font-bold text-xl text-gray-900">{module.title}</h3>
+        <p className="text-sm text-gray-500 mt-0.5">• {lesson.title}</p>
+      </div>
+    </div>
+  </header>
 
-          <div className="min-w-full mx-auto space-y-8 pb-32">
-            {lesson.blocks.length === 0 ? (
-              <div className="border-2 border-dashed border-border/60 rounded-2xl p-16 text-center bg-card/40">
-                <div className="mx-auto w-20 h-20 rounded-full bg-muted/50 flex items-center justify-center mb-6">
-                  <FileText className="h-10 w-10 text-muted-foreground" />
-                </div>
-                <h3 className="text-xl font-semibold mb-4">Leçon vide</h3>
-                <p className="text-muted-foreground mb-8">
-                  Commencez par ajouter un bloc de contenu
-                </p>
-              </div>
-            ) : (
-              <>
-                {lesson.blocks.map((block, index) => (
-                  <div key={index} className="group relative">
-                    <div>
-                      {/* Actions flottantes */}
-                      <div className="absolute right-3 top-3 opacity-0 group-hover:opacity-100 flex gap-1 backdrop-blur-sm rounded-md p-1">
-                        <Button variant="ghost" size="icon" className="h-8 w-8">
-                          <MoveUp className="h-4 w-4" />
-                        </Button>
-                        <Button variant="ghost" size="icon" className="h-8 w-8">
-                          <MoveDown className="h-4 w-4" />
-                        </Button>
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          className="h-8 w-8 text-red-600 hover:text-red-700 hover:bg-red-50"
-                        >
-                          <Trash2 className="h-4 w-4" />
-                        </Button>
-                      </div>
+  {/* Main content + Sidebar */}
+  <div className="flex flex-1 overflow-hidden">
+    {/* Content */}
+    <main className="flex-1  overflow-y-auto">
+      <ScrollArea className="p-6 space-y-6">
+  {lesson.blocks.map((block, index) => {
+    console.log("Rendu du bloc type:", block.type);
+    switch (block.type) {
+    case "heading":
+  return (
+    <div
+      key={index}
+      className="group relative rounded-xl border border-border/60 bg-linear-to-br from-card to-muted/30 p-4 shadow-sm transition-all hover:border-primary/40 hover:shadow-md"
+    >
+  
 
-                      <div className="p-6">
-                        {/* TEXT */}
-                        {block.type === "paragraph" && (
-                          <div className="space-y-2">
-                            <Textarea
-                              value={block.content_text || ""}
-                              onChange={(e) => onUpdateBlock(module.id, lesson.id, index, { content_text: e.target.value })}
-                              placeholder="Commencez à écrire votre contenu ici..."
-                              className="shadow-none text-base leading-relaxed resize-none border-none bg-transparent focus-visible:ring-0 p-0 "
-                            />
-                          </div>
-                        )}
-
-                        {/* CODE - ZONE AMÉLIORÉE */}
-                        {block.type === "code" && (
-                          <div className="space-y-4">
-                            <div className="flex items-center justify-between mb-2">
-                              <div className="flex items-center gap-2">
-                                <Code className="h-5 w-5 text-orange-600" />
-                                <span className="font-medium">Bloc de code</span>
-                              </div>
-                              <Select
-                                value={(block.code_data?.language) || "javascript"}
-                                onValueChange={(lang) =>
-                                  onUpdateBlock(module.id, lesson.id, index, {
-                                    code_data: { ...block.code_data, language: lang }
-                                  })
-                                }
-                              >
-                                <SelectTrigger className="w-48 h-9">
-                                  <SelectValue placeholder="Sélectionnez un langage" />
-                                </SelectTrigger>
-                                <SelectContent>
-                                  {codeLanguages.map((lang) => (
-                                    <SelectItem key={lang.value} value={lang.value}>
-                                      {lang.label}
-                                    </SelectItem>
-                                  ))}
-                                </SelectContent>
-                              </Select>
-                            </div>
-                            
-                            <div className="relative rounded-lg overflow-hidden border border-border">
-                              {/* En-tête du bloc de code */}
-                              <div className="flex items-center justify-between px-4 py-3 bg-zinc-900 border-b border-zinc-800">
-                                <div className="flex items-center gap-2">
-                                  <div className="w-3 h-3 rounded-full bg-red-500"></div>
-                                  <div className="w-3 h-3 rounded-full bg-yellow-500"></div>
-                                  <div className="w-3 h-3 rounded-full bg-green-500"></div>
-                                </div>
-                                <div className="text-xs text-zinc-400 font-mono">
-                                  {block.code_data?.language?.toUpperCase() || "JS"}
-                                </div>
-                              </div>
-                              
-                              {/* Zone d'édition du code */}
-                              <Textarea
-                                value={block.code_data?.code || ""}
-                                onChange={(e) =>
-                                  onUpdateBlock(module.id, lesson.id, index, {
-                                    code_data: { ...block.code_data, code: e.target.value }
-                                  })
-                                }
-                                placeholder="// Écrivez votre code ici..."
-                                className={cn(
-                                  "font-mono text-sm resize-none border-none focus-visible:ring-0",
-                                  "bg-zinc-950 00",
-                                  "p-4 min-h-62.5 ",
-                                  "leading-relaxed whitespace-pre"
-                                )}
-                                spellCheck="false"
-                              />
-                              
-                              {/* Compteur de lignes (optionnel) */}
-                              <div className="absolute left-0 top-12 bottom-0 w-12 bg-zinc-900/50 border-r border-zinc-800 text-xs text-zinc-500 font-mono hidden md:block">
-                                {block.code_data?.code?.split('\n').map((_, i) => (
-                                  <div key={i} className="px-3 py-0.5 text-right">
-                                    {i + 1}
-                                  </div>
-                                ))}
-                              </div>
-                            </div>
-                            
-                            <div className="text-xs text-muted-foreground flex items-center gap-4">
-                              <span>Tips: Utilisez Tab pour indenter, Shift+Tab pour désindenter</span>
-                            </div>
-                          </div>
-                        )}
-
-                        {/* VIDEO */}
-                        {block.type === "video" && (
-                          <div className="space-y-4">
-                            {!block.media_url ? (
-                              <div className="border-2 border-dashed border-border rounded-xl p-8 text-center hover:bg-muted/50 transition-colors cursor-pointer">
-                                <div 
-                                  className="flex flex-col items-center justify-center"
-                                  onClick={() => {
-                                    if (videoRef.current) {
-                                      videoRef.current.dataset.index = index.toString();
-                                      videoRef.current.click();
-                                    }
-                                  }}
-                                >
-                                  {uploading === `video-${index}` ? (
-                                    <>
-                                      <div className="w-12 h-12 rounded-full border-2 border-orange-500 border-t-transparent animate-spin mb-3"></div>
-                                      <p className="font-medium mb-2">Téléchargement en cours...</p>
-                                      <p className="text-sm text-muted-foreground">
-                                        Veuillez patienter pendant le traitement de la vidéo
-                                      </p>
-                                    </>
-                                  ) : (
-                                    <>
-                                      <Video className="h-12 w-12 text-orange-600 mb-3" />
-                                      <p className="font-medium mb-2">Ajouter une vidéo</p>
-                                      <p className="text-sm text-muted-foreground mb-4">
-                                        Cliquez pour sélectionner une vidéo MP4, WebM ou OGG
-                                      </p>
-                                      <Button variant="outline" size="sm">
-                                        <Upload className="h-4 w-4 mr-2" />
-                                        Choisir une vidéo
-                                      </Button>
-                                    </>
-                                  )}
-                                </div>
-                              </div>
-                            ) : (
-                              <div className="space-y-4">
-                                <div className="relative rounded-lg overflow-hidden bg-black">
-                                  <video
-                                    src={block.media_url}
-                                    controls
-                                    className="w-full max-h-96"
-                                  />
-                                  <Button
-                                    variant="destructive"
-                                    size="icon"
-                                    className="absolute top-2 right-2 h-8 w-8"
-                                    onClick={() => removeFile(index, 'video')}
-                                  >
-                                    <X className="h-4 w-4" />
-                                  </Button>
-                                  <div className="absolute bottom-2 left-2 bg-black/70 text-white text-xs px-2 py-1 rounded">
-                                    <Play className="h-3 w-3 inline mr-1" />
-                                    Lecture disponible
-                                  </div>
-                                </div>
-                                
-                              </div>
-                            )}
-                          </div>
-                        )}
-
-                        {/* FILE - VERSION AMÉLIORÉE */}
-                        {block.type === "file" && (
-                          <div className="space-y-4">
-                            {!block.file_url ? (
-                              <div className="border-2 border-dashed border-border rounded-xl p-8 text-center hover:bg-muted/50 transition-colors cursor-pointer">
-                                <div 
-                                  className="flex flex-col items-center justify-center"
-                                  onClick={() => {
-                                    if (fileRef.current) {
-                                      fileRef.current.dataset.index = index.toString();
-                                      fileRef.current.click();
-                                    }
-                                  }}
-                                >
-                                  {uploading === `file-${index}` ? (
-                                    <>
-                                      <div className="w-12 h-12 rounded-full border-2 border-orange-500 border-t-transparent animate-spin mb-3"></div>
-                                      <p className="font-medium mb-2">Téléchargement en cours...</p>
-                                      <p className="text-sm text-muted-foreground">
-                                        Traitement du fichier...
-                                      </p>
-                                    </>
-                                  ) : (
-                                    <>
-                                      <File className="h-12 w-12 text-orange-600 mb-3" />
-                                      <p className="font-medium mb-2">Ajouter un fichier</p>
-                                      <p className="text-sm text-muted-foreground mb-4">
-                                        Images, PDF, Documents Office, ZIP, etc.
-                                      </p>
-                                      <Button variant="outline" size="sm">
-                                        <Upload className="h-4 w-4 mr-2" />
-                                        Choisir un fichier
-                                      </Button>
-                                    </>
-                                  )}
-                                </div>
-                              </div>
-                            ) : (
-                              <div className="space-y-4">
-                                {/* Si c'est une image : afficher la prévisualisation */}
-                                {block.mime_type?.startsWith('image/') ? (
-                                  <div className="border rounded-lg overflow-hidden bg-card">
-                                    <div className="relative">
-                                      <Image 
-                                        src={block.file_url} 
-                                        alt={block.file_name || "Image téléchargée"}
-                                        className="w-full h-auto max-h-1000 object-contain bg-black/5"
-                                      />
-                                      <Button
-                                        variant="destructive"
-                                        size="icon"
-                                        className="absolute top-2 right-2 h-8 w-8"
-                                        onClick={() => removeFile(index, 'file')}
-                                      >
-                                        <X className="h-4 w-4" />
-                                      </Button>
-                                    </div>
-                                    <div className="p-4 border-t">
-                                      <div className="flex items-center justify-between mb-3">
-                                        <div className="flex items-center space-x-3">
-                                          <div className={`w-10 h-10 rounded-lg flex items-center justify-center ${getFileIconBg(block.mime_type)}`}>
-                                            {getFileIcon(block.mime_type)}
-                                          </div>
-                                          <div>
-                                            <Input
-                                              value={block.file_name || ""}
-                                              onChange={(e) =>
-                                                onUpdateBlock(module.id, lesson.id, index, { file_name: e.target.value })
-                                              }
-                                              placeholder="Nom du fichier"
-                                              className="font-medium border-none p-0 h-auto"
-                                            />
-                                            <div className="flex items-center space-x-4 text-sm text-muted-foreground">
-                                              <span>Image</span>
-                                              <span>•</span>
-                                              <span>{formatFileSize(block.file_size || 0)}</span>
-                                            </div>
-                                          </div>
-                                        </div>
-                                        <div className="flex items-center space-x-2">
-                                          <Button 
-                                            variant="outline" 
-                                            size="sm"
-                                            onClick={() => downloadFile(block.file_url, block.file_name || 'download')}
-                                          >
-                                            <Download className="h-4 w-4 mr-2" />
-                                            Télécharger
-                                          </Button>
-                                        </div>
-                                      </div>
-                                    </div>
-                                  </div>
-                                ) : (
-                                  /* Si c'est un autre type de fichier : afficher la carte */
-                                  <div className="border rounded-lg p-6 bg-card">
-                                    <div className="flex items-center justify-between mb-4">
-                                      <div className="flex items-center space-x-4">
-                                        <div className={`w-14 h-14 rounded-xl flex items-center justify-center ${getFileIconBg(block.mime_type)}`}>
-                                          {getFileIcon(block.mime_type)}
-                                        </div>
-                                        <div className="flex-1">
-                                          <Input
-                                            value={block.file_name || ""}
-                                            onChange={(e) =>
-                                              onUpdateBlock(module.id, lesson.id, index, { file_name: e.target.value })
-                                            }
-                                            placeholder="Nom du fichier"
-                                            className="font-medium text-lg border-none p-0 h-auto"
-                                          />
-                                          <div className="flex items-center space-x-4 text-sm text-muted-foreground mt-1">
-                                            <span className="px-2 py-1 bg-muted rounded-md text-xs">
-                                              {block.mime_type?.split('/')[1]?.toUpperCase() || "FICHIER"}
-                                            </span>
-                                            <span>•</span>
-                                            <span>{formatFileSize(block.file_size || 0)}</span>
-                                          </div>
-                                        </div>
-                                      </div>
-                                    </div>
-                                    
-                                    <div className="flex items-center justify-between pt-4 border-t">
-                                      <div className="text-sm text-muted-foreground">
-                                        Ce fichier sera téléchargeable par les apprenants
-                                      </div>
-                                      <div className="flex items-center space-x-2">
-                                        <Button 
-                                          variant="outline" 
-                                          size="sm"
-                                          onClick={() => window.open(block.file_url, '_blank')}
-                                          disabled={!block.mime_type?.includes('pdf') && !block.mime_type?.startsWith('text/')}
-                                        >
-                                          {block.mime_type?.includes('pdf') ? "Voir le PDF" : "Ouvrir"}
-                                        </Button>
-                                        <Button 
-                                          variant="outline" 
-                                          size="sm"
-                                          onClick={() => downloadFile(block.file_url, block.file_name || 'download')}
-                                        >
-                                          <Download className="h-4 w-4 mr-2" />
-                                          Télécharger
-                                        </Button>
-                                        <Button
-                                          variant="destructive"
-                                          size="icon"
-                                          className="h-9 w-9"
-                                          onClick={() => removeFile(index, 'file')}
-                                        >
-                                          <X className="h-4 w-4" />
-                                        </Button>
-                                      </div>
-                                    </div>
-                                  </div>
-                                )}
-                              </div>
-                            )}
-                          </div>
-                        )}
-
-                        {/* QUIZ */}
-                        {block.type === "quiz" && (
-                          <div className="space-y-5">
-                            <div className="flex items-center gap-2 mb-3">
-                              <HelpCircle className="h-5 w-5 text-orange-600" />
-                              <span className="font-medium">Quiz</span>
-                            </div>
-
-                            <Textarea
-                              placeholder="Posez votre question ici..."
-                              value={block.question || ""}
-                              onChange={(e) =>
-                                onUpdateBlock(module.id, lesson.id, index, { question: e.target.value })
-                              }
-                              className="min-h-20"
-                            />
-
-                            <div className="space-y-3 mt-4">
-                              <p className="text-sm font-medium">Options de réponse :</p>
-                              {block.options?.map((option: string, optIndex: number) => (
-                                <div key={optIndex} className="flex items-center gap-3">
-                                  <input
-                                    type="radio"
-                                    name={`correct-${index}`}
-                                    checked={block.correctAnswer === optIndex}
-                                    onChange={() =>
-                                      onUpdateBlock(module.id, lesson.id, index, { correctAnswer: optIndex })
-                                    }
-                                    className="h-4 w-4 text-orange-600"
-                                  />
-                                  <Input
-                                    value={option}
-                                    onChange={(e) => {
-                                      const newOptions = [...(block.options || [])];
-                                      newOptions[optIndex] = e.target.value;
-                                      onUpdateBlock(module.id, lesson.id, index, { options: newOptions });
-                                    }}
-                                    placeholder={`Option ${optIndex + 1}`}
-                                  />
-                                </div>
-                              ))}
-                            </div>
-                          </div>
-                        )}
-                      </div>
-                    </div>
-                  </div>
-                ))}
-              </>
-            )}
-          </div>
-        </div>
-    </ScrollArea>
-        
+      <div className="relative">
+        <Input
+          value={block.content_text}
+          placeholder="Saisissez le titre de votre section…"
+          className="h-auto border-0 bg-transparent px-0 py-2 text-3xl font-bold tracking-tight shadow-none placeholder:text-muted-foreground/50 placeholder:font-normal focus-visible:ring-0 focus-visible:ring-offset-0"
+          onChange={(e) =>
+            onUpdateBlock(module.id, lesson.id, index, { content_text: e.target.value })
+          }
+        />
       </div>
 
-      {/* Sidebar droite verticale */}
-      <aside className="w-34 border-l bg-card/30 h-screen overflow-y-auto">
-        <div className="">
-          <h4 className="font-semibold text-sm mb-4 px-2">Ajouter un bloc</h4>
-          <div className="flex flex-col gap-1">
-            {Object.entries(blockLabels).map(([type, label]) => (
-              <Button
-                key={type}
-                variant="ghost"
-                className="w-full justify-start gap-3 hover:bg-orange-50 hover:text-orange-600 group"
-                onClick={() => handleAddBlock(type as BlockType)}
-              >
-                <span className="text-orange-600 group-hover:text-orange-700">
-                  {blockIcons[type as BlockType]}
-                </span>
-                <span className="text-sm font-medium">{label}</span>
+      
+    </div>
+  );
+
+
+
+
+      case "paragraph":
+        return (
+          <Textarea
+            key={index}
+            value={block.content_text}
+            placeholder="Écrivez votre texte..."
+            className="border-none shadow-none focus:ring-0 resize-none"
+            onChange={(e) =>
+              onUpdateBlock(module.id, lesson.id, index, { content_text: e.target.value })
+            }
+          />
+        );
+
+      case "quote":
+        return (
+          <div key={index} className="pl-4 border-l-4 border-orange-500">
+            <Textarea
+              value={block.content_text}
+              placeholder="Citation..."
+              className="border-none shadow-none focus:ring-0 resize-none italic"
+              onChange={(e) =>
+                onUpdateBlock(module.id, lesson.id, index, { content_text: e.target.value })
+              }
+            />
+            <Input
+              value={block.author}
+              placeholder="Auteur"
+              className="mt-2 text-sm border-none shadow-none focus:ring-0"
+              onChange={(e) =>
+                onUpdateBlock(module.id, lesson.id, index, { author: e.target.value })
+              }
+            />
+          </div>
+        );
+
+      case "code":
+        return (
+          <Textarea
+            key={index}
+            value={block.code_data?.code}
+            placeholder="// Votre code ici..."
+            className="font-mono text-sm border border-gray-200 rounded-md p-3"
+            onChange={(e) =>
+              onUpdateBlock(module.id, lesson.id, index, {
+                code_data: { ...block.code_data, code: e.target.value },
+              })
+            }
+          />
+        );
+
+      case "image":
+        return (
+          <div key={index} className="space-y-2">
+            {block.media_url ? (
+              <Image
+                src={block.media_url}
+                alt={block.alt_text || "Image"}
+                width={400}
+                height={300}
+                className="rounded-md"
+              />
+            ) : (
+              <p className="text-gray-400 italic">Aucune image téléchargée</p>
+            )}
+            <Input
+              value={block.caption}
+              placeholder="Légende..."
+              className="border-none shadow-none focus:ring-0"
+              onChange={(e) =>
+                onUpdateBlock(module.id, lesson.id, index, { caption: e.target.value })
+              }
+            />
+          </div>
+        );
+
+        case "video":
+      return (
+        <div key={index} className="space-y-3 border rounded-lg p-4 bg-white">
+          {block.media_url ? (
+            <video src={block.media_url} controls className="w-full rounded-md" />
+          ) : (
+            <div className="border-2 border-dashed rounded-lg p-6 text-center">
+              <input
+                type="file"
+                accept="video/*"
+                onChange={(e) => handleFileUpload(e, index, 'video')}
+                ref={videoRef}
+                className="hidden"
+              />
+              <Button onClick={() => videoRef.current?.click()} variant="outline">
+                <Upload className="mr-2 h-4 w-4" /> Télécharger une vidéo
               </Button>
-            ))}
+            </div>
+          )}
+          {uploading === `video-${index}` && <p>Téléchargement...</p>}
+        </div>
+      );
+        
+     case "list":
+  return (
+    <div key={index} className="space-y-4 p-4 border rounded-lg bg-muted/30">
+      <div className="flex gap-3 items-center">
+        <label className="text-sm font-medium text-muted-foreground">
+          Type de liste
+        </label>
+        <Select
+          value={block.list_type || "unordered"}
+          onValueChange={(val) =>
+            onUpdateBlock(module.id, lesson.id, index, { list_type: val as "ordered" | "unordered" })
+          }
+        >
+          <SelectTrigger className="w-40 border rounded-md shadow-sm">
+            <SelectValue />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="unordered">• Puces</SelectItem>
+            <SelectItem value="ordered">1. Numérotée</SelectItem>
+          </SelectContent>
+        </Select>
+      </div>
+      <Textarea
+        value={block.content_text}
+        placeholder="Saisissez votre liste (un élément par ligne)"
+        className="font-mono text-sm border rounded-md p-3 focus:ring-2 focus:ring-primary focus:border-primary"
+        rows={6}
+        onChange={(e) =>
+          onUpdateBlock(module.id, lesson.id, index, { content_text: e.target.value })
+        }
+      />
+      <p className="text-xs text-muted-foreground italic">
+        Séparez chaque élément par un retour à la ligne.
+      </p>
+    </div>
+  );
+
+case "audio":
+  return (
+    <div key={index} className="space-y-3 border rounded-lg p-4 bg-white">
+      {block.media_url ? (
+        <audio src={block.media_url} controls className="w-full" />
+      ) : (
+        <div className="border-2 border-dashed rounded-lg p-6 text-center">
+          <input
+            type="file"
+            accept="audio/*"
+            onChange={(e) => handleFileUpload(e, index, "file")} // Réutilisation de la logique fichier
+            className="hidden"
+            id={`audio-upload-${index}`}
+          />
+          <Button
+            onClick={() => document.getElementById(`audio-upload-${index}`)?.click()}
+            variant="outline"
+          >
+            <Upload className="mr-2 h-4 w-4" /> Télécharger un fichier audio
+          </Button>
+        </div>
+      )}
+      {uploading === `file-${index}` && <p>Téléchargement...</p>}
+    </div>
+  );
+
+case "file":
+  return (
+    <div key={index} className="border rounded-lg p-4 bg-white space-y-3">
+      {block.file_url ? (
+        <div className="flex items-center justify-between p-3 bg-gray-50 rounded-md">
+          <div className="flex items-center gap-3">
+            <div className={cn("p-2 rounded-lg", getFileIconBg(block.mime_type))}>
+              {getFileIcon(block.mime_type)}
+            </div>
+            <div>
+              <p className="font-medium text-sm">{block.file_name || "Fichier"}</p>
+              {block.file_size && (
+                <p className="text-xs text-muted-foreground">{formatFileSize(block.file_size)}</p>
+              )}
+            </div>
+          </div>
+          <div className="flex gap-2">
+            <Button
+              size="sm"
+              variant="ghost"
+              onClick={() => window.open(block.file_url, "_blank")}
+            >
+              <Download className="h-4 w-4" />
+            </Button>
+            <Button size="sm" variant="ghost" onClick={() => removeFile(index, "file")}>
+              <Trash2 className="h-4 w-4" />
+            </Button>
           </div>
         </div>
-      </aside>
+      ) : (
+        <div className="border-2 border-dashed rounded-lg p-6 text-center">
+          <input
+            type="file"
+            onChange={(e) => handleFileUpload(e, index, "file")}
+            className="hidden"
+            id={`file-upload-${index}`}
+          />
+          <Button
+            onClick={() => document.getElementById(`file-upload-${index}`)?.click()}
+            variant="outline"
+          >
+            <Upload className="mr-2 h-4 w-4" /> Télécharger un fichier
+          </Button>
+        </div>
+      )}
     </div>
+  );
+
+case "embed":
+  return (
+    <div key={index} className="space-y-3 border rounded-lg p-4 bg-white">
+      <Input
+        value={block.media_url}
+        placeholder="URL à intégrer (YouTube, Vimeo, etc.)"
+        onChange={(e) =>
+          onUpdateBlock(module.id, lesson.id, index, { media_url: e.target.value })
+        }
+      />
+      {block.media_url && (
+        <div className="aspect-video rounded-md overflow-hidden border">
+          <iframe
+            src={block.media_url}
+            title="Contenu intégré"
+            className="w-full h-full"
+            allowFullScreen
+          />
+        </div>
+      )}
+    </div>
+  );
+
+case "quiz":
+  return (
+    <div key={index} className="space-y-4 border rounded-lg p-4 bg-white">
+      <Input
+        value={block.title || "Quiz"}
+        placeholder="Titre du quiz"
+        onChange={(e) =>
+          onUpdateBlock(module.id, lesson.id, index, { title: e.target.value })
+        }
+      />
+      <Textarea
+        value={block.description || ""}
+        placeholder="Description (optionnelle)"
+        onChange={(e) =>
+          onUpdateBlock(module.id, lesson.id, index, { description: e.target.value })
+        }
+      />
+      <div className="text-sm text-muted-foreground">
+        ⚙️ Interface {"d'édition"} avancée à venir (questions, réponses, etc.)
+      </div>
+      <pre className="text-xs bg-gray-100 p-2 rounded">
+        {JSON.stringify(block.quiz_data, null, 2)}
+      </pre>
+    </div>
+  );
+
+case "divider":
+  return (
+    <div key={index} className="py-4">
+      <hr className={cn(
+        "border-t",
+        block.style === "dashed" && "border-dashed",
+        block.style === "dotted" && "border-dotted"
+      )} />
+      <div className="flex justify-end mt-2">
+        <Select
+          value={block.style || "solid"}
+          onValueChange={(val) =>
+            onUpdateBlock(module.id, lesson.id, index, { style: val as "solid" | "dashed" | "dotted" })
+          }
+        >
+          <SelectTrigger className="w-28 h-8 text-xs">
+            <SelectValue />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="solid">Plein</SelectItem>
+            <SelectItem value="dashed">Tirets</SelectItem>
+            <SelectItem value="dotted">Pointillés</SelectItem>
+          </SelectContent>
+        </Select>
+      </div>
+    </div>
+  );
+
+case "callout":
+  return (
+    <div key={index} className={cn(
+      "p-4 rounded-lg border-l-4",
+      block.callout_type === "note" && "bg-blue-50 border-blue-500",
+      block.callout_type === "tip" && "bg-green-50 border-green-500",
+      block.callout_type === "warning" && "bg-yellow-50 border-yellow-500",
+      block.callout_type === "danger" && "bg-red-50 border-red-500",
+      block.callout_type === "info" && "bg-gray-50 border-gray-500"
+    )}>
+      <div className="flex gap-2 items-start">
+        <Select
+          value={block.callout_type || "info"}
+          onValueChange={(val) =>
+            onUpdateBlock(module.id, lesson.id, index, { callout_type: val as any })
+          }
+        >
+          <SelectTrigger className="w-28 h-8 text-xs">
+            <SelectValue />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="note">📘 Note</SelectItem>
+            <SelectItem value="tip">💡 Astuce</SelectItem>
+            <SelectItem value="warning">⚠️ Attention</SelectItem>
+            <SelectItem value="danger">🚨 Danger</SelectItem>
+            <SelectItem value="info">ℹ️ Info</SelectItem>
+          </SelectContent>
+        </Select>
+        <Textarea
+          value={block.content_text}
+          placeholder="Texte de l'encart..."
+          className="flex-1 border-none shadow-none focus:ring-0 resize-none bg-transparent"
+          onChange={(e) =>
+            onUpdateBlock(module.id, lesson.id, index, { content_text: e.target.value })
+          }
+        />
+      </div>
+    </div>
+  );
+      default:
+        return (
+          <div key={index} className="text-gray-400 italic">
+            Bloc  non encore implémenté
+          </div>
+        );
+    }
+  })}
+</ScrollArea>
+
+    </main>
+
+    {/* Sidebar */}
+    <aside className="w-64 shrink-0 border-l bg-white/80 backdrop-blur-md shadow-lg overflow-y-auto">
+      <div className="p-4">
+        <h4 className="font-semibold text-sm mb-4 text-gray-700">Ajouter un bloc</h4>
+        <div className="flex flex-col gap-2 divide-y">
+          {Object.entries(blockLabels).map(([type, label]) => (
+            <Button
+              key={type}
+              variant="ghost"
+              className="w-full justify-start gap-3 hover:bg-orange-100 hover:text-orange-700 transition-all duration-300 rounded-md"
+              onClick={() => handleAddBlock(type as BlockType)}
+            >
+              <span className="text-orange-600 group-hover:text-orange-700">
+                {blockIcons[type as BlockType]}
+              </span>
+              <span className="text-sm font-medium">{label}</span>
+            </Button>
+          ))}
+        </div>
+      </div>
+    </aside>
+  </div>
+</div>
+
+
   );
 }

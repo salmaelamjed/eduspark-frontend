@@ -1,5 +1,4 @@
 "use client";
-
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import {
@@ -10,7 +9,6 @@ import {
   FileText,
   Video,
   HelpCircle,
-  ClipboardList,
   MoreHorizontal,
   Trash2,
   Edit3,
@@ -21,31 +19,31 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import {  TooltipProvider } from "@/components/ui/tooltip";
+import { TooltipProvider } from "@/components/ui/tooltip";
 import { Module } from "@/types/module";
 import { Lesson } from "@/types/lesson";
 
 interface ModuleSidebarProps {
   modules: Module[];
-  selectedModuleId: number | null;
-  selectedLessonId: number | null;
-  onSelectModule: (moduleId: number) => void;
-  onSelectLesson: (moduleId: number, lessonId: number) => void;
+  selectedModuleId: string | number | null; 
+  selectedLessonId: string | number | null;
+  onSelectModule: (moduleId: string |number ) => void;
+  onSelectLesson: (moduleId: string | number, lessonId: string | number) => void;
   onAddModule: () => void;
-  onAddLesson: (moduleId: number) => void;
-  onDeleteModule: (moduleId: number) => void;
-  onDeleteLesson: (moduleId: number, lessonId: number) => void;
-  onToggleExpand: (moduleId: number) => void;
-  onRenameModule?: (moduleId: number, newTitle: number) => void;
-  onRenameLesson?: (moduleId: number, lessonId: number, newTitle: number) => void;
+  onAddLesson: (moduleId: string | number) => void;
+  onDeleteModule: (moduleId: string | number) => void;
+  onDeleteLesson: (moduleId: string | number, lessonId: string | number) => void;
+  onToggleExpand: (moduleId: string | number) => void;
+  onRenameModule?: (moduleId: string | number, newTitle: string) => void; 
+  onRenameLesson?: (moduleId: string | number, lessonId: string | number, newTitle: string) => void; 
 }
 
 const lessonTypeIcons: Record<Lesson["type"], React.ElementType> = {
   text: FileText,
   video: Video,
   quiz: HelpCircle,
-  assignment: ClipboardList,
-  // Ajoute d'autres types si besoin
+  file: FileText, 
+  code: FileText,
 };
 
 export function ModuleSidebar({
@@ -66,20 +64,20 @@ export function ModuleSidebar({
     <TooltipProvider>
       <aside className="w-72 bg-card border-r border-border flex flex-col min-h-[70vh]">
         {/* Header */}
-         <div className="p-4 border-b border-border">
-        <div className="flex items-center justify-between mb-3">
-          <h2 className="text-sm font-semibold text-foreground"> Structure du cours</h2>
+        <div className="p-4 border-b border-border">
+          <div className="flex items-center justify-between mb-3">
+            <h2 className="text-sm font-semibold text-foreground">Structure du cours</h2>
+          </div>
+          <Button 
+            variant="outline" 
+            size="sm" 
+            className="w-full justify-start hover:cursor-pointer hover:bg-gray-50"
+            onClick={onAddModule}
+          >
+            <Plus className="w-4 h-4 mr-2" />
+            Ajouter un module
+          </Button>
         </div>
-        <Button 
-          variant="outline" 
-          size="sm" 
-          className="w-full justify-start hover:cursor-pointer hover:bg-gray-50"
-          onClick={onAddModule}
-        >
-          <Plus className="w-4 h-4 mr-2" />
-          Ajouter un module
-        </Button>
-      </div>
 
         {/* Liste des modules */}
         <div className="flex-1 overflow-y-auto p-2">
@@ -117,7 +115,6 @@ export function ModuleSidebar({
   );
 }
 
-// Sous-composant pour chaque module (plus facile à maintenir)
 function ModuleItem({
   module,
   isSelected,
@@ -133,19 +130,18 @@ function ModuleItem({
 }: {
   module: Module;
   isSelected: boolean;
-  selectedLessonId: number | null;
-  onSelectModule: (id: number) => void;
-  onSelectLesson: (moduleId: number, lessonId: number) => void;
-  onAddLesson: (moduleId: number) => void;
-  onDeleteModule: (moduleId: number) => void;
-  onToggleExpand: (moduleId: number) => void;
-  onRenameModule?: (moduleId: number, newTitle: number) => void;
-  onRenameLesson?: (moduleId: number, lessonId: number, newTitle: number) => void;
-  onDeleteLesson: (moduleId: number, lessonId: number) => void;
+  selectedLessonId: string | number | null; // 💡 string | number
+  onSelectModule: (id: string | number) => void;
+  onSelectLesson: (moduleId: string | number, lessonId: string | number) => void;
+  onAddLesson: (moduleId: string | number) => void;
+  onDeleteModule: (moduleId: string | number) => void;
+  onToggleExpand: (moduleId: string | number) => void;
+  onRenameModule?: (moduleId: string | number, newTitle: string) => void; // 💡 string
+  onRenameLesson?: (moduleId: string | number, lessonId: string | number, newTitle: string) => void; // 💡 string
+  onDeleteLesson: (moduleId: string | number, lessonId: string | number) => void;
 }) {
   return (
     <div className="rounded-lg border border-transparent transition-all ">
-      {/* Ligne du module */}
       <div
         className={cn(
           "group flex items-center gap-2 px-3 py-2.5 rounded-lg cursor-pointer transition-colors",
@@ -194,7 +190,7 @@ function ModuleItem({
                 onClick={() => {
                   const newTitle = prompt("Nouveau nom du module :", module.title);
                   if (newTitle && newTitle.trim() !== module.title) {
-                    onRenameModule(module.id, Number(newTitle));
+                    onRenameModule(module.id, newTitle); // 💡 Plus besoin de caster en Number()
                   }
                 }}
               >
@@ -223,7 +219,6 @@ function ModuleItem({
         </DropdownMenu>
       </div>
 
-      {/* Leçons (si déplié) */}
       {module.isExpanded && (
         <div className="ml-8 mt-1 space-y-0.5 pb-1">
           {module.lessons.length > 0 && (
@@ -263,7 +258,7 @@ function ModuleItem({
                           onClick={() => {
                             const newTitle = prompt("Nouveau nom de la leçon :", lesson.title);
                             if (newTitle && newTitle.trim() !== lesson.title) {
-                              onRenameLesson(module.id, lesson.id, Number(newTitle));
+                              onRenameLesson(module.id, lesson.id, newTitle); // 💡 Plus de cast Number()
                             }
                           }}
                         >
@@ -290,16 +285,16 @@ function ModuleItem({
             })
           )}
 
-          {/* Bouton ajouter leçon (sous les leçons) */}
-           <button
-                    className="ml-6 mt-1 flex items-center gap-2 p-2 pl-3 text-sm text-muted-foreground hover:text-foreground hover:bg-muted rounded-lg w-[calc(100%-1.5rem)] transition-colors"
-                    onClick={() => onAddLesson(module.id)}
-                  >
-                    <Plus className="w-4 h-4" />
-                    Add Lesson
-                  </button>
+          <button
+            className="ml-6 mt-1 flex items-center gap-2 p-2 pl-3 text-sm text-muted-foreground hover:text-foreground hover:bg-muted rounded-lg w-[calc(100%-1.5rem)] transition-colors"
+            onClick={() => onAddLesson(module.id)}
+          >
+            <Plus className="w-4 h-4" />
+            Add Lesson
+          </button>
         </div>
       )}
     </div>
   );
 }
+

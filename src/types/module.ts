@@ -1,7 +1,7 @@
 import { Lesson } from "./lesson";
 
 export interface Module {
-  id: number;
+  id: number ;
   title: string;
   description?: string;
   order: number;

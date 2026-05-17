@@ -1,5 +1,6 @@
 import { Button } from '@/components/ui/button'
 import { PlusCircle } from 'lucide-react'
+import Link from 'next/link'
 import React from 'react'
 
 const Page = () => {
@@ -9,14 +10,18 @@ const Page = () => {
               <div>
                 <h1 className="text-3xl font-bold">Gestion des Cours</h1>
                 <p className="text-muted-foreground mt-1">
-                  Gérez et suivez tous vos domaines
+                  Gérez et suivez tous vos Cours
                 </p>
               </div>
+                  <Link href={'courses/create'}
+                  className=''
+                  >
                   <Button
                     className="
                       bg-orange-500 
                       hover:bg-orange-400
                       text-white 
+                      hover:cursor-pointer
                       rounded-3xl 
                       px-6 
                       py-6 
@@ -27,8 +32,9 @@ const Page = () => {
                     "
                   >
                     <PlusCircle className="h-5 w-5" />
-                    Ajouter un Cours
+                    Ajouter un cours
                   </Button>
+                  </Link>
 
             </div>
     </div>
