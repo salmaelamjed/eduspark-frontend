@@ -41,7 +41,7 @@ const CourseDetails = () => {
   };
 
   return (
-      <div className="container flex  mx-auto pt-4">
+      <div className="container flex  mx-auto pt-4 gap-6">
        <div className='border rounded-2xl  h-128 w-110'>
        {course.thumbnail ? (
   <div className="relative w-full h-128 rounded-2xl overflow-hidden">
@@ -148,16 +148,6 @@ const CourseDetails = () => {
       >
         {course.is_free ? "Commencer gratuitement" : "S'inscrire au cours"}
       </Button>
-       {course.is_free ? (
-        <p className="mt-2 text-sm text-green-600 flex items-center gap-1">
-          <span className="inline-block w-2 h-2 rounded-full bg-green-500" />
-          Accès gratuit et immédiat
-        </p>
-      ) : (
-        <p className="mt-2 text-sm text-gray-400">
-          {course.price} MAD — paiement sécurisé
-        </p>
-      )}
         </div>
        </div>
       </div>
