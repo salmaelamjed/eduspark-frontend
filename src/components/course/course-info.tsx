@@ -12,7 +12,14 @@ import { Button } from '@/components/ui/button'
 import Image from 'next/image'
 
 const levels = ["beginner", "intermediate", "advanced"]
-
+const supportedLanguages = [
+  { code: 'fr', name: 'Français' },
+  { code: 'en', name: 'English' },
+  { code: 'es', name: 'Español' },
+  { code: 'de', name: 'Deutsch' },
+  { code: 'it', name: 'Italiano' },
+  { code: 'ar', name: 'العربية (Arabe)' },
+]
 const CourseInfo = () => {
   const { register, formState: { errors }, watch, setValue } = useFormContext()
   const [preview, setPreview] = useState<string | null>(null)
@@ -20,7 +27,8 @@ const CourseInfo = () => {
   const isFreeRaw = watch("is_free", true)
   const isFree = isFreeRaw === true || isFreeRaw === "true"
   const selectedLevel = watch("level")
-
+  const selectedLanguageCode = watch("language")
+ const currentLanguage = supportedLanguages.find(lang => lang.code === selectedLanguageCode)
   // Nettoyage de l'URL de l'image uniquement lors du démontage du composant
   useEffect(() => {
     return () => {
@@ -100,12 +108,32 @@ const CourseInfo = () => {
             </div>
 
             {/* Language & Description */}
+            {/* 3. Section Langue modifiée en Dropdown (Combobox) */}
             <div className="space-y-3">
-              <Label>Langue du cours *</Label>
-              <Input {...register('language')} placeholder="ex: Français, Anglais..." />
-              <ErrorMessage errors={errors} name="language" render={({ message }) => (
-                <p className="text-red-500 text-sm mt-1.5">{message}</p>
-              )} />
+              <Label className="text-base font-medium">
+                Langue du cours <span className="text-red-500">*</span>
+              </Label>
+              <Combobox
+                items={supportedLanguages.map(lang => lang.code)} // On passe les codes uniques à la mécanique interne
+                value={selectedLanguageCode}
+                onValueChange={(value) => setValue("language", value, { shouldValidate: true })}
+              >
+                {/* On affiche le nom complet dans l'input (ex: "Français") mais la valeur stockée reste "fr" */}
+                <ComboboxInput 
+                  placeholder="Sélectionner la langue" 
+                  className="h-11" 
+                  value={currentLanguage ? currentLanguage.name : ""} 
+                />
+                <ComboboxContent>
+                  <ComboboxList>
+                    {supportedLanguages.map((lang) => (
+                      <ComboboxItem key={lang.code} value={lang.code}>
+                        {lang.name}
+                      </ComboboxItem>
+                    ))}
+                  </ComboboxList>
+                </ComboboxContent>
+              </Combobox>
             </div>
 
             <div className="space-y-3">

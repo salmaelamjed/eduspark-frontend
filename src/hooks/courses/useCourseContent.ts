@@ -1,6 +1,6 @@
 "use client";
 
-import { AudioBlock, Block, CalloutBlock, DividerBlock, EmbedBlock, FileBlock, HeadingBlock, ImageBlock, ListBlock, ParagraphBlock, QuoteBlock } from "@/types/block";
+import { AudioBlock, Block, CalloutBlock, DividerBlock, EmbedBlock, FileBlock, HeadingBlock, ImageBlock, ListBlock, ParagraphBlock, QuizBlock, QuoteBlock } from "@/types/block";
 import {  VideoBlock } from "@/types/block";
 import { Lesson } from "@/types/lesson";
 import { Module } from "@/types/module";
@@ -156,13 +156,139 @@ export function useCourseContent() {
 
   // Préparer les modules pour l’envoi au backend (sans IDs)
   const getModulesForBackend = useCallback(() => {
-    return modules.map((mod) => ({
+    return modules.map((mod, modIndex) => ({
       title: mod.title.trim(),
-      description: mod.description?.trim(),
-      lessons: mod.lessons.map((les) => ({
+      description: mod.description?.trim() || null,
+      order: modIndex + 1,
+      lessons: mod.lessons.map((les, lesIndex) => ({
         title: les.title.trim(),
-        is_preview: les.is_preview,
-        blocks: les.blocks,
+        is_preview: les.is_preview ? 1 : 0,
+        order: lesIndex + 1,
+        blocks: les.blocks.map((block, blockIndex) => {
+          // Initialisation de la structure de base requise par la migration de la table 'lesson_blocks'
+          const baseBlock: any = {
+            type: block.type,
+            order: blockIndex + 1,
+            is_preview: les.is_preview ? 1 : 0,
+            content: null,
+            media_url: null,
+            settings: null,
+            quiz_data: null,
+            code_data: null,
+            duration_seconds: null,
+            language: "fr",
+          };
+
+          // Mutation des données selon les spécificités du type de bloc
+           switch (block.type) {
+             case "heading":
+               baseBlock.content = (block).content || "";
+               baseBlock.settings = { level: `h${(block).level || 2}` };
+               break;
+
+             case "paragraph":
+             case "quote":
+             case "list":
+               baseBlock.content = (block).content || "";
+               if (block.type === "list") {
+                 baseBlock.settings = {
+                   style: (block).list_type || "unordered",
+                 };
+               }
+               break;
+
+             case "callout":
+               baseBlock.content = (block).content || "";
+               baseBlock.settings = {
+                 type: (block).callout_type || "info",
+               };
+               break;
+
+             case "image":
+               baseBlock.media_url = (block).media_url || "";
+               // alt_text et caption peuvent être encapsulés dans les configurations flexibles
+               baseBlock.settings = {
+                 alt_text: (block).alt_text || "",
+                 caption: (block).caption || "",
+               };
+               break;
+
+             case "video":
+             case "audio":
+               baseBlock.media_url = (block ).media_url || "";
+               baseBlock.duration_seconds =
+                 Number((block).duration_seconds) || 0;
+               break;
+
+             case "file":
+               baseBlock.media_url = (block).file_url || "";
+               baseBlock.settings = {
+                 file_name: (block).file_name || "",
+               };
+               break;
+
+             case "embed":
+               baseBlock.media_url = (block).media_url || "";
+               baseBlock.settings = {
+                 embed_type: (block).embed_type || "other",
+               };
+               break;
+
+             case "divider":
+               baseBlock.settings = { style: (block).style || "solid" };
+               break;
+
+             case "code":
+               baseBlock.code_data = {
+                 language: (block).code_data?.language || "javascript",
+                 code: (block).code_data?.code || "",
+               };
+               break;
+
+             case "quiz":
+              
+               // Adaptation des données mockées du frontend vers le format strict attendu par le validateur Laravel
+               baseBlock.quiz_data = {
+                 settings: {
+                   passing_score_percent: 80, // Valeur par défaut requise
+                 },
+                 questions: ((block as any).quiz_data.questions || []).map(
+                   (q : any, qIdx: number) => {
+                     const questionId = `q-${qIdx + 1}`;
+
+                     // On mappe les options au format attendu { id, text }
+                     const formattedOptions = (q.options || []).map(
+                       (opt: string, oIdx: number) => ({
+                         id: `opt-${oIdx + 1}`,
+                         text: opt,
+                       }),
+                     );
+
+                     // On mappe les index des bonnes réponses vers les IDs des options générées
+                     const correctAnswersIds = (q.correct_answers || []).map(
+                       (idx: number) => `opt-${idx + 1}`,
+                     );
+
+                     return {
+                       id: questionId,
+                       question_text: q.question || "Question",
+                       type:
+                         q.type === "multiple_choice" &&
+                         correctAnswersIds.length > 1
+                           ? "multiple"
+                           : "single",
+                       options: formattedOptions,
+                       correct_answer: correctAnswersIds,
+                       explanation: q.explanation || null,
+                     };
+                   },
+                 ),
+               };
+               break;
+           }
+
+           return baseBlock;
+        })
       })),
     }));
   }, [modules]);
@@ -189,18 +315,12 @@ export function useCourseContent() {
               let newBlock: Block;
 
               switch (type) {
-                // case "text":
-                //   newBlock = {
-                //     type: "text",
-                //     content_text: (initialData as TextBlock).content_text || "",
-                //   };
-                //   break;
 
                 case "heading":
                   newBlock = {
                     type: "heading",
-                    content_text:
-                      (initialData as HeadingBlock).content_text || "",
+                    content:
+                      (initialData as HeadingBlock).content || "",
                     level: (initialData as HeadingBlock).level || 2, 
                   };
                   break;
@@ -208,23 +328,23 @@ export function useCourseContent() {
                 case "paragraph":
                   newBlock = {
                     type: "paragraph",
-                    content_text:
-                      (initialData as ParagraphBlock).content_text || "",
+                    content:
+                      (initialData as ParagraphBlock).content || "",
                   };
                   break;
 
                 case "list":
                   newBlock = {
                     type: "list",
-                    content_text: (initialData as ListBlock).content_text || "",
+                    content: (initialData as ListBlock).content || "",
                   };
                   break;
 
                 case "quote":
                   newBlock = {
                     type: "quote",
-                    content_text:
-                      (initialData as QuoteBlock).content_text || "",
+                    content:
+                      (initialData as QuoteBlock).content || "",
                   };
                   break;
 
@@ -263,20 +383,35 @@ export function useCourseContent() {
                   };
                   break;
 
-                case "quiz":
+                case "quiz":{
+                  // Extraction des données initiales s'il y en a, sinon fallback sur la structure par défaut
+                  const quizInitialData = initialData as Partial<QuizBlock>;
                   newBlock = {
                     type: "quiz",
-                    title: "Nouveau Quiz",
-                    questions: [
-                      {
-                        question: "Question par défaut...",
-                        type: "multiple_choice",
-                        options: ["Option 1", "Option 2", "Option 3"],
-                        correct_answers: [0],
-                        points: 10,
-                      },
-                    ],
+                    title: quizInitialData.title || "Nouveau Quiz",
+                    description: quizInitialData.description || "",
+                    quiz_data: {
+                      passing_score:
+                        quizInitialData.quiz_data?.passing_score || 70,
+                      shuffle_questions:
+                        quizInitialData.quiz_data?.shuffle_questions || false,
+                      show_explanation_after_submit:
+                        quizInitialData.quiz_data
+                          ?.show_explanation_after_submit || true,
+                      questions: quizInitialData.quiz_data?.questions || [
+                        {
+                          question: "Question par défaut...",
+                          type: "multiple_choice",
+                          options: ["Option 1", "Option 2", "Option 3"],
+                          correct_answers: [0],
+                          points: 10,
+                          explanation: "",
+                        },
+                      ],
+                    },
                   };
+                }
+                  
                   break;
 
                 case "code":
@@ -307,8 +442,8 @@ export function useCourseContent() {
                 case "callout":
                   newBlock = {
                     type: "callout",
-                    content_text:
-                      (initialData as CalloutBlock).content_text || "",
+                    content:
+                      (initialData as CalloutBlock).content || "",
                     callout_type:
                       (initialData as CalloutBlock).callout_type || "info",
                   };
@@ -316,7 +451,7 @@ export function useCourseContent() {
                 default:
                   newBlock = {
                     type: "paragraph",
-                    content_text: "",
+                    content: "",
                   };
                   break;
               }

@@ -29,7 +29,7 @@ export const UseCourses = ({ getModulesForBackend }: UseCoursesProps = {}) => {
       title: "",
       description: "",
       level: "beginner",
-      language: "Français",
+      language: "fr",
       is_free: true,
       price: 0,
       thumbnail: undefined,
@@ -96,28 +96,8 @@ export const UseCourses = ({ getModulesForBackend }: UseCoursesProps = {}) => {
       // 4. On ajoute les modules (objets complexes) en les sérialisant en JSON
       formDataPayload.append("modules", JSON.stringify(modules));
 
-      // 5. On envoie formDataPayload au lieu du payload JSON habituel
-      // Note: On cast en 'any' si ton type CourseRequestPayload n'accepte pas FormData
       const response = await coursesApi.create(formDataPayload as any, token);
-      // Gérer l'upload de l'image
-      // let thumbnailUrl = "";
-      // if (formData.thumbnail && formData.thumbnail.length > 0) {
-      //   const file = formData.thumbnail[0];
-      //   thumbnailUrl = URL.createObjectURL(file);
-      // }
 
-      // Préparer le payload
-      // const payload: CourseRequestPayload = {
-      //   title: formData.title.trim(),
-      //   description: formData.description.trim(),
-      //   level: formData.level,
-      //   language: formData.language,
-      //   is_free: String(formData.is_free) === "true" ,
-      //   price: String(formData.is_free) === "true" ? 0 : Number(formData.price),
-      //   thumbnail: thumbnailUrl,
-      //   modules: modules,
-      // };
-      // const response = await coursesApi.create(payload, token);
       if (response?.course?.id) {
         toast.success(response.message || "Cours créé avec succès");
         router.push(`/dashboard/courses`);

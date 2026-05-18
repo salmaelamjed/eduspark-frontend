@@ -22,7 +22,7 @@ export interface CourseRequestPayload {
   language: string;
   is_free: boolean;
   price?: number; // seulement si !is_free
-  thumbnail: string; 
+  thumbnail: string;
   createdAt: string;
   updatedAt: string;
   status: "draft" | "published" | "archived";
@@ -31,21 +31,47 @@ export interface CourseRequestPayload {
     {
       title: string;
       description: string;
+      order: number;
       lessons: [
         {
           title: string;
-          is_preview: boolean;
+          is_preview: number | boolean;
+          order: number;
           blocks: [
             {
-              type: "image" | "video" | "text" | "quiz" | "code";
-              content_text?: string;
-              media_url?: string;
-              duration_seconds?: number;
-              code_data?: {
-                language: string;
-                code: string;
-              };
-
+              type:
+                | "heading"
+                | "paragraph"
+                | "list"
+                | "quote"
+                | "image"
+                | "video"
+                | "audio"
+                | "file"
+                | "code"
+                | "quiz"
+                | "embed"
+                | "divider"
+                | "callout";
+              order: number;
+              is_preview: number | boolean;
+              content?: string | null;
+              media_url?: string | null;
+              duration_seconds?: number | null;
+              language?: string | null;
+              settings?: Record<string, any> | null;
+              code_data?: { language: string; code: string } | null;
+              quiz_data?: {
+                settings: { passing_score_percent: number };
+                questions: Array<{
+                  id: string;
+                  question_text: string;
+                  type: "single" | "multiple";
+                  options: Array<{ id: string; text: string }>;
+                  correct_answer: string[];
+                  explanation?: string | null;
+                }>;
+              } | null;
             },
           ];
         },

@@ -56,19 +56,26 @@ const ButtonHandler = () => {
 
         for (const block of lesson.blocks) {
           switch (block.type) {
-            case "paragraph":
+           case "paragraph":
             case "heading":
-              if (!block.content_text?.trim()) {
+            case "quote":
+            case "list":
+            case "callout":
+              if (!block.content?.trim()) {
                 return false;
               }
               break;
             case "video":
-              if (!block.media_url) {
+            case "image":
+            case "audio":
+            case "embed":
+              if (!block.media_url?.trim()) {
                 return false;
               }
               break;
             case "file":
-              if (!block.file_url) {
+              // Validation basée sur la structure de ton hook (file_url)
+              if (!(block).file_url?.trim()) {
                 return false;
               }
               break;
@@ -77,7 +84,46 @@ const ButtonHandler = () => {
                 return false;
               }
               break;
+              case "divider":
+              // Un divider est purement visuel (généralement pré-rempli avec un style 'solid')
+              // On s'assure juste qu'il a une propriété de style valide définie
+              if (!(block).style) {
+                return false;
+              }
+              break;
+              case "quiz": {
+              const questions = block.quiz_data?.questions;
+              
+              // Le quiz doit contenir au moins une question
+              if (!questions || !Array.isArray(questions) || questions.length === 0) {
+                return false;
+              }
+
+              // Itération et validation de chaque question présente dans le bloc de quiz
+              for (const q of questions) {
+                // 1. L'énoncé de la question ne doit pas être vide
+                if (!q.question?.trim()) {
+                  return false;
+                }
+                // 2. Il doit y avoir au moins 2 options de réponses proposées
+                if (!q.options || !Array.isArray(q.options) || q.options.length < 2) {
+                  return false;
+                }
+                // 3. Toutes les options textuelles doivent être remplies
+                if (q.options.some((opt: string) => !opt?.trim())) {
+                  return false;
+                }
+                // 4. Il doit y avoir au moins un index de bonne réponse valide sélectionné
+                if (!q.correct_answers || !Array.isArray(q.correct_answers) || q.correct_answers.length === 0) {
+                  return false;
+                }
+              }
+              break;
           }
+          default:
+              // Sécurité critique : Bloque la soumission si un type non supporté atterrit ici
+              return false;
+        }
         }
       }
     }

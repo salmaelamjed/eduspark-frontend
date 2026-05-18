@@ -22,24 +22,24 @@ export interface BaseBlock {
 
 export interface ParagraphBlock extends BaseBlock {
   type: "paragraph";
-  content_text: string;
+  content: string;
 }
 
 export interface HeadingBlock extends BaseBlock {
   type: "heading";
-  content_text: string;
-  level?: 1 | 2 | 3 | 4 | 5 | 6; // h1 à h6
+  content: string;
+  level?: 1 | 2 | 3 | 4 | 5 | 6; 
 }
 
 export interface ListBlock extends BaseBlock {
   type: "list";
-  content_text: string;
+  content: string;
   list_type?: "ordered" | "unordered";
 }
 
 export interface QuoteBlock extends BaseBlock {
   type: "quote";
-  content_text: string;
+  content: string;
   author?: string;
 }
 
@@ -116,7 +116,7 @@ export interface DividerBlock extends BaseBlock {
 
 export interface CalloutBlock extends BaseBlock {
   type: "callout";
-  content_text: string;
+  content: string;
   callout_type?: "note" | "tip" | "warning" | "danger" | "info";
 }
 
