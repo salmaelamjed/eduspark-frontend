@@ -71,9 +71,9 @@ const Page = () => {
         <div className=" mx-auto mt-4">
           {selectedLesson ? (
             
-            <ScrollArea className="h-screen w-full  p-4">
-  <LessonContent lesson={selectedLesson} />
-</ScrollArea>
+          <ScrollArea className="h-screen w-full  p-4">
+            <LessonContent lesson={selectedLesson} />
+          </ScrollArea>
           ) : (
             <div className="flex flex-col items-center justify-center min-h-[60vh] text-center text-muted-foreground gap-3">
               <div className="w-20 h-20 rounded-full bg-orange-50 flex items-center justify-center">

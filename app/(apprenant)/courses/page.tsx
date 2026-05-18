@@ -69,8 +69,6 @@ const Page = () => {
   };
 
   return (
-    <div >
-     <Navbar/>
     <div className="px-4 mt-4 py-4">
           {/* Filtres */}
 <div className=" flex flex-col md:flex-row flex-wrap items-stretch md:items-center justify-between gap-3 rounded-lg mb-6">
@@ -360,7 +358,6 @@ const Page = () => {
           )}
         </>
       )}
-    </div>
     </div>
   )
 }

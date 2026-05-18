@@ -2,7 +2,7 @@
 
 import { useParams } from 'next/navigation';
 import { useCourseDetail } from '@/hooks/courses/use-course'; 
-// import LoadingCourseDetails from './loading';
+ import LoadingCourseDetails from './loading';
 import Image from 'next/image';
 import { BarChart2, Book, BookOpen, CalendarDays, Globe, Languages, Quote, UserCircle } from 'lucide-react';
 import { Separator } from '@/components/ui/separator';
@@ -17,7 +17,7 @@ const CourseDetails = () => {
   
   const { course, loading, error } = useCourseDetail(courseId);
 
-  if (loading) return <>chargement....</>;
+  if (loading) return <LoadingCourseDetails/>;
    const totalLessons = course?.modules?.reduce((acc, mod) => acc + (mod.lessons?.length || 0), 0) || 0;
   const totalModules = course?.modules?.length || 0;
 
@@ -41,8 +41,6 @@ const CourseDetails = () => {
   };
 
   return (
-    <div className="min-h-screen ">
-      <Navbar/>
       <div className="container flex  mx-auto pt-4">
        <div className='border rounded-2xl  h-128 w-110'>
        {course.thumbnail ? (
@@ -163,8 +161,6 @@ const CourseDetails = () => {
         </div>
        </div>
       </div>
-
-    </div>
   );
 };
 

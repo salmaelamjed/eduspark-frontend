@@ -532,7 +532,7 @@ return (
                           <span className="text-xs text-muted-foreground">Format :</span>
                           <Select
                             value={block.list_type || "unordered"}
-                            onValueChange={(val: any) => onUpdateBlock(module.id, lesson.id, index, { list_type: val })}
+                            onValueChange={(val: string) => onUpdateBlock(module.id, lesson.id, index, { list_type: val })}
                           >
                             <SelectTrigger className="w-36 h-8 text-xs">
                               <SelectValue />
