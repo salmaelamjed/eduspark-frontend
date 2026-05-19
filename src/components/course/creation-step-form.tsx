@@ -26,6 +26,7 @@ const CreationCourseFormStep = () => {
     renameLesson,
     deleteModule,
     deleteLesson,
+     deleteBlock,
     selectedModuleId,
     selectedLessonId,
     selectModule,
@@ -74,15 +75,6 @@ const CreationCourseFormStep = () => {
         blocks: lesson.blocks || [],
       }))
     })),
-    instructor: {
-      id: "",
-      name: "",
-      avatar: "",
-    },
-    rating: 0,
-    total_students: 0,
-    total_lessons: modules.reduce((acc, m) => acc + m.lessons.length, 0),
-    total_modules: modules.length,
   };
 
 
@@ -120,6 +112,7 @@ const CreationCourseFormStep = () => {
             onAddBlock={(moduleId, lessonId, type, initialData) =>
               addBlock(moduleId, lessonId, type, initialData)
             }
+             onDeleteBlock={deleteBlock}
             onUpdateBlock={updateBlock}
           />
 

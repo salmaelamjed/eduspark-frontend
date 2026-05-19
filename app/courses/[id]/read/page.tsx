@@ -9,6 +9,7 @@ import LessonContent from '@/components/lesson/lesson-content';
 import { ScrollArea } from "@/components/ui/scroll-area"
 import { Separator } from '@/components/ui/separator';
 import BotWindow from '@/components/chatbot/window';
+import Loading from './loading';
 
 const Page = () => {
   const params = useParams();
@@ -35,7 +36,7 @@ const Page = () => {
     if (loading || !course) return;
   }, [course, loading, selectedLessonId]);
 
-  if (loading) return <div className="p-8">Chargement...</div>;
+  if (loading) return <Loading/>;
   if (error || !course) return <div className="p-8">Erreur</div>;
 
   const modulesWithExpand = course.modules?.map((mod) => ({

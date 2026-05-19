@@ -297,8 +297,8 @@ export function useCourseContent() {
   // Dans useCourseContent
   const addBlock = useCallback(
     (
-      moduleId: string,
-      lessonId: string,
+      moduleId: number|string,
+      lessonId: number|string,
       type: Block["type"],
       initialData: Partial<Block> = {},
       insertAtIndex?: number,
@@ -419,7 +419,7 @@ export function useCourseContent() {
                     type: "code",
                     code_data: {
                       language: "javascript",
-                      code: "// Votre code ici...",
+                      code: "",
                     },
                   };
                   break;
@@ -487,10 +487,10 @@ export function useCourseContent() {
 
 const updateBlock = useCallback(
   (
-    moduleId: string,
-    lessonId: string,
+    moduleId: number | string,
+    lessonId: number | string,
     blockIndex: number,
-    updates: Partial<Block>
+    updates: Partial<Block>,
   ) => {
     setModules((prev) =>
       prev.map((mod) => {
@@ -522,10 +522,60 @@ const updateBlock = useCallback(
             };
           }),
         };
-      })
+      }),
     );
   },
-  []
+  [],
+);
+
+const deleteBlock = useCallback(
+  (
+    moduleId: number | string,
+    lessonId: number | string,
+    blockIndex: number,
+  ) => {
+    setModules((prev) =>
+      prev.map((mod) => {
+        if (mod.id !== moduleId) return mod;
+
+        return {
+          ...mod,
+          lessons: mod.lessons.map((les) => {
+            if (les.id !== lessonId) return les;
+
+            // Vérifier que l'index est valide
+            if (
+              blockIndex < 0 ||
+              blockIndex >= les.blocks.length ||
+              !Number.isInteger(blockIndex)
+            ) {
+              console.warn(
+                `Index de bloc invalide pour suppression : ${blockIndex}`,
+              );
+              return les;
+            }
+
+            // Filtrer le bloc à supprimer
+            const newBlocks = les.blocks.filter(
+              (_, index) => index !== blockIndex,
+            );
+
+            // Réindexer les ordres des blocs restants
+            const reorderedBlocks = newBlocks.map((block, idx) => ({
+              ...block,
+              order: idx + 1,
+            }));
+
+            return {
+              ...les,
+              blocks: reorderedBlocks,
+            };
+          }),
+        };
+      }),
+    );
+  },
+  [],
 );
 
   return {
@@ -544,5 +594,6 @@ const updateBlock = useCallback(
     getModulesForBackend,
     toggleExpand,
     updateBlock,
+    deleteBlock,
   };
 }

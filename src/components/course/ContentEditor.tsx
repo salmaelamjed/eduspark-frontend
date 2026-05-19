@@ -28,6 +28,16 @@ import { blockIcons } from "@/constants/content-editor";
 import { blockLabels } from "@/constants/content-editor";
 import { Module } from "@/types/module";
 import { ScrollArea } from "../ui/scroll-area";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 
 
 interface ContentEditorProps {
@@ -41,7 +51,7 @@ interface ContentEditorProps {
     blockIndex: number,
     updates: Partial<Block>
   ) => void;
-  onDeleteBlock?: (moduleId: number, lessonId: number, blockIndex: number) => void; 
+  onDeleteBlock: (moduleId: number, lessonId: number, blockIndex: number) => void;
 }
 
 interface QuizEditorProps {
@@ -267,6 +277,17 @@ export function ContentEditor({
   const [uploading, setUploading] = useState<string | null>(null);
   const videoRef = useRef<HTMLInputElement>(null);
   const imageRef = useRef<HTMLInputElement>(null);
+  
+  // État pour la confirmation de suppression
+  const [deleteConfirmation, setDeleteConfirmation] = useState<{
+    isOpen: boolean;
+    blockIndex: number | null;
+    blockType: BlockType | null;
+  }>({
+    isOpen: false,
+    blockIndex: null,
+    blockType: null
+  });
 
   if (!lesson || !module) {
    return (
@@ -317,7 +338,7 @@ export function ContentEditor({
         initialData = { 
           ...initialData,
           code_data: { 
-            code: "// Écrivez votre code ici...", 
+            code: "", 
             language: "javascript" 
           }
         };
@@ -445,6 +466,43 @@ export function ContentEditor({
     }
   };
 
+  // Fonction pour ouvrir la confirmation de suppression
+  const handleDeleteClick = (blockIndex: number) => {
+    const block = lesson.blocks[blockIndex];
+    setDeleteConfirmation({
+      isOpen: true,
+      blockIndex,
+      blockType: block.type
+    });
+  };
+
+  // Fonction pour confirmer la suppression
+  const confirmDelete = () => {
+    if (deleteConfirmation.blockIndex !== null && onDeleteBlock && module?.id && lesson?.id) {
+      onDeleteBlock(module.id, lesson.id, deleteConfirmation.blockIndex);
+    }
+    // Fermer la boîte de dialogue
+    setDeleteConfirmation({
+      isOpen: false,
+      blockIndex: null,
+      blockType: null
+    });
+  };
+
+  // Fonction pour annuler la suppression
+  const cancelDelete = () => {
+    setDeleteConfirmation({
+      isOpen: false,
+      blockIndex: null,
+      blockType: null
+    });
+  };
+
+  // Récupérer le nom lisible du type de bloc
+  const getBlockTypeLabel = (type: BlockType | null): string => {
+    if (!type) return "bloc";
+    return blockLabels[type] || type;
+  };
 
 return (
     <div className="flex flex-col h-screen from-gray-50 w-full  ">
@@ -466,14 +524,19 @@ return (
   {lesson.blocks.map((block, index) => {
 
     // Conteneur réutilisable avec bouton de suppression global pour l'éditeur
-                const renderBlockWrapper = (label: string, icon: React.ReactNode, children: React.ReactNode) => (
-                  <div key={index} className="group relative rounded-xl border border-gray-200 bg-white p-5 shadow-xs transition-all hover:border-orange-200 hover:shadow-xs">
-                    <div className="absolute top-3 right-3 flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+               const renderBlockWrapper = (label: string, icon: React.ReactNode, children: React.ReactNode) => (
+                  <div key={index} className="group relative rounded-xl border border-gray-200 bg-white p-5 shadow-xs transition-all hover:border-orange-200 hover:shadow-md">
+                    <div className="absolute top-3 right-3 flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity z-30">
                       <Button
+                        type="button"
                         variant="ghost"
                         size="icon"
-                        className="h-7 w-7 text-muted-foreground hover:text-destructive"
-                        onClick={() => onDeleteBlock && onDeleteBlock(module.id, lesson.id, index)}
+                        className="h-7 w-7 text-muted-foreground hover:text-destructive hover:bg-red-50"
+                        onClick={(e) => {
+                          e.preventDefault();
+                          e.stopPropagation();
+                          handleDeleteClick(index);
+                        }}
                       >
                         <Trash2 className="h-4 w-4" />
                       </Button>
@@ -589,13 +652,16 @@ return (
                               <SelectItem value="php">PHP</SelectItem>
                               <SelectItem value="python">Python</SelectItem>
                               <SelectItem value="html">HTML / CSS</SelectItem>
+                              <SelectItem value="html">CSS</SelectItem>
+                              <SelectItem value="html">Java</SelectItem>
+
                             </SelectContent>
                           </Select>
                         </div>
                         <Textarea
                           value={block.code_data?.code || ""}
                           placeholder="// Entrez votre code ou script d'exemple ici..."
-                          className="font-mono text-xs bg-slate-900 text-slate-100 p-3 rounded-md min-h-[120px] focus-visible:ring-0"
+                          className="font-mono text-xs bg-slate-900 text-slate-100 p-3 rounded-md min-h-30 focus-visible:ring-0"
                           onChange={(e) => onUpdateBlock(module.id, lesson.id, index, {
                             code_data: { ...(block.code_data || { language: "javascript" }), code: e.target.value }
                           })}
@@ -912,6 +978,36 @@ case "callout":
           </div>
         </aside>
   </div>
+
+  {/* Boîte de dialogue de confirmation de suppression */}
+  <AlertDialog open={deleteConfirmation.isOpen} onOpenChange={(open) => {
+    if (!open) cancelDelete();
+  }}>
+    <AlertDialogContent>
+      <AlertDialogHeader>
+        <AlertDialogTitle>Confirmer la suppression</AlertDialogTitle>
+        <AlertDialogDescription>
+          Êtes-vous sûr de vouloir supprimer ce bloc{" "}
+          <span className="font-semibold text-foreground">
+            {getBlockTypeLabel(deleteConfirmation.blockType)}
+          </span>
+          {" "}? Cette action est irréversible et supprimera définitivement tout le contenu associé à ce bloc.
+        </AlertDialogDescription>
+      </AlertDialogHeader>
+      <AlertDialogFooter>
+        <AlertDialogCancel onClick={cancelDelete}>
+          Annuler
+        </AlertDialogCancel>
+        <AlertDialogAction 
+          onClick={confirmDelete}
+          className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+        >
+          <Trash2 className="h-4 w-4 mr-2" />
+          Supprimer définitivement
+        </AlertDialogAction>
+      </AlertDialogFooter>
+    </AlertDialogContent>
+  </AlertDialog>
 </div>
 
 
