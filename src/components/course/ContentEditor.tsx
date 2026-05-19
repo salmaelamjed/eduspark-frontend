@@ -1,4 +1,8 @@
 "use client";
+       import React, { useEffect } from "react";
+// Import de Prism pour la coloration syntaxique automatique
+import Prism from "prismjs";
+import Editor from "react-simple-code-editor";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Input } from "@/components/ui/input";
@@ -38,6 +42,13 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
+// Support des langages de votre liste
+import "prismjs/components/prism-javascript";
+import "prismjs/components/prism-php";
+import "prismjs/components/prism-python";
+import "prismjs/components/prism-markup"; // HTML
+import "prismjs/components/prism-css";
+import "prismjs/components/prism-java";
 
 
 interface ContentEditorProps {
@@ -525,100 +536,207 @@ return (
 
     // Conteneur réutilisable avec bouton de suppression global pour l'éditeur
                const renderBlockWrapper = (label: string, icon: React.ReactNode, children: React.ReactNode) => (
-                  <div key={index} className="group relative rounded-xl border border-gray-200 bg-white p-5 shadow-xs transition-all hover:border-orange-200 hover:shadow-md">
-                    <div className="absolute top-3 right-3 flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity z-30">
-                      <Button
-                        type="button"
-                        variant="ghost"
-                        size="icon"
-                        className="h-7 w-7 text-muted-foreground hover:text-destructive hover:bg-red-50"
-                        onClick={(e) => {
-                          e.preventDefault();
-                          e.stopPropagation();
-                          handleDeleteClick(index);
-                        }}
-                      >
-                        <Trash2 className="h-4 w-4" />
-                      </Button>
-                    </div>
-                    <div className="flex items-center gap-2 text-xs font-semibold text-orange-600 mb-3 tracking-wider uppercase">
-                      {icon} {label}
-                    </div>
-                    {children}
-                  </div>
-                );
+  <div key={index} className="group relative p-5 hover:border hover:rounded-2xl border-transparent transition-all duration-200">
+    {/* Delete button */}
+    <div className="absolute top-3 right-3 flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity z-30">
+      <Button
+        type="button"
+        variant="ghost"
+        size="icon"
+        className="h-7 w-7 text-muted-foreground hover:text-destructive hover:bg-red-50"
+        onClick={(e) => {
+          e.preventDefault();
+          e.stopPropagation();
+          handleDeleteClick(index);
+        }}
+      >
+        <Trash2 className="h-4 w-4" />
+      </Button>
+    </div>
+    {children}
+  </div>
+);
 
-    switch (block.type) {
-                  case "heading":
-                    return renderBlockWrapper("Titre", blockIcons.heading, (
-                      <div className="space-y-3">
-                        <div className="flex items-center gap-2">
-                          <span className="text-xs text-muted-foreground">Importance :</span>
-                          <Select
-                            value={String(block.level || 2)}
-                            onValueChange={(val) => onUpdateBlock(module.id, lesson.id, index, { level: parseInt(val) as any })}
-                          >
-                            <SelectTrigger className="w-24 h-8 text-xs">
-                              <SelectValue />
-                            </SelectTrigger>
-                            <SelectContent>
-                              {[1, 2, 3, 4, 5, 6].map(lvl => (
-                                <SelectItem key={lvl} value={String(lvl)}>H{lvl}</SelectItem>
-                              ))}
-                            </SelectContent>
-                          </Select>
-                        </div>
-                        <Input
-                          value={block.content}
-                          placeholder="Saisissez le titre de votre section…"
-                          className={cn(
-                            "h-auto border-0 bg-transparent px-0 font-bold shadow-none focus-visible:ring-0 rounded-none border-b border-gray-100 focus:border-orange-400",
-                            block.level === 1 ? "text-3xl" : block.level === 3 ? "text-xl" : "text-2xl"
-                          )}
-                          onChange={(e) => onUpdateBlock(module.id, lesson.id, index, { content: e.target.value })}
-                        />
-                      </div>
-                    ));
-                case "paragraph":
-                    return renderBlockWrapper("Paragraphe", blockIcons.paragraph, (
-                      <Textarea
-                        value={block.content}
-                        placeholder="Écrivez votre paragraphe de cours ici..."
-                        className="border-none shadow-none focus-visible:ring-0 resize-y min-h-20 p-0 text-gray-800 leading-relaxed bg-transparent"
-                        onChange={(e) => onUpdateBlock(module.id, lesson.id, index, { content: e.target.value })}
-                      />
-                    ));
-                case "list":
-                    return renderBlockWrapper("Liste", blockIcons.list, (
-                      <div className="space-y-3">
-                        <div className="flex gap-2 items-center">
-                          <span className="text-xs text-muted-foreground">Format :</span>
-                          <Select
-                            value={block.list_type || "unordered"}
-                            onValueChange={(val: string) => onUpdateBlock(module.id, lesson.id, index, { list_type: val })}
-                          >
-                            <SelectTrigger className="w-36 h-8 text-xs">
-                              <SelectValue />
-                            </SelectTrigger>
-                            <SelectContent>
-                              <SelectItem value="unordered">• Puces</SelectItem>
-                              <SelectItem value="ordered">1. Numérotée</SelectItem>
-                            </SelectContent>
-                          </Select>
-                        </div>
-                        <Textarea
-                          value={block.content}
-                          placeholder="Élément de liste 1&#10;Élément de liste 2&#10;(Un élément par ligne)"
-                          className="font-mono text-sm border-gray-200 focus-visible:ring-orange-500"
-                          rows={4}
-                          onChange={(e) => onUpdateBlock(module.id, lesson.id, index, { content: e.target.value })}
-                        />
-                      </div>
-                    ));
+switch (block.type) {
+        case "heading":
+    const isEmpty = !block.content || block.content.trim() === "";
+    
+    const headingSize = 
+      block.level === 1 ? "text-4xl" :
+      block.level === 2 ? "text-3xl" :
+      block.level === 3 ? "text-2xl" : "text-xl";
 
-      case "quote":
+    return renderBlockWrapper("Titre", blockIcons.heading, (
+      <div className="space-y-3">
+        {/* Sélecteur de niveau */}
+        <div className="flex items-center gap-2">
+          <span className="text-xs text-muted-foreground">Importance :</span>
+          <Select
+            value={String(block.level || 2)}
+            onValueChange={(val) => onUpdateBlock(module.id, lesson.id, index, { level: parseInt(val) as any })}
+          >
+            <SelectTrigger className="w-24 h-8 text-xs">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              {[1, 2, 3, 4, 5, 6].map(lvl => (
+                <SelectItem key={lvl} value={String(lvl)}>H{lvl}</SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
+
+        {/* Heading Input → Textarea avec auto-resize */}
+        <div className="relative max-w-3xl">   {/* ← Largeur contrôlée ici */}
+          <textarea
+            value={block.content}
+            placeholder="Saisissez le titre de votre section…"
+            rows={1}
+            className={cn(
+              "w-full bg-transparent px-0 py-2 resize-none overflow-hidden font-bold leading-tight ",
+              headingSize,
+              
+              !isEmpty && "text-foreground",
+              isEmpty && `
+                text-muted-foreground/70 
+                text-[1.1rem] 
+                font-normal 
+                italic
+                tracking-wide
+              `,
+              // Focus & Hover
+              "focus:outline-none focus:ring-0 focus:border-none",
+              "",
+              
+              "transition-all duration-200"
+            )}
+            onChange={(e) => {
+              onUpdateBlock(module.id, lesson.id, index, { content: e.target.value });
+              // Auto-resize
+              e.target.style.height = 'auto';
+              e.target.style.height = `${e.target.scrollHeight}px`;
+            }}
+            onKeyDown={(e) => {
+              // Empêcher le saut de ligne si tu ne veux pas de multi-lignes dans les titres
+              if (e.key === 'Enter') {
+                e.preventDefault();
+              }
+            }}
+          />
+
+          {/* Ligne décorative en bas (optionnelle) */}
+          <div className={cn(
+            "h-px w-full mt-1 transition-all duration-200",
+            isEmpty ? "bg-gray-200" : "bg-gray-300"
+          )} />
+        </div>
+      </div>
+    ));
+        case "paragraph":
+  return renderBlockWrapper("Paragraphe", blockIcons.paragraph, (
+    <div className="max-w-155">   {/* ← Largeur fixée ici */}
+      <Textarea
+        value={block.content}
+        placeholder="Écrivez votre paragraphe de cours ici..."
+        className={cn(
+          "w-full bg-transparent border-none shadow-none focus-visible:ring-0 p-0 text-base leading-relaxed resize-none overflow-hidden min-h-25",
+          
+          "text-gray-800 dark:text-gray-200",
+          "placeholder:text-gray-400 placeholder:font-light",
+          
+          // Bordure subtile (WordPress style)
+          "border-b border-gray-200 focus:border-orange-400 hover:border-gray-300 transition-all duration-200"
+        )}
+        rows={3}
+        onChange={(e) => {
+          onUpdateBlock(module.id, lesson.id, index, { content: e.target.value });
+          
+          // Auto-resize
+          e.target.style.height = 'auto';
+          e.target.style.height = `${Math.max(e.target.scrollHeight, 100)}px`;
+        }}
+      />
+    </div>
+  ));
+        case "list":
+  const isOrdered = block.list_type === "ordered";
+
+  // Convertir le contenu stocké en lignes brutes pour l'édition
+  const rawLines = block.content
+    ? block.content.split("\n").map(line =>
+        line
+          .replace(/^•\s+/, "")
+          .replace(/^\d+\.\s+/, "")
+          .trim()
+      )
+    : [""]; // Commencer avec une ligne vide
+
+  const displayValue = rawLines
+    .map((line, i) => {
+      if (isOrdered) {
+        return `${i + 1}. ${line}`;
+      } else {
+        return `• ${line}`;
+      }
+    })
+    .join("\n");
+
+  return renderBlockWrapper("Liste", blockIcons.list, (
+    <div className="space-y-3">
+      <div className="flex gap-2 items-center">
+        <span className="text-xs text-muted-foreground">Format :</span>
+        <Select
+          value={block.list_type || "unordered"}
+          onValueChange={(val: "ordered" | "unordered") => {
+            onUpdateBlock(module.id, lesson.id, index, { list_type: val });
+          }}
+        >
+          <SelectTrigger className="w-36 h-8 text-xs">
+            <SelectValue />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="unordered">• Puces</SelectItem>
+            <SelectItem value="ordered">1. Numérotée</SelectItem>
+          </SelectContent>
+        </Select>
+      </div>
+
+      <Textarea
+        value={displayValue}   // ← On affiche avec les préfixes
+        placeholder="Commencez à écrire ici..."
+        className="w-full border-none shadow-none focus-visible:ring-0 p-0 text-gray-800 leading-relaxed bg-transparent placeholder:italic placeholder:text-gray-400"
+        rows={4}
+        onChange={(e) => {
+          const inputLines = e.target.value.split("\n");
+
+          // Nettoyer chaque ligne (enlever les anciens préfixes)
+          const cleanLines = inputLines.map(line =>
+            line
+              .replace(/^•\s+/, "")
+              .replace(/^\d+\.\s+/, "")
+              .trim()
+          );
+
+          // Reformater avec les bons préfixes
+          const formatted = cleanLines
+            .map((cleanLine, i) => {
+              if (isOrdered) {
+                return `${i + 1}. ${cleanLine}`;
+              } else {
+                return `• ${cleanLine}`;
+              }
+            })
+            .join("\n");
+
+          onUpdateBlock(module.id, lesson.id, index, { content: formatted });
+        }}
+      />
+    </div>
+  ));
+  
+        case "quote":
                     return renderBlockWrapper("Citation", blockIcons.quote, (
-                      <div className="pl-4 border-l-4 border-orange-500 bg-gray-50/50 p-2 rounded-r-lg space-y-2">
+                      <div className="pl-4 max-w-156 border-l-4 border-orange-500 bg-gray-50/50 p-2 rounded-r-lg space-y-2">
                         <Textarea
                           value={block.content}
                           placeholder="« Votre texte de citation historique ou inspirant... »"
@@ -633,42 +751,85 @@ return (
                         />
                       </div>
                     ));
-      case "code":
-                    return renderBlockWrapper("Bloc de Code", blockIcons.code, (
-                      <div className="space-y-2">
-                        <div className="flex items-center gap-2">
-                          <span className="text-xs text-muted-foreground">Langage :</span>
-                          <Select
-                            value={block.code_data?.language || "javascript"}
-                            onValueChange={(val) => onUpdateBlock(module.id, lesson.id, index, {
-                              code_data: { ...(block.code_data || { code: "" }), language: val }
-                            })}
-                          >
-                            <SelectTrigger className="w-36 h-8 text-xs">
-                              <SelectValue />
-                            </SelectTrigger>
-                            <SelectContent>
-                              <SelectItem value="javascript">JavaScript</SelectItem>
-                              <SelectItem value="php">PHP</SelectItem>
-                              <SelectItem value="python">Python</SelectItem>
-                              <SelectItem value="html">HTML / CSS</SelectItem>
-                              <SelectItem value="html">CSS</SelectItem>
-                              <SelectItem value="html">Java</SelectItem>
 
-                            </SelectContent>
-                          </Select>
-                        </div>
-                        <Textarea
-                          value={block.code_data?.code || ""}
-                          placeholder="// Entrez votre code ou script d'exemple ici..."
-                          className="font-mono text-xs bg-slate-900 text-slate-100 p-3 rounded-md min-h-30 focus-visible:ring-0"
-                          onChange={(e) => onUpdateBlock(module.id, lesson.id, index, {
-                            code_data: { ...(block.code_data || { language: "javascript" }), code: e.target.value }
-                          })}
-                        />
-                      </div>
-                    ));
 
+
+case "code":
+  // On force Prism à recalculer la coloration quand le langage ou le code change
+  const currentLanguage = block.code_data?.language || "javascript";
+  const currentCode = block.code_data?.code || "";
+
+  return renderBlockWrapper("Bloc de Code", blockIcons.code, (
+    <div className="space-y-4 w-full max-w-3xl mx-auto p-2">
+      
+      {/* BARRE D'OUTILS SUPÉRIEURE */}
+      <div className="flex items-center justify-between bg-slate-100 dark:bg-slate-800 p-2 rounded-lg border border-slate-200 dark:border-slate-700 shadow-sm">
+        <div className="flex items-center gap-2">
+          <span className="text-xs font-medium text-slate-500 dark:text-slate-400">Langage :</span>
+          <Select
+            value={currentLanguage}
+            onValueChange={(val) => onUpdateBlock(module.id, lesson.id, index, {
+              code_data: { ...(block.code_data || { code: "" }), language: val }
+            })}
+          >
+            <SelectTrigger className="w-40 h-8 text-xs font-semibold bg-white dark:bg-slate-950 shadow-sm">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="javascript">JavaScript</SelectItem>
+              <SelectItem value="php">PHP</SelectItem>
+              <SelectItem value="python">Python</SelectItem>
+              <SelectItem value="markup">HTML</SelectItem>
+              <SelectItem value="css">CSS</SelectItem>
+              <SelectItem value="java">Java</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
+        
+        {/* Badge indicateur de style */}
+        <span className="text-[10px] uppercase tracking-wider font-bold text-slate-400 bg-slate-200 dark:bg-slate-700 px-2 py-0.5 rounded">
+          {currentLanguage === "markup" ? "html" : currentLanguage}
+        </span>
+      </div>
+
+      {/* DESIGN DU SNIPPET PRO (STYLE MAC OS WINDOW) */}
+      <div className="relative group rounded-xl overflow-hidden bg-gradient-to-tr from-slate-950 via-slate-900 to-slate-800 shadow-2xl border border-slate-800/80 p-4 pt-12">
+        
+        {/* Boutons Mac Style en haut à gauche */}
+        <div className="absolute top-4 left-4 flex gap-1.5 z-10">
+          <span className="w-3 h-3 rounded-full bg-red-500/90 shadow-inner" />
+          <span className="w-3 h-3 rounded-full bg-yellow-500/90 shadow-inner" />
+          <span className="w-3 h-3 rounded-full bg-green-500/90 shadow-inner" />
+        </div>
+        
+        {/* Éditeur avec coloration syntaxique en temps réel */}
+        <div className="font-mono text-sm leading-relaxed overflow-x-auto min-h-[120px]">
+          <Editor
+            value={currentCode}
+            placeholder="// Entrez votre code ou script d'exemple ici..."
+            onValueChange={(codeText) => onUpdateBlock(module.id, lesson.id, index, {
+              code_data: { ...(block.code_data || { language: "javascript" }), code: codeText }
+            })}
+            highlight={(codeText) => {
+              // Gestion de la correspondance avec Prism (html utilise 'markup')
+              const lang = currentLanguage === "html" ? "markup" : currentLanguage;
+              return Prism.highlight(
+                codeText,
+                Prism.languages[lang] || Prism.languages.javascript,
+                lang
+              );
+            }}
+            padding={12}
+            className="w-full text-slate-100 focus:outline-none selection:bg-slate-700/50"
+            style={{
+              fontFamily: '"Fira Code", "Courier New", Courier, monospace',
+            }}
+          />
+        </div>
+      </div>
+
+    </div>
+  ));
       case "image":
                     return renderBlockWrapper("Image", blockIcons.image, (
                       <div className="space-y-3">
@@ -927,17 +1088,17 @@ case "callout":
                               <SelectValue />
                             </SelectTrigger>
                             <SelectContent>
-                              <SelectItem value="note">📘 Note</SelectItem>
-                              <SelectItem value="tip">💡 Astuce</SelectItem>
-                              <SelectItem value="warning">⚠️ Warning</SelectItem>
-                              <SelectItem value="danger">🚨 Danger</SelectItem>
-                              <SelectItem value="info">ℹ️ Info</SelectItem>
+                              <SelectItem value="note">Note</SelectItem>
+                              <SelectItem value="tip"> Astuce</SelectItem>
+                              <SelectItem value="warning"> Warning</SelectItem>
+                              <SelectItem value="danger">Danger</SelectItem>
+                              <SelectItem value="info">Info</SelectItem>
                             </SelectContent>
                           </Select>
                           <Textarea
                             value={block.content}
                             placeholder="Saisissez une remarque ou consigne importante..."
-                            className="flex-1 border-none shadow-none focus-visible:ring-0 resize-none bg-transparent p-0 min-h-[50px] font-medium placeholder:font-normal"
+                            className="flex-1 border-none shadow-none focus-visible:ring-0 resize-none bg-transparent p-0 min-h-12.5 font-medium placeholder:font-normal"
                             onChange={(e) => onUpdateBlock(module.id, lesson.id, index, { content: e.target.value })}
                           />
                         </div>
