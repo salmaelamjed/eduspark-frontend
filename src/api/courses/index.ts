@@ -83,19 +83,32 @@ export interface CourseDetail {
 }
 
 export const coursesApi = {
-  getAll: (filters: CourseListFilters = {}) =>{
+  getAll: (filters: CourseListFilters = {}) => {
     const params = new URLSearchParams();
- // Ajout uniquement des paramètres définis
+    // Ajout uniquement des paramètres définis
     Object.entries(filters).forEach(([key, value]) => {
-      if (value !== undefined && value !== null && value !== '') {
+      if (value !== undefined && value !== null && value !== "") {
         params.append(key, String(value));
       }
     });
     const queryString = params.toString();
 
-  return apiClient.get<PaginatedCourses>(`/courses?${queryString}`);
+    return apiClient.get<PaginatedCourses>(`/courses?${queryString}`);
+  },
+  /**
+   * Récupère les cours de l'enseignant connecté
+   */
+  getMyCourses: (filters: CourseListFilters = {}, token: string) => {
+    const params = new URLSearchParams();
 
+    Object.entries(filters).forEach(([key, value]) => {
+      if (value !== undefined && value !== null && value !== "") {
+        params.append(key, String(value));
+      }
+    });
 
+    const queryString = params.toString();
+    return apiClient.get<PaginatedCourses>(`/teacher/courses?${queryString}`,token);
   },
 
   getOne: (id: number) => apiClient.get<CourseDetail>(`/courses/${id}`),

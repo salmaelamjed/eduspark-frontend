@@ -1,6 +1,5 @@
 "use client";
-       import React, { useEffect } from "react";
-// Import de Prism pour la coloration syntaxique automatique
+import React, { useEffect } from "react";
 import Prism from "prismjs";
 import Editor from "react-simple-code-editor";
 import { Button } from "@/components/ui/button";
@@ -16,14 +15,16 @@ import {
 import {
   Trash2,
   FileText,
-  File,
   Upload,
   Download,
   Plus,
   X,
+  Loader2,
+  Video,
+  Music,
 } from "lucide-react";
 import { Lesson, Block, BlockType, QuizBlock, QuizQuestion } from "@/types/block";
-import { useState, useRef, ChangeEvent } from "react";
+import { useState, ChangeEvent } from "react";
 import { cn } from "@/lib/utils";
 import Image from "next/image";
 import { ACCEPTED_FILE_TYPES, ACCEPTED_IMAGE_TYPES, ACCEPTED_VIDEO_TYPES, getFileIcon, getFileIconBg } from "@/constants/content-editor";
@@ -46,7 +47,7 @@ import {
 import "prismjs/components/prism-javascript";
 import "prismjs/components/prism-php";
 import "prismjs/components/prism-python";
-import "prismjs/components/prism-markup"; // HTML
+import "prismjs/components/prism-markup"; 
 import "prismjs/components/prism-css";
 import "prismjs/components/prism-java";
 
@@ -285,11 +286,7 @@ export function ContentEditor({
   onUpdateBlock,
   onDeleteBlock
 }: ContentEditorProps) {
-  const [uploading, setUploading] = useState<string | null>(null);
-  const videoRef = useRef<HTMLInputElement>(null);
-  const imageRef = useRef<HTMLInputElement>(null);
-  
-  // État pour la confirmation de suppression
+  const [uploading, setUploading] = useState<string | null>(null);  
   const [deleteConfirmation, setDeleteConfirmation] = useState<{
     isOpen: boolean;
     blockIndex: number | null;
@@ -299,6 +296,16 @@ export function ContentEditor({
     blockIndex: null,
     blockType: null
   });
+   
+  useEffect(() => {
+  if (typeof window !== 'undefined') {    const languages = ['javascript', 'php', 'python', 'markup', 'css', 'java'];
+    languages.forEach(lang => {
+      if (!Prism.languages[lang]) {
+        console.warn(`Prism language "${lang}" not loaded`);
+      }
+    });
+  }
+}, []);
 
   if (!lesson || !module) {
    return (
@@ -396,66 +403,92 @@ export function ContentEditor({
     onAddBlock(module.id, lesson.id, type, initialData);
   };
 
-  const simulateFileUpload = async (file: File, blockIndex: number, type: 'video' | 'file'| 'image') => {
-    setUploading(`${type}-${blockIndex}`);
-    
-    await new Promise(resolve => setTimeout(resolve, 1200));
-    const objectUrl = URL.createObjectURL(file);
-    
-    if (type === 'video') {
-      onUpdateBlock(module.id, lesson.id, blockIndex, {
-        media_url: objectUrl,
-        file_name: file.name,
-        file_size: file.size,
-      })
-    } else if(type === 'image'){
-        onUpdateBlock(module.id, lesson.id, blockIndex, {
-        media_url: objectUrl,
-        alt_text: file.name
-      });
-    }else {
-      onUpdateBlock(module.id, lesson.id, blockIndex, {
-        file_url: objectUrl,
-        file_name: file.name,
-        file_size: file.size,
-        mime_type: file.type
-      });
-    }
-    
-    setUploading(null);
-  };
+ const simulateFileUpload = async (file: File, blockIndex: number, type: 'video' | 'file' | 'image' | 'audio') => {
+  setUploading(`${type}-${blockIndex}`);
+  
+  // Simulation de latence réseau
+  await new Promise(resolve => setTimeout(resolve, 1200));
+  const objectUrl = URL.createObjectURL(file);
+  
+  if (type === 'video') {
+    onUpdateBlock(module.id, lesson.id, blockIndex, {
+      media_url: objectUrl,
+      file_name: file.name,
+      file_size: file.size,
+    });
+  } else if (type === 'image') {
+    onUpdateBlock(module.id, lesson.id, blockIndex, {
+      media_url: objectUrl,
+      alt_text: file.name
+    });
+  } else if (type === 'audio') {
+    onUpdateBlock(module.id, lesson.id, blockIndex, {
+      media_url: objectUrl,
+      file_name: file.name,
+      file_size: file.size,
+      mime_type: file.type,
+    });
+  } else {
+    onUpdateBlock(module.id, lesson.id, blockIndex, {
+      file_url: objectUrl,
+      file_name: file.name,
+      file_size: file.size,
+      mime_type: file.type
+    });
+  }
+  
+  setUploading(null);
+};
 
-  const handleFileUpload = (e: ChangeEvent<HTMLInputElement>, blockIndex: number, type: 'video' | 'file'|'image') => {
-    const file = e.target.files?.[0];
-    if (!file) return;
+  const ACCEPTED_AUDIO_TYPES = [
+  "audio/mpeg", 
+  "audio/wav",
+  "audio/x-wav",
+  "audio/mp4",  
+];
 
-    if (type === 'video' && !ACCEPTED_VIDEO_TYPES.includes(file.type)) {
-      alert("Type de fichier vidéo non supporté. Utilisez MP4, WebM ou OGG.");
+ const handleFileUpload = (
+  e: ChangeEvent<HTMLInputElement>, 
+  blockIndex: number, 
+  type: 'video' | 'file' | 'image' | 'audio'
+) => {
+  const file = e.target.files?.[0];
+  if (!file) return;
+
+  // Validation Vidéo
+  if (type === 'video' && !ACCEPTED_VIDEO_TYPES.includes(file.type)) {
+    alert("Type de fichier vidéo non supporté. Utilisez MP4, WebM ou OGG.");
+    return;
+  }
+
+  // Validation Image
+  if (type === 'image' && !ACCEPTED_IMAGE_TYPES.includes(file.type)) {
+    alert("Type d'image non supporté.");
+    return;
+  }
+
+  // Validation Audio
+  if (type === 'audio' && !ACCEPTED_AUDIO_TYPES.includes(file.type)) {
+    alert("Type audio non supporté. Formats acceptés : MP3, WAV, M4A.");
+    return;
+  }
+
+  // Validation Fichier Générique
+  if (type === 'file') {
+    const isImage = ACCEPTED_IMAGE_TYPES.includes(file.type);
+    const isOtherFile = ACCEPTED_FILE_TYPES.includes(file.type);
+    
+    if (!isImage && !isOtherFile) {
+      alert("Type de fichier non supporté. Veuillez choisir une image, un PDF, un document Office, etc.");
       return;
     }
+  }
 
-    if (type === 'image' && !ACCEPTED_IMAGE_TYPES.includes(file.type)) {
-      alert("Type d'image non supporté.");
-      return;
-    }
-
-    if (type === 'file') {
-      const isImage = ACCEPTED_IMAGE_TYPES.includes(file.type);
-      const isOtherFile = ACCEPTED_FILE_TYPES.includes(file.type);
-      
-      if (!isImage && !isOtherFile) {
-        alert("Type de fichier non supporté. Veuillez choisir une image, un PDF, un document Office, etc.");
-        return;
-      }
-      simulateFileUpload(file, blockIndex, type);
+  simulateFileUpload(file, blockIndex, type);
     e.target.value = '';
-    }
+};
 
-    simulateFileUpload(file, blockIndex, type);
-        e.target.value = '';
-  };
-
-  const removeFile = (blockIndex: number, type: 'video' | 'file'| 'image') => {
+  const removeFile = (blockIndex: number, type: 'video' | 'file'| 'image'| 'audio') => {
     if (type === 'video') {
       onUpdateBlock(module.id, lesson.id, blockIndex, {
         media_url: "",
@@ -467,6 +500,13 @@ export function ContentEditor({
         media_url: '',
         alt_text: ''
       });
+    }else if(type === 'audio'){
+        onUpdateBlock(module.id, lesson.id, blockIndex, {
+      media_url: "",
+      file_name: "",
+      file_size: 0,
+      mime_type: ""
+    });
     } else {
       onUpdateBlock(module.id, lesson.id, blockIndex, {
         file_url: "",
@@ -477,7 +517,6 @@ export function ContentEditor({
     }
   };
 
-  // Fonction pour ouvrir la confirmation de suppression
   const handleDeleteClick = (blockIndex: number) => {
     const block = lesson.blocks[blockIndex];
     setDeleteConfirmation({
@@ -487,7 +526,6 @@ export function ContentEditor({
     });
   };
 
-  // Fonction pour confirmer la suppression
   const confirmDelete = () => {
     if (deleteConfirmation.blockIndex !== null && onDeleteBlock && module?.id && lesson?.id) {
       onDeleteBlock(module.id, lesson.id, deleteConfirmation.blockIndex);
@@ -500,7 +538,6 @@ export function ContentEditor({
     });
   };
 
-  // Fonction pour annuler la suppression
   const cancelDelete = () => {
     setDeleteConfirmation({
       isOpen: false,
@@ -509,32 +546,24 @@ export function ContentEditor({
     });
   };
 
-  // Récupérer le nom lisible du type de bloc
   const getBlockTypeLabel = (type: BlockType | null): string => {
     if (!type) return "bloc";
     return blockLabels[type] || type;
   };
-
 return (
     <div className="flex flex-col h-screen from-gray-50 w-full  ">
-  {/* Header */}
   <header className=" bg-white/90 backdrop-blur-md  border-b">
-    <div className="px-6 py-4 flex items-center justify-between">
+    <div className="px-4 py-4 flex items-center justify-between">
       <div>
         <h3 className="font-bold text-xl text-gray-900">{module.title}</h3>
         <p className="text-sm text-gray-500 mt-0.5">• {lesson.title}</p>
       </div>
     </div>
   </header>
-
-  {/* Main content + Sidebar */}
   <div className="flex flex-1 overflow-hidden">
-    {/* Content */}
     <main className="flex-1  overflow-y-auto">
       <ScrollArea className="p-6 space-y-6">
   {lesson.blocks.map((block, index) => {
-
-    // Conteneur réutilisable avec bouton de suppression global pour l'éditeur
                const renderBlockWrapper = (label: string, icon: React.ReactNode, children: React.ReactNode) => (
   <div key={index} className="group relative p-5 hover:border hover:rounded-2xl border-transparent transition-all duration-200">
     {/* Delete button */}
@@ -568,8 +597,7 @@ switch (block.type) {
 
     return renderBlockWrapper("Titre", blockIcons.heading, (
       <div className="space-y-3">
-        {/* Sélecteur de niveau */}
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-2 ">
           <span className="text-xs text-muted-foreground">Importance :</span>
           <Select
             value={String(block.level || 2)}
@@ -586,8 +614,7 @@ switch (block.type) {
           </Select>
         </div>
 
-        {/* Heading Input → Textarea avec auto-resize */}
-        <div className="relative max-w-3xl">   {/* ← Largeur contrôlée ici */}
+        <div className="relative max-w-3xl ">  
           <textarea
             value={block.content}
             placeholder="Saisissez le titre de votre section…"
@@ -596,7 +623,7 @@ switch (block.type) {
               "w-full bg-transparent px-0 py-2 resize-none overflow-hidden font-bold leading-tight ",
               headingSize,
               
-              !isEmpty && "text-foreground",
+              !isEmpty && "text-foreground ",
               isEmpty && `
                 text-muted-foreground/70 
                 text-[1.1rem] 
@@ -608,7 +635,7 @@ switch (block.type) {
               "focus:outline-none focus:ring-0 focus:border-none",
               "",
               
-              "transition-all duration-200"
+              "transition-all duration-200 border-none"
             )}
             onChange={(e) => {
               onUpdateBlock(module.id, lesson.id, index, { content: e.target.value });
@@ -624,40 +651,35 @@ switch (block.type) {
             }}
           />
 
-          {/* Ligne décorative en bas (optionnelle) */}
-          <div className={cn(
-            "h-px w-full mt-1 transition-all duration-200",
-            isEmpty ? "bg-gray-200" : "bg-gray-300"
-          )} />
         </div>
       </div>
     ));
         case "paragraph":
-  return renderBlockWrapper("Paragraphe", blockIcons.paragraph, (
-    <div className="max-w-155">   {/* ← Largeur fixée ici */}
-      <Textarea
-        value={block.content}
-        placeholder="Écrivez votre paragraphe de cours ici..."
-        className={cn(
-          "w-full bg-transparent border-none shadow-none focus-visible:ring-0 p-0 text-base leading-relaxed resize-none overflow-hidden min-h-25",
-          
-          "text-gray-800 dark:text-gray-200",
-          "placeholder:text-gray-400 placeholder:font-light",
-          
-          // Bordure subtile (WordPress style)
-          "border-b border-gray-200 focus:border-orange-400 hover:border-gray-300 transition-all duration-200"
-        )}
-        rows={3}
-        onChange={(e) => {
-          onUpdateBlock(module.id, lesson.id, index, { content: e.target.value });
-          
-          // Auto-resize
-          e.target.style.height = 'auto';
-          e.target.style.height = `${Math.max(e.target.scrollHeight, 100)}px`;
-        }}
-      />
-    </div>
-  ));
+        return renderBlockWrapper("Paragraphe", blockIcons.paragraph, (
+          <div className="max-w-155">   {/* ← Largeur fixée ici */}
+            <Textarea
+              value={block.content}
+              placeholder="Écrivez votre paragraphe de cours ici..."
+              className={cn(
+                "w-full bg-transparent border-none shadow-none focus-visible:ring-0 p-0 text-base leading-relaxed resize-none overflow-hidden min-h-25",
+                
+                "text-gray-800 dark:text-gray-200",
+                "placeholder:text-gray-400 placeholder:font-light",
+                
+                // Bordure subtile (WordPress style)
+                "border-b border-gray-200 focus:border-orange-400 hover:border-gray-300 transition-all duration-200"
+              )}
+              rows={1}
+              onChange={(e) => {
+                onUpdateBlock(module.id, lesson.id, index, { content: e.target.value });
+                
+                // Auto-resize
+                e.target.style.height = 'auto';
+                e.target.style.height = `${Math.max(e.target.scrollHeight, 100)}px`;
+              }}
+            />
+          </div>
+        ));
         case "list":
   const isOrdered = block.list_type === "ordered";
 
@@ -669,7 +691,7 @@ switch (block.type) {
           .replace(/^\d+\.\s+/, "")
           .trim()
       )
-    : [""]; // Commencer avec une ligne vide
+    : [""]; 
 
   const displayValue = rawLines
     .map((line, i) => {
@@ -708,16 +730,12 @@ switch (block.type) {
         rows={4}
         onChange={(e) => {
           const inputLines = e.target.value.split("\n");
-
-          // Nettoyer chaque ligne (enlever les anciens préfixes)
           const cleanLines = inputLines.map(line =>
             line
               .replace(/^•\s+/, "")
               .replace(/^\d+\.\s+/, "")
               .trim()
           );
-
-          // Reformater avec les bons préfixes
           const formatted = cleanLines
             .map((cleanLine, i) => {
               if (isOrdered) {
@@ -733,7 +751,6 @@ switch (block.type) {
       />
     </div>
   ));
-  
         case "quote":
                     return renderBlockWrapper("Citation", blockIcons.quote, (
                       <div className="pl-4 max-w-156 border-l-4 border-orange-500 bg-gray-50/50 p-2 rounded-r-lg space-y-2">
@@ -751,234 +768,597 @@ switch (block.type) {
                         />
                       </div>
                     ));
-
-
-
-case "code":
-  // On force Prism à recalculer la coloration quand le langage ou le code change
-  const currentLanguage = block.code_data?.language || "javascript";
-  const currentCode = block.code_data?.code || "";
+        case "code": {
+        const currentLanguage = block.code_data?.language || "javascript";
+        const currentCode = block.code_data?.code || "";
+          const prismLanguage = Prism.languages[currentLanguage] 
+            ? currentLanguage 
+            : "javascript";
 
   return renderBlockWrapper("Bloc de Code", blockIcons.code, (
-    <div className="space-y-4 w-full max-w-3xl mx-auto p-2">
+    <div className="w-full max-w-3xl mx-auto p-2">
       
-      {/* BARRE D'OUTILS SUPÉRIEURE */}
-      <div className="flex items-center justify-between bg-slate-100 dark:bg-slate-800 p-2 rounded-lg border border-slate-200 dark:border-slate-700 shadow-sm">
-        <div className="flex items-center gap-2">
-          <span className="text-xs font-medium text-slate-500 dark:text-slate-400">Langage :</span>
-          <Select
-            value={currentLanguage}
-            onValueChange={(val) => onUpdateBlock(module.id, lesson.id, index, {
-              code_data: { ...(block.code_data || { code: "" }), language: val }
-            })}
-          >
-            <SelectTrigger className="w-40 h-8 text-xs font-semibold bg-white dark:bg-slate-950 shadow-sm">
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="javascript">JavaScript</SelectItem>
-              <SelectItem value="php">PHP</SelectItem>
-              <SelectItem value="python">Python</SelectItem>
-              <SelectItem value="markup">HTML</SelectItem>
-              <SelectItem value="css">CSS</SelectItem>
-              <SelectItem value="java">Java</SelectItem>
-            </SelectContent>
-          </Select>
-        </div>
+      <div className="relative rounded-xl overflow-hidden bg-slate-950 shadow-2xl border border-slate-800/80">
         
-        {/* Badge indicateur de style */}
-        <span className="text-[10px] uppercase tracking-wider font-bold text-slate-400 bg-slate-200 dark:bg-slate-700 px-2 py-0.5 rounded">
-          {currentLanguage === "markup" ? "html" : currentLanguage}
-        </span>
-      </div>
+        <div className="flex justify-between items-center bg-slate-900/90 px-4 py-3 border-b border-slate-800/60 backdrop-blur-sm select-none">
+          
+          <div className="flex gap-2">
+            <span className="w-3 h-3 rounded-full bg-rose-500 shadow-[inset_0_1px_1.5px_rgba(0,0,0,0.3)]" />
+            <span className="w-3 h-3 rounded-full bg-amber-500 shadow-[inset_0_1px_1.5px_rgba(0,0,0,0.3)]" />
+            <span className="w-3 h-3 rounded-full bg-emerald-500 shadow-[inset_0_1px_1.5px_rgba(0,0,0,0.3)]" />
+          </div>
 
-      {/* DESIGN DU SNIPPET PRO (STYLE MAC OS WINDOW) */}
-      <div className="relative group rounded-xl overflow-hidden bg-gradient-to-tr from-slate-950 via-slate-900 to-slate-800 shadow-2xl border border-slate-800/80 p-4 pt-12">
-        
-        {/* Boutons Mac Style en haut à gauche */}
-        <div className="absolute top-4 left-4 flex gap-1.5 z-10">
-          <span className="w-3 h-3 rounded-full bg-red-500/90 shadow-inner" />
-          <span className="w-3 h-3 rounded-full bg-yellow-500/90 shadow-inner" />
-          <span className="w-3 h-3 rounded-full bg-green-500/90 shadow-inner" />
+          <div className="flex items-center gap-3">
+            <span className="text-[10px] uppercase tracking-wider font-bold text-slate-500 bg-slate-800/50 px-2 py-0.5 rounded border border-slate-700/30">
+              {currentLanguage === "markup" ? "html" : currentLanguage}
+            </span>
+
+            <Select
+              value={currentLanguage}
+              onValueChange={(val) => onUpdateBlock(module.id, lesson.id, index, {
+                ...block,
+                code_data: { 
+                  code: currentCode,
+                  language: val 
+                }
+              })}
+            >
+              <SelectTrigger className="w-36 h-7 text-xs font-medium bg-slate-800 text-slate-200 border-slate-700 hover:bg-slate-700/70 transition-colors shadow-sm focus:ring-1 focus:ring-slate-600">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent className="bg-slate-900 border-slate-800 text-slate-300">
+                <SelectItem value="javascript">JavaScript</SelectItem>
+                <SelectItem value="php">PHP</SelectItem>
+                <SelectItem value="python">Python</SelectItem>
+                <SelectItem value="markup">HTML</SelectItem>
+                <SelectItem value="css">CSS</SelectItem>
+                <SelectItem value="java">Java</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+          
         </div>
         
-        {/* Éditeur avec coloration syntaxique en temps réel */}
-        <div className="font-mono text-sm leading-relaxed overflow-x-auto min-h-[120px]">
+        <div className="font-mono text-sm leading-relaxed overflow-x-auto min-h-30 bg-slate-950 p-4">
           <Editor
             value={currentCode}
             placeholder="// Entrez votre code ou script d'exemple ici..."
             onValueChange={(codeText) => onUpdateBlock(module.id, lesson.id, index, {
-              code_data: { ...(block.code_data || { language: "javascript" }), code: codeText }
+              ...block,
+              code_data: { 
+                language: currentLanguage,
+                code: codeText 
+              }
             })}
             highlight={(codeText) => {
-              // Gestion de la correspondance avec Prism (html utilise 'markup')
-              const lang = currentLanguage === "html" ? "markup" : currentLanguage;
-              return Prism.highlight(
-                codeText,
-                Prism.languages[lang] || Prism.languages.javascript,
-                lang
-              );
+              if (!codeText || typeof codeText !== 'string') {
+                return '';
+              }
+              try {
+                const grammar = Prism.languages[prismLanguage] || Prism.languages.javascript;
+                return Prism.highlight(codeText, grammar, prismLanguage);
+              } catch (error) {
+                return codeText;
+                console.log(error)
+              }
             }}
-            padding={12}
-            className="w-full text-slate-100 focus:outline-none selection:bg-slate-700/50"
+            padding={4}
+            className="w-full text-slate-100 focus:outline-none selection:bg-slate-800"
             style={{
               fontFamily: '"Fira Code", "Courier New", Courier, monospace',
             }}
           />
         </div>
+
       </div>
 
     </div>
   ));
-      case "image":
-                    return renderBlockWrapper("Image", blockIcons.image, (
-                      <div className="space-y-3">
-                        {block.media_url ? (
-                          <div className="relative max-w-xs border rounded-lg overflow-hidden bg-gray-50">
-                            <Image
-                              src={block.media_url}
-                              alt={block.alt_text || "Aperçu"}
-                              width={320}
-                              height={180}
-                              className="object-contain max-h-44 w-full"
-                            />
-                            <Button
-                              size="xs"
-                              variant="destructive"
-                              className="absolute top-1 right-1 h-6 px-2 text-[10px]"
-                              onClick={() => onUpdateBlock(module.id, lesson.id, index, { media_url: "" })}
-                            >
-                              Enlever
-                            </Button>
-                          </div>
-                        ) : (
-                          <div className="border border-dashed rounded-lg p-4 text-center bg-gray-50/50">
-                            <input
-                              type="file"
-                              accept="image/*"
-                              id={`img-${index}`}
-                              className="hidden"
-                              onChange={(e) => handleFileUpload(e, index, 'image')}
-                            />
-                            <Button size="sm" variant="outline" onClick={() => document.getElementById(`img-${index}`)?.click()}>
-                              <Upload className="mr-2 h-3.5 w-3.5" /> Charger une image
-                            </Button>
-                          </div>
-                        )}
-                        <div className="grid grid-cols-2 gap-2">
-                          <Input
-                            placeholder="Légende de l'image (caption)..."
-                            value={block.caption || ""}
-                            className="h-8 text-xs"
-                            onChange={(e) => onUpdateBlock(module.id, lesson.id, index, { caption: e.target.value })}
-                          />
-                          <Input
-                            placeholder="Texte alternatif (Alt) pour accessibilité..."
-                            value={block.alt_text || ""}
-                            className="h-8 text-xs"
-                            onChange={(e) => onUpdateBlock(module.id, lesson.id, index, { alt_text: e.target.value })}
-                          />
-                        </div>
-                        {uploading === `image-${index}` && <p className="text-xs text-orange-500 animate-pulse">Chargement de l'image...</p>}
-                      </div>
-                    ));
-        case "video":
-      return (
-        <div key={index} className="space-y-3 border rounded-lg p-4 bg-white">
-          {block.media_url ? (
-            <video src={block.media_url} controls className="w-full rounded-md" />
-          ) : (
-            <div className="border-2 border-dashed rounded-lg p-6 text-center">
-              <input
-                type="file"
-                accept="video/*"
-                onChange={(e) => handleFileUpload(e, index, 'video')}
-                ref={videoRef}
-                className="hidden"
-              />
-              <Button onClick={() => videoRef.current?.click()} variant="outline">
-                <Upload className="mr-2 h-4 w-4" /> Télécharger une vidéo
-              </Button>
-            </div>
-          )}
-          {uploading === `video-${index}` && <p>Téléchargement...</p>}
-        </div>
-      );
-        
-      case "audio":
-                    return renderBlockWrapper("Audio", blockIcons.audio, (
-                      <div className="space-y-2">
-                        {block.media_url ? (
-                          <div className="flex items-center gap-2">
-                            <audio src={block.media_url} controls className="flex-1" />
-                            <Button size="icon" variant="ghost" className="text-destructive" onClick={() => onUpdateBlock(module.id, lesson.id, index, { media_url: "" })}>
-                              <X className="h-4 w-4" />
-                            </Button>
-                          </div>
-                        ) : (
-                          <div className="border border-dashed rounded-lg p-4 text-center bg-gray-50/50">
-                            <input
-                              type="file"
-                              accept="audio/*"
-                              id={`audio-${index}`}
-                              className="hidden"
-                              onChange={(e) => handleFileUpload(e, index, 'file')}
-                            />
-                            <Button size="sm" variant="outline" onClick={() => document.getElementById(`audio-${index}`)?.click()}>
-                              <Upload className="mr-2 h-3.5 w-3.5" /> Sélectionner un audio
-                            </Button>
-                          </div>
-                        )}
-                      </div>
-                    ));
-    case "file":
-      return (
-        <div key={index} className="border rounded-lg p-4 bg-white space-y-3">
-          {block.file_url ? (
-            <div className="flex items-center justify-between p-3 bg-gray-50 rounded-md">
-              <div className="flex items-center gap-3">
-                <div className={cn("p-2 rounded-lg", getFileIconBg(block.mime_type))}>
-                  {getFileIcon(block.mime_type)}
-                </div>
-                <div>
-                  <p className="font-medium text-sm">{block.file_name || "Fichier"}</p>
-                  {block.file_size && (
-                    <p className="text-xs text-muted-foreground">{formatFileSize(block.file_size)}</p>
-                  )}
-                </div>
-              </div>
-              <div className="flex gap-2">
-                <Button
-                  size="sm"
-                  variant="ghost"
-                  onClick={() => window.open(block.file_url, "_blank")}
-                >
-                  <Download className="h-4 w-4" />
-                </Button>
-                <Button size="sm" variant="ghost" onClick={() => removeFile(index, "file")}>
-                  <Trash2 className="h-4 w-4" />
-                </Button>
-              </div>
-            </div>
-          ) : (
-            <div className="border-2 border-dashed rounded-lg p-6 text-center">
-              <input
-                type="file"
-                onChange={(e) => handleFileUpload(e, index, "file")}
-                className="hidden"
-                id={`file-upload-${index}`}
-              />
-              <Button
-                onClick={() => document.getElementById(`file-upload-${index}`)?.click()}
-                variant="outline"
-              >
-                <Upload className="mr-2 h-4 w-4" /> Télécharger un fichier
-              </Button>
-            </div>
-          )}
-        </div>
-      );
+}
+        case "image": {
+          const isUploading = uploading === `image-${index}`;
+          const inputId = `img-${index}`;
 
+          const handleFiles = (files: FileList | null) => {
+            if (!files?.[0] || isUploading) return;
+            const file = files[0];
+            const url = URL.createObjectURL(file);
+            const img = new window.Image();
+            img.onload = () => {
+              onUpdateBlock(module.id, lesson.id, index, {
+              });
+              URL.revokeObjectURL(url);
+            };
+            img.src = url;
+
+            const fakeEvent = { target: { files } } as unknown as React.ChangeEvent<HTMLInputElement>;
+            handleFileUpload(fakeEvent, index, "image");
+          };
+
+          return renderBlockWrapper("Image", blockIcons.image, (
+            <div className="w-full max-w-2xl space-y-3">
+              {block.media_url ? (
+                /* --- BLOC CONTENEUR D'IMAGE --- */
+                <figure className="group relative overflow-hidden rounded-2xl border border-border bg-muted/30 transition-all hover:shadow-md">
+                  {/* Zone d'affichage de l'image */}
+                  <div className="relative flex aspect-video w-full items-center justify-center bg-background">
+                    <Image
+                      src={block.media_url}
+                      alt={block.alt_text || "Aperçu"}
+                      width={800}
+                      height={475}
+                      className="h-full w-full object-contain transition-transform duration-500 group-hover:scale-[1.01]"
+                    />
+                  </div>
+
+                  {/* --- ACTIONS FLOTTANTES (SUR L'IMAGE EN HAUT À DROITE) --- */}
+                  <div className="absolute bottom-3 right-3 flex items-center gap-1.5 opacity-0 -translate-y-1 transition-all duration-200 group-hover:opacity-100 group-hover:translate-y-0">
+                    {/* Bouton Remplacer */}
+                    <Button
+                      size="sm"
+                      className="h-8 gap-1.5 rounded-xl bg-background/80 px-3 text-xs font-medium border border-orange-400 backdrop-blur-md text-orange-400 hover:bg-background transition-colors"
+                      onClick={() => document.getElementById(inputId)?.click()}
+                    >
+                      <Upload className="h-3.5 w-3.5" />
+                      Remplacer
+                    </Button>
+
+                    <Button
+                      size="icon"
+                      className="h-8 w-8 rounded-xl text-muted-foreground bg-transparent border-orange-400 border hover:cursor-pointer  hover:bg-transparent transition-colors"
+                      onClick={() =>
+                        onUpdateBlock(module.id, lesson.id, index, {
+                          media_url: "",
+                        })
+                      }
+                    >
+                      <X className="h-3.5 w-3.5 text-orange-400" />
+                    </Button>
+                  </div>
+                  <input
+                    id={inputId}
+                    type="file"
+                    accept="image/*"
+                    className="hidden"
+                    onChange={(e) => handleFiles(e.target.files)}
+                  />
+                </figure>
+              ) : (
+                <label
+                  htmlFor={inputId}
+                  onDragOver={(e) => {
+                    e.preventDefault();
+                    e.currentTarget.dataset.drag = "true";
+                  }}
+                  onDragLeave={(e) => {
+                    delete e.currentTarget.dataset.drag;
+                  }}
+                  onDrop={(e) => {
+                    e.preventDefault();
+                    delete e.currentTarget.dataset.drag;
+                    handleFiles(e.dataTransfer.files);
+                  }}
+                  className="group relative flex cursor-pointer flex-col items-center justify-center gap-4 rounded-2xl border border-dashed border-border bg-background px-6 py-12 text-center transition-all hover:border-primary/50 hover:bg-muted/30 data-[drag=true]:border-primary data-[drag=true]:bg-primary/5"
+                >
+                  <input
+                    id={inputId}
+                    type="file"
+                    accept="image/*"
+                    className="hidden"
+                    disabled={isUploading}
+                    onChange={(e) => handleFiles(e.target.files)}
+                  />
+
+                  {isUploading ? (
+                    <>
+                      <div className="relative">
+                        <Loader2 className="h-6 w-6 animate-spin text-primary" />
+                        <span className="absolute inset-0 -m-2 animate-ping rounded-full bg-primary/20" />
+                      </div>
+                      <div className="space-y-1">
+                        <p className="text-sm font-medium text-foreground">Upload en cours…</p>
+                        <p className="text-xs text-muted-foreground">Optimisation de {"l'image"}</p>
+                      </div>
+                    </>
+                  ) : (
+                    <>
+                      <div className="flex h-12 w-12 items-center justify-center rounded-xl border border-border bg-muted/50 text-muted-foreground transition-all group-hover:-translate-y-0.5 group-hover:border-primary/30 group-hover:bg-primary/10 group-hover:text-primary">
+                        <Upload className="h-5 w-5" />
+                      </div>
+                      <div className="space-y-1">
+                        <p className="text-sm font-medium text-foreground">
+                          Glissez une image ou{" "}
+                          <span className="text-primary underline-offset-2 group-hover:underline">
+                            parcourez
+                          </span>
+                        </p>
+                        <p className="text-xs text-muted-foreground">
+                          PNG, JPG, WEBP — {"jusqu'à 5 Mo"}
+                        </p>
+                      </div>
+                    </>
+                  )}
+                </label>
+              )}
+            </div>
+          ));
+        }
+        case "video": {
+          const isUploading = uploading === `video-${index}`;
+          const inputId = `video-${index}`;
+
+          const handleVideoFiles = (files: FileList | null) => {
+            if (!files?.[0] || isUploading) return;
+            
+            // Déclenche votre fonction existante de téléversement vers le serveur
+            const fakeEvent = { target: { files } } as unknown as React.ChangeEvent<HTMLInputElement>;
+            handleFileUpload(fakeEvent, index, "video");
+          };
+
+          return renderBlockWrapper("Vidéo", blockIcons.video, (
+            <div className="w-full max-w-2xl space-y-3 font-sans">
+              {block.media_url ? (
+                /* --- LECTEUR VIDÉO STYLE SaaS PREMIUM --- */
+                <figure className="group relative overflow-hidden rounded-2xl border border-border bg-muted/30 transition-all hover:shadow-md">
+                  <div className="relative flex aspect-video w-full items-center justify-center bg-black rounded-2xl overflow-hidden">
+                    <video 
+                      src={block.media_url} 
+                      controls 
+                      className="h-full w-full object-contain" 
+                    />
+                  </div>
+
+                  {/* --- ACTIONS FLOTTANTES AU SURVOL (EN HAUT À DROITE) --- */}
+                  <div className="absolute top-3 right-3 flex items-center gap-1.5 opacity-0 -translate-y-1 transition-all duration-200 group-hover:opacity-100 group-hover:translate-y-0 z-20">
+                    {/* Bouton Remplacer */}
+                    <Button
+                      size="sm"
+                      variant="secondary"
+                      className="h-8 gap-1.5 rounded-xl bg-background/80 px-3 text-xs font-medium text-foreground border border-border/40 backdrop-blur-md shadow-sm hover:bg-background transition-colors"
+                      onClick={() => document.getElementById(inputId)?.click()}
+                    >
+                      <Upload className="h-3.5 w-3.5" />
+                      Remplacer
+                    </Button>
+
+                    {/* Bouton Supprimer */}
+                    <Button
+                      size="icon"
+                      variant="secondary"
+                      className="h-8 w-8 rounded-xl bg-background/80 text-muted-foreground border border-border/40 backdrop-blur-md shadow-sm hover:bg-destructive hover:text-destructive-foreground transition-colors"
+                      onClick={() =>
+                        onUpdateBlock(module.id, lesson.id, index, {
+                          media_url: "",
+                        })
+                      }
+                      title="Supprimer la vidéo"
+                    >
+                      <Trash2 className="h-3.5 w-3.5" />
+                    </Button>
+                  </div>
+
+                  <input
+                    id={inputId}
+                    type="file"
+                    accept="video/*"
+                    className="hidden"
+                    onChange={(e) => handleVideoFiles(e.target.files)}
+                  />
+                </figure>
+              ) : (
+                /* --- ZONE D'UPLOAD INTERACTIVE (LABEL) --- */
+                <label
+                  htmlFor={inputId}
+                  onDragOver={(e) => {
+                    e.preventDefault();
+                    e.currentTarget.dataset.drag = "true";
+                  }}
+                  onDragLeave={(e) => {
+                    delete e.currentTarget.dataset.drag;
+                  }}
+                  onDrop={(e) => {
+                    e.preventDefault();
+                    delete e.currentTarget.dataset.drag;
+                    handleVideoFiles(e.dataTransfer.files);
+                  }}
+                  className={`group relative flex cursor-pointer flex-col items-center justify-center gap-4 rounded-2xl border border-dashed border-border bg-background px-6 py-12 text-center transition-all hover:border-primary/50 hover:bg-muted/30
+                    data-[drag=true]:border-primary data-[drag=true]:bg-primary/5
+                    ${isUploading ? 'pointer-events-none opacity-80' : ''}`}
+                >
+                  <input
+                    id={inputId}
+                    type="file"
+                    accept="video/*"
+                    className="hidden"
+                    disabled={isUploading}
+                    onChange={(e) => handleVideoFiles(e.target.files)}
+                  />
+
+                  {isUploading ? (
+                    /* --- ÉTAT DE CHARGEMENT ÉPURÉ --- */
+                    <div className="flex flex-col items-center justify-center space-y-4 py-4">
+                      <div className="relative">
+                        <Loader2 className="h-6 w-6 animate-spin text-primary" />
+                        <span className="absolute inset-0 -m-2 animate-ping rounded-full bg-primary/20" />
+                      </div>
+                      <div className="space-y-1">
+                        <p className="text-sm font-medium text-foreground">Téléchargement de la vidéo…</p>
+                        <p className="text-xs text-muted-foreground">Traitement et encodage du fichier en cours</p>
+                      </div>
+                    </div>
+                  ) : (
+                    /* --- ÉTAT INITIAL --- */
+                    <>
+                      {/* Icône avec halo dynamique */}
+                      <div className="flex h-12 w-12 items-center justify-center rounded-xl border border-border bg-muted/50 text-muted-foreground transition-all group-hover:-translate-y-0.5 group-hover:border-primary/30 group-hover:bg-primary/10 group-hover:text-primary">
+                        <Video className="h-5 w-5" /> {/* Remplacé par une icône Video pour le contexte */}
+                      </div>
+                      <div className="space-y-1">
+                        <p className="text-sm font-medium text-foreground">
+                          Glissez une vidéo ici ou{" "}
+                          <span className="text-primary underline-offset-2 group-hover:underline font-semibold">
+                            parcourez vos fichiers
+                          </span>
+                        </p>
+                        <p className="text-xs text-muted-foreground">
+                          MP4, WebM, Ogg — {"jusqu'à "}50 Mo
+                        </p>
+                      </div>
+                    </>
+                  )}
+                </label>
+              )}
+            </div>
+          ));
+        }    
+        case "audio": {
+          const isUploading = uploading === `audio-${index}`;
+          const inputId = `audio-${index}`;
+
+          const handleAudioFiles = (files: FileList | null) => {
+            if (!files?.[0] || isUploading) return;
+            const fakeEvent = { target: { files } } as unknown as React.ChangeEvent<HTMLInputElement>;
+            handleFileUpload(fakeEvent, index, 'audio');
+          };
+
+          return renderBlockWrapper("Audio", blockIcons.audio, (
+            <div className="w-full max-w-2xl space-y-3 font-sans">
+              {block.media_url ? (
+                <div className="group relative flex flex-col gap-2 rounded-2xl  bg-muted/20 p-4 transition-all  hover:bg-muted/30">
+                  <div className="flex items-center gap-3">
+
+                    <div className="flex items-center gap-1 opacity-0 transition-opacity duration-200 group-hover:opacity-100">
+                      <Button
+                        size="sm"
+                        variant="ghost"
+                        className="h-7 gap-1 rounded-lg px-2 text-xs font-medium text-muted-foreground hover:text-foreground"
+                        onClick={() => document.getElementById(inputId)?.click()}
+                      >
+                        <Upload className="h-3 w-3" />
+                        Remplacer
+                      </Button>
+                      <Button
+                        size="icon"
+                        variant="ghost"
+                        className="h-7 w-7 rounded-lg text-muted-foreground hover:bg-destructive/10 hover:text-destructive"
+                        onClick={() => removeFile(index, "audio")}
+                        title="Supprimer l'audio"
+                      >
+                        <Trash2 className="h-3.5 w-3.5" />
+                      </Button>
+                    </div>
+                  </div>
+                  <audio src={block.media_url} controls className="h-9 w-full mt-1" />
+
+                  <input
+                    id={inputId}
+                    type="file"
+                    accept="audio/*"
+                    className="hidden"
+                    onChange={(e) => handleAudioFiles(e.target.files)}
+                  />
+                </div>
+              ) : (
+                <label
+                  htmlFor={inputId}
+                  onDragOver={(e) => {
+                    e.preventDefault();
+                    e.currentTarget.dataset.drag = "true";
+                  }}
+                  onDragLeave={(e) => {
+                    delete e.currentTarget.dataset.drag;
+                  }}
+                  onDrop={(e) => {
+                    e.preventDefault();
+                    delete e.currentTarget.dataset.drag;
+                    handleAudioFiles(e.dataTransfer.files);
+                  }}
+                  className={`group relative flex cursor-pointer flex-col items-center justify-center gap-4 rounded-2xl border border-dashed border-border bg-background px-6 py-10 text-center transition-all hover:border-primary/50 hover:bg-muted/30
+                    data-[drag=true]:border-primary data-[drag=true]:bg-primary/5
+                    ${isUploading ? 'pointer-events-none opacity-80' : ''}`}
+                >
+                  <input
+                    id={inputId}
+                    type="file"
+                    accept="audio/*"
+                    className="hidden"
+                    disabled={isUploading}
+                    onChange={(e) => handleAudioFiles(e.target.files)}
+                  />
+
+                  {isUploading ? (
+                    <div className="flex flex-col items-center justify-center space-y-4 py-2">
+                      <div className="relative">
+                        <Loader2 className="h-6 w-6 animate-spin text-primary" />
+                        <span className="absolute inset-0 -m-2 animate-ping rounded-full bg-primary/20" />
+                      </div>
+                      <div className="space-y-1">
+                        <p className="text-sm font-medium text-foreground">Téléchargement du fichier audio…</p>
+                        <p className="text-xs text-muted-foreground">Traitement audio en cours</p>
+                      </div>
+                    </div>
+                  ) : (
+                    <>
+                      <div className="flex h-12 w-12 items-center justify-center rounded-xl border border-border bg-muted/50 text-muted-foreground transition-all group-hover:-translate-y-0.5 group-hover:border-primary/30 group-hover:bg-primary/10 group-hover:text-primary">
+                        <Music className="h-5 w-5" />
+                      </div>
+                      <div className="space-y-1">
+                        <p className="text-sm font-medium text-foreground">
+                          Glissez un fichier audio ou{" "}
+                          <span className="text-primary underline-offset-2 group-hover:underline font-semibold">
+                            parcourez vos dossiers
+                          </span>
+                        </p>
+                        <p className="text-xs text-muted-foreground">
+                          MP3, WAV, M4A — {"jusqu'à 20 Mo"}
+                        </p>
+                      </div>
+                    </>
+                  )}
+                </label>
+              )}
+            </div>
+          ));
+        }
+        case "file": {
+        const isUploading = uploading === `file-${index}`;
+        const inputId = `file-upload-${index}`;
+
+        const handleDocumentFiles = (files: FileList | null) => {
+          if (!files?.[0] || isUploading) return;
+          
+          // Déclenche votre fonction existante de téléversement
+          const fakeEvent = { target: { files } } as unknown as React.ChangeEvent<HTMLInputElement>;
+          handleFileUpload(fakeEvent, index, "file");
+        };
+
+        return renderBlockWrapper("Fichier", blockIcons.file, (
+          <div className="w-full max-w-2xl space-y-3 font-sans">
+            {block.file_url ? (
+              /* --- AFFICHAGE DU FICHIER TÉLÉVERSÉ --- */
+              <div className="group relative flex items-center justify-between rounded-2xl border border-border bg-muted/20 p-3.5 transition-all hover:bg-muted/30 hover:shadow-sm">
+                <div className="flex items-center gap-3.5 min-w-0">
+                  {/* Icône dynamique basée sur le type de fichier */}
+                  <div className={cn("flex h-11 w-11 shrink-0 items-center justify-center rounded-xl border border-border/40 shadow-sm transition-transform group-hover:scale-105", getFileIconBg(block.mime_type))}>
+                    {getFileIcon(block.mime_type)}
+                  </div>
+                  
+                  {/* Métadonnées du fichier */}
+                  <div className="min-w-0 space-y-0.5">
+                    <p className="font-medium text-sm text-foreground truncate max-w-[320px] md:max-w-100">
+                      {block.file_name || "Document sans titre"}
+                    </p>
+                    {block.file_size && (
+                      <p className="text-xs text-muted-foreground font-light">
+                        {formatFileSize(block.file_size)}
+                      </p>
+                    )}
+                  </div>
+                </div>
+
+                {/* --- BOUTONS D'ACTIONS COHÉRENTS --- */}
+                <div className="flex items-center gap-1 opacity-0 transition-opacity duration-200 group-hover:opacity-100">
+                  {/* Bouton Remplacer */}
+                  <Button
+                    size="sm"
+                    variant="ghost"
+                    className="h-8 gap-1.5 rounded-xl px-2.5 text-xs font-medium text-muted-foreground hover:text-foreground"
+                    onClick={() => document.getElementById(inputId)?.click()}
+                  >
+                    <Upload className="h-3.5 w-3.5" />
+                    Remplacer
+                  </Button>
+                  <Button
+                    size="icon"
+                    variant="ghost"
+                    className="h-8 w-8 rounded-xl text-muted-foreground hover:bg-muted hover:text-foreground"
+                    onClick={() => window.open(block.file_url, "_blank")}
+                    title="Ouvrir le fichier"
+                  >
+                    <Download className="h-3.5 w-3.5" />
+                  </Button>
+
+                  {/* Bouton Supprimer */}
+                  <Button 
+                    size="icon" 
+                    variant="ghost" 
+                    className="h-8 w-8 rounded-xl text-muted-foreground hover:bg-destructive/10 hover:text-destructive"
+                    onClick={() => removeFile(index, "file")}
+                    title="Supprimer"
+                  >
+                    <Trash2 className="h-3.5 w-3.5" />
+                  </Button>
+                </div>
+
+                <input
+                  id={inputId}
+                  type="file"
+                  className="hidden"
+                  onChange={(e) => handleDocumentFiles(e.target.files)}
+                />
+              </div>
+            ) : (
+              <label
+                htmlFor={inputId}
+                onDragOver={(e) => {
+                  e.preventDefault();
+                  e.currentTarget.dataset.drag = "true";
+                }}
+                onDragLeave={(e) => {
+                  delete e.currentTarget.dataset.drag;
+                }}
+                onDrop={(e) => {
+                  e.preventDefault();
+                  delete e.currentTarget.dataset.drag;
+                  handleDocumentFiles(e.dataTransfer.files);
+                }}
+                className={`group relative flex cursor-pointer flex-col items-center justify-center gap-4 rounded-2xl border border-dashed border-border bg-background px-6 py-10 text-center transition-all hover:border-primary/50 hover:bg-muted/30
+                  data-[drag=true]:border-primary data-[drag=true]:bg-primary/5
+                  ${isUploading ? 'pointer-events-none opacity-80' : ''}`}
+              >
+                <input
+                  id={inputId}
+                  type="file"
+                  className="hidden"
+                  disabled={isUploading}
+                  onChange={(e) => handleDocumentFiles(e.target.files)}
+                />
+
+                {isUploading ? (
+                  /* --- ÉTAT DE CHARGEMENT ÉPURÉ --- */
+                  <div className="flex flex-col items-center justify-center space-y-4 py-2">
+                    <div className="relative">
+                      <Loader2 className="h-6 w-6 animate-spin text-primary" />
+                      <span className="absolute inset-0 -m-2 animate-ping rounded-full bg-primary/20" />
+                    </div>
+                    <div className="space-y-1">
+                      <p className="text-sm font-medium text-foreground">Téléchargement du document…</p>
+                      <p className="text-xs text-muted-foreground">Mise en ligne sécurisée</p>
+                    </div>
+                  </div>
+                ) : (
+                  <>
+                    <div className="flex h-12 w-12 items-center justify-center rounded-xl border border-border bg-muted/50 text-muted-foreground transition-all group-hover:-translate-y-0.5 group-hover:border-primary/30 group-hover:bg-primary/10 group-hover:text-primary">
+                      <FileText className="h-5 w-5" />
+                    </div>
+                    <div className="space-y-1">
+                      <p className="text-sm font-medium text-foreground">
+                        Glissez un document ici ou{" "}
+                        <span className="text-primary underline-offset-2 group-hover:underline font-semibold">
+                          parcourez vos fichiers
+                        </span>
+                      </p>
+                      <p className="text-xs text-muted-foreground">
+                        PDF, DOCX, XLSX, ZIP — {"jusqu'à 20 Mo"}
+                      </p>
+                    </div>
+                  </>
+                )}
+              </label>
+            )}
+          </div>
+        ));
+        }
       case "embed":
                     return renderBlockWrapper("Intégration Externe", blockIcons.embed, (
                       <div className="space-y-3">
@@ -1011,117 +1391,113 @@ case "code":
                         )}
                       </div>
                     ));
-case "quiz":
-                    return renderBlockWrapper("Quiz Éducatif", blockIcons.quiz, (
-                      <div className="space-y-3">
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                          <div>
-                            <label className="text-[11px] font-medium text-gray-500">Titre de l'exercice :</label>
-                            <Input
-                              value={block.title || ""}
-                              placeholder="Ex: Évaluation sommative - Chapitre 1"
-                              className="font-semibold text-sm"
-                              onChange={(e) => onUpdateBlock(module.id, lesson.id, index, { title: e.target.value })}
-                            />
-                          </div>
-                          <div>
-                            <label className="text-[11px] font-medium text-gray-500">Description / Directives :</label>
-                            <Input
-                              value={block.description || ""}
-                              placeholder="Ex: Répondez correctement aux questions pour valider ce module."
-                              className="text-xs text-muted-foreground"
-                              onChange={(e) => onUpdateBlock(module.id, lesson.id, index, { description: e.target.value })}
-                            />
-                          </div>
-                        </div>
+      case "quiz":
+                          return renderBlockWrapper("Quiz Éducatif", blockIcons.quiz, (
+                            <div className="space-y-3">
+                              <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                                <div>
+                                  <label className="text-[11px] font-medium text-gray-500">Titre de {"l'exercice "}:</label>
+                                  <Input
+                                    value={block.title || ""}
+                                    placeholder="Ex: Évaluation sommative - Chapitre 1"
+                                    className="font-semibold text-sm"
+                                    onChange={(e) => onUpdateBlock(module.id, lesson.id, index, { title: e.target.value })}
+                                  />
+                                </div>
+                                <div>
+                                  <label className="text-[11px] font-medium text-gray-500">Description / Directives :</label>
+                                  <Input
+                                    value={block.description || ""}
+                                    placeholder="Ex: Répondez correctement aux questions pour valider ce module."
+                                    className="text-xs text-muted-foreground"
+                                    onChange={(e) => onUpdateBlock(module.id, lesson.id, index, { description: e.target.value })}
+                                  />
+                                </div>
+                              </div>
 
-                        {/* Rendu de l'éditeur avancé de questions */}
-                        <QuizEditor
-                          block={block}
-                          onUpdate={(updates) => onUpdateBlock(module.id, lesson.id, index, updates)}
-                        />
-                      </div>
-                    ));
-        
-                    case "divider":
-                    return renderBlockWrapper("Séparateur Visuel", blockIcons.divider, (
-                      <div className="py-2 space-y-3">
-                        <hr className={cn(
-                          "border-t-2",
-                          block.style === "dashed" && "border-dashed",
-                          block.style === "dotted" && "border-dotted",
-                          "border-gray-200"
-                        )} />
-                        <div className="flex justify-end">
-                          <Select
-                            value={block.style || "solid"}
-                            onValueChange={(val: any) => onUpdateBlock(module.id, lesson.id, index, { style: val })}
-                          >
-                            <SelectTrigger className="w-28 h-7 text-xs">
-                              <SelectValue />
-                            </SelectTrigger>
-                            <SelectContent>
-                              <SelectItem value="solid">Trait plein</SelectItem>
-                              <SelectItem value="dashed">Tirets</SelectItem>
-                              <SelectItem value="dotted">Pointillés</SelectItem>
-                            </SelectContent>
-                          </Select>
-                        </div>
-                      </div>
-                    ));
-case "callout":
-                    return renderBlockWrapper("Encart d'Information", blockIcons.callout, (
-                      <div className={cn(
-                        "p-4 rounded-lg border-l-4 shadow-2xs",
-                        block.callout_type === "note" && "bg-blue-50/60 border-blue-500 text-blue-900",
-                        block.callout_type === "tip" && "bg-green-50/60 border-green-500 text-green-900",
-                        block.callout_type === "warning" && "bg-yellow-50/60 border-yellow-500 text-yellow-900",
-                        block.callout_type === "danger" && "bg-red-50/60 border-red-500 text-red-900",
-                        block.callout_type === "info" && "bg-sky-50/40 border-sky-400 text-sky-950"
-                      )}>
-                        <div className="flex gap-3 items-start">
-                          <Select
-                            value={block.callout_type || "info"}
-                            onValueChange={(val: any) => onUpdateBlock(module.id, lesson.id, index, { callout_type: val })}
-                          >
-                            <SelectTrigger className="w-28 h-8 text-xs bg-white text-gray-800">
-                              <SelectValue />
-                            </SelectTrigger>
-                            <SelectContent>
-                              <SelectItem value="note">Note</SelectItem>
-                              <SelectItem value="tip"> Astuce</SelectItem>
-                              <SelectItem value="warning"> Warning</SelectItem>
-                              <SelectItem value="danger">Danger</SelectItem>
-                              <SelectItem value="info">Info</SelectItem>
-                            </SelectContent>
-                          </Select>
-                          <Textarea
-                            value={block.content}
-                            placeholder="Saisissez une remarque ou consigne importante..."
-                            className="flex-1 border-none shadow-none focus-visible:ring-0 resize-none bg-transparent p-0 min-h-12.5 font-medium placeholder:font-normal"
-                            onChange={(e) => onUpdateBlock(module.id, lesson.id, index, { content: e.target.value })}
-                          />
-                        </div>
-                      </div>
-                    ));
-                default:
-                    return (
-                      <div key={index} className="p-4 rounded-xl border bg-yellow-50/50 text-xs text-yellow-700 italic">
-                        Type de bloc non supporté ou absent du rendu.
-                      </div>
-                    );
-    }
+                              {/* Rendu de l'éditeur avancé de questions */}
+                              <QuizEditor
+                                block={block}
+                                onUpdate={(updates) => onUpdateBlock(module.id, lesson.id, index, updates)}
+                              />
+                            </div>
+                          ));              
+      case "divider":
+      return renderBlockWrapper("Séparateur Visuel", blockIcons.divider, (
+        <div className="py-2 space-y-3">
+          <hr className={cn(
+            "border-t-2",
+            block.style === "dashed" && "border-dashed",
+            block.style === "dotted" && "border-dotted",
+            "border-gray-200"
+          )} />
+          <div className="flex justify-end">
+            <Select
+              value={block.style || "solid"}
+              onValueChange={(val: any) => onUpdateBlock(module.id, lesson.id, index, { style: val })}
+            >
+              <SelectTrigger className="w-28 h-7 text-xs">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="solid">Trait plein</SelectItem>
+                <SelectItem value="dashed">Tirets</SelectItem>
+                <SelectItem value="dotted">Pointillés</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+        </div>
+      ));
+      case "callout":
+            return renderBlockWrapper("Encart d'Information", blockIcons.callout, (
+              <div className={cn(
+                "p-4 rounded-lg border-l-4 shadow-2xs",
+                block.callout_type === "note" && "bg-blue-50/60 border-blue-500 text-blue-900",
+                block.callout_type === "tip" && "bg-green-50/60 border-green-500 text-green-900",
+                block.callout_type === "warning" && "bg-yellow-50/60 border-yellow-500 text-yellow-900",
+                block.callout_type === "danger" && "bg-red-50/60 border-red-500 text-red-900",
+                block.callout_type === "info" && "bg-sky-50/40 border-sky-400 text-sky-950"
+              )}>
+                <div className="flex gap-3 items-start">
+                  <Select
+                    value={block.callout_type || "info"}
+                    onValueChange={(val: any) => onUpdateBlock(module.id, lesson.id, index, { callout_type: val })}
+                  >
+                    <SelectTrigger className="w-28 h-8 text-xs bg-white text-gray-800">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="note">Note</SelectItem>
+                      <SelectItem value="tip"> Astuce</SelectItem>
+                      <SelectItem value="warning"> Warning</SelectItem>
+                      <SelectItem value="danger">Danger</SelectItem>
+                      <SelectItem value="info">Info</SelectItem>
+                    </SelectContent>
+                  </Select>
+                  <Textarea
+                    value={block.content}
+                    placeholder="Saisissez une remarque ou consigne importante..."
+                    className="flex-1 border-none shadow-none focus-visible:ring-0 resize-none bg-transparent p-0 min-h-12.5 font-medium placeholder:font-normal"
+                    onChange={(e) => onUpdateBlock(module.id, lesson.id, index, { content: e.target.value })}
+                  />
+                </div>
+              </div>
+            ));      
+      default:
+        return (
+          <div key={index} className="p-4 rounded-xl border bg-yellow-50/50 text-xs text-yellow-700 italic">
+            Type de bloc non supporté ou absent du rendu.
+          </div>
+        );
+
+                  }
   })}
 </ScrollArea>
 
     </main>
-
-    {/* Sidebar */}
-    {/* Sidebar latérale : Liste des Blocs insérables */}
-        <aside className="w-64 shrink-0 border-l bg-white overflow-y-auto shadow-sm">
+        <aside className="w-38 shrink-0 border-l bg-white overflow-y-auto shadow-sm">
           <div className="p-4">
-            <h4 className="font-semibold text-xs tracking-wider uppercase mb-3 text-gray-500">Composants de cours</h4>
-            <div className="flex flex-col gap-1">
+            <div className="w-full flex flex-col gap-1">
               {Object.entries(blockLabels).map(([type, label]) => (
                 <Button
                   key={type}

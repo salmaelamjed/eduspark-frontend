@@ -27,7 +27,7 @@ export default async function DashboardLayout({
     
     user = response || null;
     
-  } catch (err: any) {
+  } catch (err) {
     redirect('/sign-in?error=session_expired');
   }
   if (!user) {

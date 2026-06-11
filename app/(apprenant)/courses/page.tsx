@@ -10,9 +10,7 @@ import { Select, SelectContent, SelectGroup, SelectItem, SelectLabel, SelectTrig
 import EmptyComponent from "@/components/empty/Empty";
 import { Book, Filter, FolderOpen } from "lucide-react";
 import { useGetDomains } from "@/hooks/domains/use-domain"
-import Navbar from "@/components/navbar";
 
-// Define proper types for filter values
 type FilterValue = string | number | boolean | undefined;
 type FilterKey = keyof CourseListFilters;
 
@@ -35,7 +33,7 @@ const Page = () => {
   const handleApplyFilters = () => {
     setAppliedFilters({
       ...filters,
-      page: 1, // Reset to first page when applying new filters
+      page: 1, 
     });
     getCourses({
       ...filters,
@@ -54,13 +52,11 @@ const Page = () => {
   const handlePageChange = (newPage: number) => {
     if (newPage < 1 || newPage > (courses?.last_page ?? 1)) return;
     
-    // Update both filters and appliedFilters to keep page in sync
     setFilters((prev) => ({ ...prev, page: newPage }));
     setAppliedFilters((prev) => ({ ...prev, page: newPage }));
     getCourses({ ...appliedFilters, page: newPage });
   };
 
-  // Check if any filter is active (excluding page)
   const hasActiveFilters = (): boolean => {
     const { page, ...filterParams } = appliedFilters;
     return Object.values(filterParams).some((value): boolean => 
