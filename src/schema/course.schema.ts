@@ -308,7 +308,7 @@ const lessonSchema = z.object({
   title: z
     .string()
     .min(3, "Le titre de la leçon doit contenir au moins 3 caractères"),
-  slug: z.string().optional(), // Sera généré automatiquement
+  slug: z.string().optional().default(""), // Sera généré automatiquement
   order: z.number().default(0),
   is_preview: z.boolean().default(false),
   blocks: z.array(blockSchema).default([]),
@@ -339,7 +339,7 @@ export const CourseCreationSchema = z.object({
     .min(20, "La description doit contenir au moins 20 caractères")
     .max(2000),
   level: z.enum(["beginner", "intermediate", "advanced"]),
-  language: z.string().min(2, "La langue est requise").default("Français"),
+  language: z.string().min(2, "La langue est requise").default("fr"),
   is_free: z.boolean().default(true),
   price: z
     .number()

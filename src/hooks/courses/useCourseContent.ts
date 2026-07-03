@@ -1,6 +1,6 @@
 "use client";
 
-import { AudioBlock, Block, CalloutBlock, DividerBlock, EmbedBlock, FileBlock, HeadingBlock, ImageBlock, ListBlock, ParagraphBlock, QuizBlock, QuoteBlock } from "@/types/block";
+import { AudioBlock, Block, CalloutBlock, CodeBlock, DividerBlock, EmbedBlock, FileBlock, HeadingBlock, ImageBlock, ListBlock, ParagraphBlock, QuizBlock, QuizQuestion, QuoteBlock } from "@/types/block";
 import {  VideoBlock } from "@/types/block";
 import { Lesson } from "@/types/lesson";
 import { Module } from "@/types/module";
@@ -9,7 +9,7 @@ import { useState, useCallback } from "react";
 type TempId = `temp-${string}`;
 
 // Définir les types locaux qui étendent les types de base
-export interface LocalModule extends Omit<Module, 'id' | 'lessons'> {
+export interface LocalModule extends Omit<Module, "id" | "lessons" | "order"> {
   id: TempId;
   lessons: LocalLesson[];
   order?: number;
@@ -20,6 +20,8 @@ export interface LocalLesson extends Omit<Lesson, 'id' | 'blocks'> {
   id: TempId;
   blocks: Block[];
 }
+
+type BackendBlockPayload = Record<string, unknown>;
 
 export function useCourseContent() {
   const [modules, setModules] = useState<LocalModule[]>([]);
@@ -155,143 +157,144 @@ export function useCourseContent() {
  );
 
   // Préparer les modules pour l’envoi au backend (sans IDs)
-  const getModulesForBackend = useCallback(() => {
-    return modules.map((mod, modIndex) => ({
-      title: mod.title.trim(),
-      description: mod.description?.trim() || null,
-      order: modIndex + 1,
-      lessons: mod.lessons.map((les, lesIndex) => ({
-        title: les.title.trim(),
-        is_preview: les.is_preview ? 1 : 0,
-        order: lesIndex + 1,
-        blocks: les.blocks.map((block, blockIndex) => {
-          // Initialisation de la structure de base requise par la migration de la table 'lesson_blocks'
-          const baseBlock: any = {
-            type: block.type,
-            order: blockIndex + 1,
-            is_preview: les.is_preview ? 1 : 0,
-            content: null,
-            media_url: null,
-            settings: null,
-            quiz_data: null,
-            code_data: null,
-            duration_seconds: null,
-            language: "fr",
-          };
+const getModulesForBackend = useCallback(() => {
+  return modules.map((mod, modIndex) => ({
+    title: mod.title.trim(),
+    description: mod.description?.trim() || null,
+    order: modIndex + 1,
 
-          // Mutation des données selon les spécificités du type de bloc
-           switch (block.type) {
-             case "heading":
-               baseBlock.content = (block).content || "";
-               baseBlock.settings = { level: `h${(block).level || 2}` };
-               break;
+    lessons: mod.lessons.map((les, lesIndex) => ({
+      title: les.title.trim(),
+      is_preview: les.is_preview ? 1 : 0,
+      order: lesIndex + 1,
 
-             case "paragraph":
-             case "quote":
-             case "list":
-               baseBlock.content = (block).content || "";
-               if (block.type === "list") {
-                 baseBlock.settings = {
-                   style: (block).list_type || "unordered",
-                 };
-               }
-               break;
+      blocks: les.blocks.map((block, blockIndex) => {
+        const baseBlock: BackendBlockPayload = {
+          type: block.type,
+          order: blockIndex + 1,
+          is_preview: les.is_preview ? 1 : 0,
+          // content: block.content,
+          // media_url: block.media_url,
+          // settings: block.settings,
+          // quiz_data: block.quiz_data,
+          // code_data: block.code_data,
+          // duration_seconds: block.duration_seconds,
+          language: "fr",
+        };
 
-             case "callout":
-               baseBlock.content = (block).content || "";
-               baseBlock.settings = {
-                 type: (block).callout_type || "info",
-               };
-               break;
+     
+        switch (block.type) {
+          case "heading": {
+            const b = block as HeadingBlock;
+            baseBlock.content = b.content || "";
+            baseBlock.settings = { level: b.settings?.level || "h2" };
+            break;
+          }
 
-             case "image":
-               baseBlock.media_url = (block).media_url || "";
-               // alt_text et caption peuvent être encapsulés dans les configurations flexibles
-               baseBlock.settings = {
-                 alt_text: (block).alt_text || "",
-                 caption: (block).caption || "",
-               };
-               break;
+          case "paragraph":
+          case "quote": {
+            const b = block as ParagraphBlock | QuoteBlock;
+            baseBlock.content = b.content || "";
+            break;
+          }
 
-             case "video":
-             case "audio":
-               baseBlock.media_url = (block ).media_url || "";
-               baseBlock.duration_seconds =
-                 Number((block).duration_seconds) || 0;
-               break;
+          case "list": {
+            const b = block as ListBlock;
+            baseBlock.content = b.content || "";
+            baseBlock.settings = { style: b.settings?.style || "unordered" };
+            break;
+          }
 
-             case "file":
-               baseBlock.media_url = (block).file_url || "";
-               baseBlock.settings = {
-                 file_name: (block).file_name || "",
-               };
-               break;
+          case "callout": {
+            const b = block as CalloutBlock;
+            baseBlock.content = b.content || "";
+            baseBlock.settings = { type: b.settings?.type || "info" };
+            break;
+          }
 
-             case "embed":
-               baseBlock.media_url = (block).media_url || "";
-               baseBlock.settings = {
-                 embed_type: (block).embed_type || "other",
-               };
-               break;
+          // ====================== BLOCS MÉDIA ======================
+          case "image":
+          case "video":
+          case "audio":
+          case "embed": {
+            const b = block as
+              | ImageBlock
+              | VideoBlock
+              | AudioBlock
+              | EmbedBlock;
+            const url = b.media_url;
+            baseBlock.media_url = url && !url.startsWith("blob:") ? url : null;
 
-             case "divider":
-               baseBlock.settings = { style: (block).style || "solid" };
-               break;
+            if ("duration_seconds" in b) {
+              baseBlock.duration_seconds = b.duration_seconds ?? null;
+            }
 
-             case "code":
-               baseBlock.code_data = {
-                 language: (block).code_data?.language || "javascript",
-                 code: (block).code_data?.code || "",
-               };
-               break;
+            // ✅ propager le fichier réel pour que useCourses.ts puisse l'uploader
+            if ("file" in b) {
+              baseBlock.file = b.file ?? null;
+            }
+            break;
+          }
 
-             case "quiz":
-              
-               // Adaptation des données mockées du frontend vers le format strict attendu par le validateur Laravel
-               baseBlock.quiz_data = {
-                 settings: {
-                   passing_score_percent: 80, // Valeur par défaut requise
-                 },
-                 questions: ((block as any).quiz_data.questions || []).map(
-                   (q : any, qIdx: number) => {
-                     const questionId = `q-${qIdx + 1}`;
+          case "file": {
+            const b = block as FileBlock;
+            baseBlock.media_url = b.file_url || null;
+            baseBlock.file = b.file ?? null; // ✅ idem
+            break;
+          }
 
-                     // On mappe les options au format attendu { id, text }
-                     const formattedOptions = (q.options || []).map(
-                       (opt: string, oIdx: number) => ({
-                         id: `opt-${oIdx + 1}`,
-                         text: opt,
-                       }),
-                     );
+          case "code": {
+            const b = block as CodeBlock;
+            baseBlock.code_data = {
+              language: b.code_data?.language || "javascript",
+              code: b.code_data?.code || "",
+            };
+            break;
+          }
 
-                     // On mappe les index des bonnes réponses vers les IDs des options générées
-                     const correctAnswersIds = (q.correct_answers || []).map(
-                       (idx: number) => `opt-${idx + 1}`,
-                     );
+          case "quiz": {
+            const b = block as QuizBlock;
+            const questions: QuizQuestion[] = b.quiz_data?.questions || [];
 
-                     return {
-                       id: questionId,
-                       question_text: q.question || "Question",
-                       type:
-                         q.type === "multiple_choice" &&
-                         correctAnswersIds.length > 1
-                           ? "multiple"
-                           : "single",
-                       options: formattedOptions,
-                       correct_answer: correctAnswersIds,
-                       explanation: q.explanation || null,
-                     };
-                   },
-                 ),
-               };
-               break;
-           }
+            baseBlock.quiz_data = {
+              settings: {
+                passing_score_percent:
+                  b.quiz_data?.settings?.passing_score_percent ?? 80,
+              },
+              questions: questions.map((q, qIdx) => ({
+                id: `q-${qIdx + 1}`,
+                question_text: q.question || "Question",
+                type:
+                  q.type === "multiple" && (q.correct_answers?.length || 0) > 1
+                    ? "multiple"
+                    : "single",
+                options: (q.options || []).map((opt: string, oIdx: number) => ({
+                  id: `opt-${oIdx + 1}`,
+                  text: opt,
+                })),
+                correct_answer: (q.correct_answers || []).map(
+                  (idx: number) => `opt-${idx + 1}`,
+                ),
+                explanation: q.explanation || null,
+              })),
+            };
+            break;
+          }
 
-           return baseBlock;
-        })
-      })),
-    }));
-  }, [modules]);
+          case "divider": {
+            const b = block as DividerBlock;
+            baseBlock.settings = { style: b.style || "solid" };
+            break;
+          }
+
+          default:
+            break;
+        }
+        return baseBlock;
+      }),
+    })),
+  }));
+}, [modules]);
 
   // Ajouter un block dans une leçon spécifique
   // Dans useCourseContent
@@ -315,144 +318,155 @@ export function useCourseContent() {
               let newBlock: Block;
 
               switch (type) {
-
-                case "heading":
+                case "heading": {
+                  const data = initialData as Partial<HeadingBlock>;
                   newBlock = {
                     type: "heading",
-                    content:
-                      (initialData as HeadingBlock).content || "",
-                    level: (initialData as HeadingBlock).level || 2, 
+                    content: data.content || "",
+                    settings: { level: data.settings?.level || "h2" },
                   };
                   break;
+                }
 
-                case "paragraph":
+                case "paragraph": {
+                  const data = initialData as Partial<ParagraphBlock>;
                   newBlock = {
                     type: "paragraph",
-                    content:
-                      (initialData as ParagraphBlock).content || "",
+                    content: data.content || "",
                   };
                   break;
+                }
 
-                case "list":
+                case "list": {
+                  const data = initialData as Partial<ListBlock>;
                   newBlock = {
                     type: "list",
-                    content: (initialData as ListBlock).content || "",
+                    content: data.content || "",
+                    settings: { style: data.settings?.style || "unordered" },
                   };
                   break;
+                }
 
-                case "quote":
+                case "quote": {
+                  const data = initialData as Partial<QuoteBlock>;
                   newBlock = {
                     type: "quote",
-                    content:
-                      (initialData as QuoteBlock).content || "",
+                    content: data.content || "",
                   };
                   break;
+                }
 
-                case "image":
+                case "image": {
+                  const data = initialData as Partial<ImageBlock>;
                   newBlock = {
                     type: "image",
-                    media_url: (initialData as ImageBlock).media_url || "",
-                    alt_text: (initialData as ImageBlock).alt_text || "",
-                    caption: (initialData as ImageBlock).caption || "",
+                    media_url: data.media_url || "",
+                    alt_text: data.alt_text || "",
+                    caption: data.caption || "",
                   };
                   break;
+                }
 
-                case "audio":
+                case "audio": {
+                  const data = initialData as Partial<AudioBlock>;
                   newBlock = {
                     type: "audio",
-                    media_url: (initialData as AudioBlock).media_url || "",
-                    duration_seconds:
-                      (initialData as AudioBlock).duration_seconds || 0,
+                    media_url: data.media_url || "",
+                    duration_seconds: data.duration_seconds || 0,
                   };
                   break;
+                }
 
-                case "file":
+                case "file": {
+                  const data = initialData as Partial<FileBlock>;
                   newBlock = {
                     type: "file",
-                    file_url: (initialData as FileBlock).file_url || "",
-                    file_name: (initialData as FileBlock).file_name || "",
+                    file_url: data.file_url || "",
+                    file_name: data.file_name || "",
                   };
                   break;
+                }
 
-                case "video":
+                case "video": {
+                  const data = initialData as Partial<VideoBlock>;
                   newBlock = {
                     type: "video",
-                    media_url: (initialData as VideoBlock).media_url || "",
-                    duration_seconds:
-                      (initialData as VideoBlock).duration_seconds || 0,
+                    media_url: data.media_url || "",
+                    duration_seconds: data.duration_seconds || 0,
                   };
                   break;
+                }
 
-                case "quiz":{
-                  // Extraction des données initiales s'il y en a, sinon fallback sur la structure par défaut
-                  const quizInitialData = initialData as Partial<QuizBlock>;
+                case "quiz": {
+                  const data = initialData as Partial<QuizBlock>;
+                  const defaultQuestions: QuizQuestion[] = [
+                    {
+                      question: "Question par défaut...",
+                      type: "multiple",
+                      options: ["Option 1", "Option 2", "Option 3"],
+                      correct_answers: [0],
+                      points: 10,
+                      explanation: "",
+                    },
+                  ];
+
                   newBlock = {
                     type: "quiz",
-                    title: quizInitialData.title || "Nouveau Quiz",
-                    description: quizInitialData.description || "",
+                    title: data.title || "Nouveau Quiz",
+                    description: data.description || "",
                     quiz_data: {
-                      passing_score:
-                        quizInitialData.quiz_data?.passing_score || 70,
+                      settings: {
+                        passing_score_percent:
+                          data.quiz_data?.settings?.passing_score_percent || 70,
+                      },
                       shuffle_questions:
-                        quizInitialData.quiz_data?.shuffle_questions || false,
+                        data.quiz_data?.shuffle_questions || false,
                       show_explanation_after_submit:
-                        quizInitialData.quiz_data
-                          ?.show_explanation_after_submit || true,
-                      questions: quizInitialData.quiz_data?.questions || [
-                        {
-                          question: "Question par défaut...",
-                          type: "multiple_choice",
-                          options: ["Option 1", "Option 2", "Option 3"],
-                          correct_answers: [0],
-                          points: 10,
-                          explanation: "",
-                        },
-                      ],
+                        data.quiz_data?.show_explanation_after_submit ?? true,
+                      questions: data.quiz_data?.questions || defaultQuestions,
                     },
                   };
-                }
-                  
                   break;
+                }
 
                 case "code":
                   newBlock = {
                     type: "code",
-                    code_data: {
-                      language: "javascript",
-                      code: "",
-                    },
+                    code_data: { language: "javascript", code: "" },
                   };
                   break;
 
-                case "embed":
+                case "embed": {
+                  const data = initialData as Partial<EmbedBlock>;
                   newBlock = {
                     type: "embed",
-                    media_url: (initialData as EmbedBlock).media_url || "",
-                    embed_type:
-                      (initialData as EmbedBlock).embed_type || "other",
+                    media_url: data.media_url || "",
+                    embed_type: data.embed_type || "other",
                   };
                   break;
+                }
 
-                case "divider":
+                case "divider": {
+                  const data = initialData as Partial<DividerBlock>;
                   newBlock = {
                     type: "divider",
-                    style: (initialData as DividerBlock).style || "solid",
+                    style: data.style || "solid",
                   };
                   break;
-                case "callout":
+                }
+
+                case "callout": {
+                  const data = initialData as Partial<CalloutBlock>;
                   newBlock = {
                     type: "callout",
-                    content:
-                      (initialData as CalloutBlock).content || "",
-                    callout_type:
-                      (initialData as CalloutBlock).callout_type || "info",
+                    content: data.content || "",
+                    settings: { type: data.settings?.type || "info" },
                   };
                   break;
+                }
+
                 default:
-                  newBlock = {
-                    type: "paragraph",
-                    content: "",
-                  };
+                  newBlock = { type: "paragraph", content: "" };
                   break;
               }
 
@@ -514,7 +528,7 @@ const updateBlock = useCallback(
             newBlocks[blockIndex] = {
               ...newBlocks[blockIndex],
               ...updates,
-            };
+            } as Block;
 
             return {
               ...les,

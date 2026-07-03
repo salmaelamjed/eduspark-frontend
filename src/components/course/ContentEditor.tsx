@@ -23,7 +23,7 @@ import {
   Video,
   Music,
 } from "lucide-react";
-import { Lesson, Block, BlockType, QuizBlock, QuizQuestion } from "@/types/block";
+import { Lesson, Block, BlockType, QuizBlock, QuizQuestion, HeadingBlock, CalloutBlock, EmbedBlock, DividerBlock } from "@/types/block";
 import { useState, ChangeEvent } from "react";
 import { cn } from "@/lib/utils";
 import Image from "next/image";
@@ -72,7 +72,7 @@ interface QuizEditorProps {
 }
 
 function QuizEditor({ block, onUpdate }: QuizEditorProps) {
-const quizData = block.quiz_data || { questions: [], passing_score: 70 };
+const quizData = block.quiz_data || { questions: [], settings: { passing_score_percent: 70 } };
 
   const updateQuestion = (qIndex: number, updatedQuestion: Partial<QuizQuestion>) => {
     const newQuestions = [...quizData.questions];
@@ -85,7 +85,7 @@ const quizData = block.quiz_data || { questions: [], passing_score: 70 };
   const addQuestion = () => {
     const newQuestion: QuizQuestion = {
       question: "",
-      type: "multiple_choice",
+      type: "single",
       options: ["Option 1", "Option 2"],
       correct_answers: [0],
       points: 1,
@@ -110,18 +110,13 @@ const quizData = block.quiz_data || { questions: [], passing_score: 70 };
 
   const removeOption = (qIndex: number, optIndex: number) => {
     const q = quizData.questions[qIndex];
-    if (!q.options) return;
+    if (q.options.length <= 2) return;
     
     const newOptions = q.options.filter((_, i) => i !== optIndex);
-    let newCorrect: number[] = [];
-    if (Array.isArray(q.correct_answers)) {
-      newCorrect = q.correct_answers
-        .map(v => (v > optIndex ? v - 1 : v))
-        .filter(v => v !== optIndex && v >= 0 && v < newOptions.length);
-      if (newCorrect.length === 0 && newOptions.length > 0) newCorrect = [0];
-    } else {
-      newCorrect = [0];
-    }
+    let newCorrect = q.correct_answers
+      .map((v) => (v > optIndex ? v - 1 : v))
+      .filter((v) => v !== optIndex && v >= 0 && v < newOptions.length);
+    if (newCorrect.length === 0) newCorrect = [0];
 
     updateQuestion(qIndex, { options: newOptions, correct_answers: newCorrect });
   };
@@ -135,10 +130,18 @@ const quizData = block.quiz_data || { questions: [], passing_score: 70 };
             <Input
               type="number"
               className="w-16 h-7 text-xs px-1"
-              value={quizData.passing_score ?? 70}
-              onChange={(e) => onUpdate({
-                quiz_data: { ...quizData, passing_score: parseInt(e.target.value) || 0 }
-              })}
+              value={quizData.settings.passing_score_percent ?? 70}
+              onChange={(e) =>
+                onUpdate({
+                  quiz_data: {
+                    ...quizData,
+                    settings: {
+                      ...quizData.settings,
+                      passing_score_percent: parseInt(e.target.value) || 0,
+                    },
+                  },
+                })
+              }
             />
           </label>
         </div>
@@ -170,93 +173,78 @@ const quizData = block.quiz_data || { questions: [], passing_score: 70 };
             <span className="text-xs text-muted-foreground font-medium">Format :</span>
             <Select
               value={q.type}
-              onValueChange={(val: any) => updateQuestion(qIndex, { 
+              onValueChange={(val: QuizQuestion["type"]) => updateQuestion(qIndex, { 
                 type: val, 
-                correct_answers: val === "short_answer" ? "" : [0],
-                options: val === "short_answer" ? undefined : ["Option 1", "Option 2"]
+                 // 1 seule bonne réponse forcée en mode "single"
+                correct_answers: val === "single" ? [q.correct_answers[0] ?? 0] : q.correct_answers,
               })}
             >
               <SelectTrigger className="w-48 h-8 text-xs">
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="multiple_choice">Choix unique (Radio)</SelectItem>
-                <SelectItem value="multiple_select">Choix multiples (Checkbox)</SelectItem>
-                <SelectItem value="short_answer">Réponse écrite courte</SelectItem>
+                <SelectItem value="single">Choix unique (Radio)</SelectItem>
+                <SelectItem value="multiple">Choix multiples (Checkbox)</SelectItem>
               </SelectContent>
             </Select>
           </div>
 
           {/* Options de réponses */}
-          {q.type !== "short_answer" && q.options && (
-            <div className="space-y-2 pl-2">
-              <span className="text-xs font-semibold text-gray-600">Options & Bonnes réponses :</span>
-              {q.options.map((opt, optIndex) => {
-                const isCorrect = Array.isArray(q.correct_answers) && q.correct_answers.includes(optIndex);
-                return (
-                  <div key={optIndex} className="flex items-center gap-2">
-                    <input
-                      type={q.type === "multiple_choice" ? "radio" : "checkbox"}
-                      name={`q-${qIndex}-options`}
-                      checked={isCorrect}
-                      onChange={() => {
-                        if (q.type === "multiple_choice") {
-                          updateQuestion(qIndex, { correct_answers: [optIndex] });
-                        } else {
-                          const currentCorrect = Array.isArray(q.correct_answers) ? q.correct_answers : [];
-                          const nextCorrect = currentCorrect.includes(optIndex)
-                            ? currentCorrect.filter(i => i !== optIndex)
-                            : [...currentCorrect, optIndex];
-                          updateQuestion(qIndex, { correct_answers: nextCorrect });
-                        }
-                      }}
-                      className="h-4 w-4 rounded text-orange-600 focus:ring-orange-500"
-                    />
-                    <Input
-                      value={opt}
-                      className="h-8 text-sm flex-1"
-                      placeholder={`Option ${optIndex + 1}`}
-                      onChange={(e) => {
-                        const nextOpts = [...(q.options || [])];
-                        nextOpts[optIndex] = e.target.value;
-                        updateQuestion(qIndex, { options: nextOpts });
-                      }}
-                    />
-                    {(q.options?.length ?? 0) > 1 && (
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        className="h-8 w-8 text-muted-foreground"
-                        onClick={() => removeOption(qIndex, optIndex)}
-                      >
-                        <X className="h-4 w-4" />
-                      </Button>
-                    )}
-                  </div>
-                );
-              })}
-              <Button
-                variant="link"
-                size="sm"
-                onClick={() => addOption(qIndex)}
-                className="text-xs p-0 h-auto text-orange-600"
-              >
-                + Ajouter une option
-              </Button>
-            </div>
-          )}
+           <div className="space-y-2 pl-2">
+            <span className="text-xs font-semibold text-gray-600">Options & Bonnes réponses :</span>
+            {q.options.map((opt, optIndex) => {
+              const isCorrect = q.correct_answers.includes(optIndex);
+              return (
+                <div key={optIndex} className="flex items-center gap-2">
+                  <input
+                    type={q.type === "single" ? "radio" : "checkbox"}
+                    name={`q-${qIndex}-options`}
+                    checked={isCorrect}
+                    onChange={() => {
+                      if (q.type === "single") {
+                        updateQuestion(qIndex, { correct_answers: [optIndex] });
+                      } else {
+                        const next = q.correct_answers.includes(optIndex)
+                          ? q.correct_answers.filter((i) => i !== optIndex)
+                          : [...q.correct_answers, optIndex];
+                        updateQuestion(qIndex, { correct_answers: next });
+                      }
+                    }}
+                    className="h-4 w-4 rounded text-orange-600 focus:ring-orange-500"
+                  />
+                  <Input
+                    value={opt}
+                    className="h-8 text-sm flex-1"
+                    placeholder={`Option ${optIndex + 1}`}
+                    onChange={(e) => {
+                      const nextOpts = [...q.options];
+                      nextOpts[optIndex] = e.target.value;
+                      updateQuestion(qIndex, { options: nextOpts });
+                    }}
+                  />
+                  {q.options.length > 2 && (
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      className="h-8 w-8 text-muted-foreground"
+                      onClick={() => removeOption(qIndex, optIndex)}
+                    >
+                      <X className="h-4 w-4" />
+                    </Button>
+                  )}
+                </div>
+              );
+            })}
+            <Button
+              variant="link"
+              size="sm"
+              onClick={() => addOption(qIndex)}
+              className="text-xs p-0 h-auto text-orange-600"
+            >
+              + Ajouter une option
+            </Button>
+          </div>
 
-          {/* Cas réponse courte textuelle */}
-          {q.type === "short_answer" && (
-            <div className="space-y-1">
-              <span className="text-xs font-semibold text-gray-600">Réponse attendue :</span>
-              <Input
-                value={typeof q.correct_answers === 'string' ? q.correct_answers : ""}
-                placeholder="Mot-clé ou réponse exacte attendue..."
-                onChange={(e) => updateQuestion(qIndex, { correct_answers: e.target.value })}
-              />
-            </div>
-          )}
 
           {/* Explication technique */}
           <div className="space-y-1">
@@ -324,119 +312,117 @@ export function ContentEditor({
   }
 
  const handleAddBlock = (type: BlockType) => {
-    if (!module?.id || !lesson?.id) return;
+  if (!module?.id || !lesson?.id) return;
 
-    let initialData: Partial<Block> = {
-      type: type,
-      order: lesson.blocks.length + 1,
-      is_preview: false,
-      is_hidden: false
-    };
-    
-    switch (type) {
-      case "paragraph":
-        initialData = { ...initialData, content: "" };
-        break;
-      case "heading":
-        initialData = { ...initialData, content: "", level: 2 };
-        break;
-      case "list":
-        initialData = { ...initialData, content: "", list_type: "unordered" };
-        break;
-      case "quote":
-        initialData = { ...initialData, content: "", author: "" };
-        break;
-      case "callout":
-        initialData = { ...initialData, content: "", callout_type: "info" };
-        break;
-      case "divider":
-        initialData = { ...initialData, style: "solid" };
-        break;
-      case "code":
-        initialData = { 
-          ...initialData,
-          code_data: { 
-            code: "", 
-            language: "javascript" 
-          }
-        };
-        break;
-      case "video":
-        initialData = { ...initialData, media_url: "", duration_seconds: 0, thumbnail_url: "" };
-        break;
-      case "audio":
-        initialData = { ...initialData, media_url: "", duration_seconds: 0 };
-        break;
-      case "image":
-        initialData = { ...initialData, media_url: "", alt_text: "", caption: "" };
-        break;
-      case "file":
-        initialData = { ...initialData, file_url: "", file_name: "", file_size: 0, mime_type: "" };
-        break;
-      case "embed":
-        initialData = { ...initialData, media_url: "", embed_type: "other" };
-        break;
-      case "quiz":
-        initialData = {
-          ...initialData,
-          title: "Quiz d'évaluation",
-          description: "",
-          quiz_data: {
-            questions: [
-              {
-                question: "Votre première question ?",
-                type: "multiple_choice",
-                options: ["Option A", "Option B"],
-                correct_answers: [0],
-                points: 1,
-                explanation: ""
-              }
-            ],
-            passing_score: 70,
-            shuffle_questions: false,
-            show_explanation_after_submit: true
-          }
-        };
-        break;
-    }
-
-    onAddBlock(module.id, lesson.id, type, initialData);
+  const base = {
+    order: lesson.blocks.length + 1,
+    is_preview: false,
+    is_hidden: false,
   };
 
- const simulateFileUpload = async (file: File, blockIndex: number, type: 'video' | 'file' | 'image' | 'audio') => {
+  let initialData: Partial<Block>;
+
+  switch (type) {
+    case "paragraph":
+      initialData = { type, ...base, content: "" } as Partial<Block>;
+      break;
+    case "heading":
+      initialData = { type, ...base, content: "", settings: { level: "h2" } } as Partial<Block>;
+      break;
+    case "list":
+      initialData = { type, ...base, content: "", settings: { style: "unordered" } } as Partial<Block>;
+      break;
+    case "quote":
+      initialData = { type, ...base, content: "", author: "" } as Partial<Block>;
+      break;
+    case "callout":
+      initialData = { type, ...base, content: "", settings: { type: "info" } } as Partial<Block>;
+      break;
+    case "divider":
+      initialData = { type, ...base, style: "solid" } as Partial<Block>;
+      break;
+    case "code":
+      initialData = { type, ...base, code_data: { code: "", language: "javascript" } } as Partial<Block>;
+      break;
+    case "video":
+      initialData = { type, ...base, media_url: "", duration_seconds: 0, thumbnail_url: "" } as Partial<Block>;
+      break;
+    case "audio":
+      initialData = { type, ...base, media_url: "", duration_seconds: 0 } as Partial<Block>;
+      break;
+    case "image":
+      initialData = { type, ...base, media_url: "", alt_text: "", caption: "" } as Partial<Block>;
+      break;
+    case "file":
+      initialData = { type, ...base, file_url: "", file_name: "", file_size: 0, mime_type: "" } as Partial<Block>;
+      break;
+    case "embed":
+      initialData = { type, ...base, media_url: "", embed_type: "other" } as Partial<Block>;
+      break;
+    case "quiz":
+      initialData = {
+        type,
+        ...base,
+        title: "Quiz d'évaluation",
+        description: "",
+        quiz_data: {
+          questions: [
+            {
+              question: "Votre première question ?",
+              type: "single",
+              options: ["Option A", "Option B"],
+              correct_answers: [0],
+              points: 1,
+              explanation: "",
+            },
+          ],
+          settings: { passing_score_percent: 70 },
+          shuffle_questions: false,
+          show_explanation_after_submit: true,
+        },
+      } as Partial<Block>;
+      break;
+    default:
+      initialData = { type, ...base } as Partial<Block>;
+  }
+
+  onAddBlock(module.id, lesson.id, type, initialData);
+};
+
+const simulateFileUpload = async (file: File, blockIndex: number, type: 'video' | 'file' | 'image' | 'audio') => {
   setUploading(`${type}-${blockIndex}`);
-  
-  // Simulation de latence réseau
   await new Promise(resolve => setTimeout(resolve, 1200));
   const objectUrl = URL.createObjectURL(file);
   
-  if (type === 'video') {
-    onUpdateBlock(module.id, lesson.id, blockIndex, {
-      media_url: objectUrl,
-      file_name: file.name,
-      file_size: file.size,
-    });
-  } else if (type === 'image') {
-    onUpdateBlock(module.id, lesson.id, blockIndex, {
-      media_url: objectUrl,
-      alt_text: file.name
-    });
-  } else if (type === 'audio') {
-    onUpdateBlock(module.id, lesson.id, blockIndex, {
-      media_url: objectUrl,
-      file_name: file.name,
-      file_size: file.size,
-      mime_type: file.type,
-    });
-  } else {
-    onUpdateBlock(module.id, lesson.id, blockIndex, {
-      file_url: objectUrl,
-      file_name: file.name,
-      file_size: file.size,
-      mime_type: file.type
-    });
+   const updateData: any = {
+    file: file, 
+  };
+
+    switch(type) {
+    case 'image':
+      updateData.media_url = objectUrl;
+      updateData.alt_text = file.name;
+      break;
+    case 'video':
+      updateData.media_url = objectUrl;
+      updateData.file_name = file.name;
+      updateData.file_size = file.size;
+      break;
+    case 'audio':
+      updateData.media_url = objectUrl;
+      updateData.file_name = file.name;
+      updateData.file_size = file.size;
+      updateData.mime_type = file.type;
+      break;
+    case 'file':
+      updateData.file_url = objectUrl;
+      updateData.file_name = file.name;
+      updateData.file_size = file.size;
+      updateData.mime_type = file.type;
+      break;
   }
   
+  onUpdateBlock(module.id, lesson.id, blockIndex, updateData);
   setUploading(null);
 };
 
@@ -587,74 +573,61 @@ return (
 );
 
 switch (block.type) {
-        case "heading":
-    const isEmpty = !block.content || block.content.trim() === "";
-    
-    const headingSize = 
-      block.level === 1 ? "text-4xl" :
-      block.level === 2 ? "text-3xl" :
-      block.level === 3 ? "text-2xl" : "text-xl";
+        case "heading": {
+        const isEmpty = !block.content || block.content.trim() === "";
 
-    return renderBlockWrapper("Titre", blockIcons.heading, (
-      <div className="space-y-3">
-        <div className="flex items-center gap-2 ">
-          <span className="text-xs text-muted-foreground">Importance :</span>
-          <Select
-            value={String(block.level || 2)}
-            onValueChange={(val) => onUpdateBlock(module.id, lesson.id, index, { level: parseInt(val) as any })}
-          >
-            <SelectTrigger className="w-24 h-8 text-xs">
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
-              {[1, 2, 3, 4, 5, 6].map(lvl => (
-                <SelectItem key={lvl} value={String(lvl)}>H{lvl}</SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-        </div>
+        const headingSize =
+          block.settings.level === "h1" ? "text-4xl" :
+          block.settings.level === "h2" ? "text-3xl" :
+          block.settings.level === "h3" ? "text-2xl" : "text-xl";
 
-        <div className="relative max-w-3xl ">  
-          <textarea
-            value={block.content}
-            placeholder="Saisissez le titre de votre section…"
-            rows={1}
-            className={cn(
-              "w-full bg-transparent px-0 py-2 resize-none overflow-hidden font-bold leading-tight ",
-              headingSize,
-              
-              !isEmpty && "text-foreground ",
-              isEmpty && `
-                text-muted-foreground/70 
-                text-[1.1rem] 
-                font-normal 
-                italic
-                tracking-wide
-              `,
-              // Focus & Hover
-              "focus:outline-none focus:ring-0 focus:border-none",
-              "",
-              
-              "transition-all duration-200 border-none"
-            )}
-            onChange={(e) => {
-              onUpdateBlock(module.id, lesson.id, index, { content: e.target.value });
-              // Auto-resize
-              e.target.style.height = 'auto';
-              e.target.style.height = `${e.target.scrollHeight}px`;
-            }}
-            onKeyDown={(e) => {
-              // Empêcher le saut de ligne si tu ne veux pas de multi-lignes dans les titres
-              if (e.key === 'Enter') {
-                e.preventDefault();
-              }
-            }}
-          />
-
-        </div>
+  return renderBlockWrapper("Titre", blockIcons.heading, (
+    <div className="space-y-3">
+      <div className="flex items-center gap-2">
+        <span className="text-xs text-muted-foreground">Importance :</span>
+        <Select
+          value={block.settings.level || "h2"}
+          onValueChange={(val: HeadingBlock["settings"]["level"]) =>
+            onUpdateBlock(module.id, lesson.id, index, { settings: { level: val } })
+          }
+        >
+          <SelectTrigger className="w-24 h-8 text-xs">
+            <SelectValue />
+          </SelectTrigger>
+          <SelectContent>
+            {(["h1", "h2", "h3", "h4", "h5", "h6"] as const).map((lvl) => (
+              <SelectItem key={lvl} value={lvl}>{lvl.toUpperCase()}</SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
       </div>
-    ));
-        case "paragraph":
+
+      <div className="relative max-w-3xl">
+        <textarea
+          value={block.content}
+          placeholder="Saisissez le titre de votre section…"
+          rows={1}
+          className={cn(
+            "w-full bg-transparent px-0 py-2 resize-none overflow-hidden font-bold leading-tight",
+            headingSize,
+            !isEmpty && "text-foreground",
+            isEmpty && "text-muted-foreground/70 text-[1.1rem] font-normal italic tracking-wide",
+            "focus:outline-none focus:ring-0 focus:border-none transition-all duration-200 border-none"
+          )}
+          onChange={(e) => {
+            onUpdateBlock(module.id, lesson.id, index, { content: e.target.value });
+            e.target.style.height = 'auto';
+            e.target.style.height = `${e.target.scrollHeight}px`;
+          }}
+          onKeyDown={(e) => {
+            if (e.key === 'Enter') e.preventDefault();
+          }}
+        />
+      </div>
+    </div>
+  ));
+}
+    case "paragraph":
         return renderBlockWrapper("Paragraphe", blockIcons.paragraph, (
           <div className="max-w-155">   {/* ← Largeur fixée ici */}
             <Textarea
@@ -681,47 +654,47 @@ switch (block.type) {
           </div>
         ));
         case "list":
-  const isOrdered = block.list_type === "ordered";
+        const isOrdered = block.settings.style === "ordered";
 
-  // Convertir le contenu stocké en lignes brutes pour l'édition
-  const rawLines = block.content
-    ? block.content.split("\n").map(line =>
-        line
-          .replace(/^•\s+/, "")
-          .replace(/^\d+\.\s+/, "")
-          .trim()
-      )
-    : [""]; 
+        // Convertir le contenu stocké en lignes brutes pour l'édition
+        const rawLines = block.content
+          ? block.content.split("\n").map(line =>
+              line
+                .replace(/^•\s+/, "")
+                .replace(/^\d+\.\s+/, "")
+                .trim()
+            )
+          : [""]; 
 
-  const displayValue = rawLines
-    .map((line, i) => {
-      if (isOrdered) {
-        return `${i + 1}. ${line}`;
-      } else {
-        return `• ${line}`;
-      }
-    })
-    .join("\n");
+        const displayValue = rawLines
+          .map((line, i) => {
+            if (isOrdered) {
+              return `${i + 1}. ${line}`;
+            } else {
+              return `• ${line}`;
+            }
+          })
+          .join("\n");
 
-  return renderBlockWrapper("Liste", blockIcons.list, (
-    <div className="space-y-3">
-      <div className="flex gap-2 items-center">
-        <span className="text-xs text-muted-foreground">Format :</span>
-        <Select
-          value={block.list_type || "unordered"}
-          onValueChange={(val: "ordered" | "unordered") => {
-            onUpdateBlock(module.id, lesson.id, index, { list_type: val });
-          }}
-        >
-          <SelectTrigger className="w-36 h-8 text-xs">
-            <SelectValue />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="unordered">• Puces</SelectItem>
-            <SelectItem value="ordered">1. Numérotée</SelectItem>
-          </SelectContent>
-        </Select>
-      </div>
+        return renderBlockWrapper("Liste", blockIcons.list, (
+          <div className="space-y-3">
+            <div className="flex gap-2 items-center">
+              <span className="text-xs text-muted-foreground">Format :</span>
+              <Select
+                value={block.settings.style || "unordered"}
+                onValueChange={(val: "ordered" | "unordered") => {
+                  onUpdateBlock(module.id, lesson.id, index, { settings:{style:val}});
+                }}
+              >
+                <SelectTrigger className="w-36 h-8 text-xs">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="unordered">• Puces</SelectItem>
+                  <SelectItem value="ordered">1. Numérotée</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
 
       <Textarea
         value={displayValue}   // ← On affiche avec les préfixes
@@ -1360,68 +1333,68 @@ switch (block.type) {
         ));
         }
       case "embed":
-                    return renderBlockWrapper("Intégration Externe", blockIcons.embed, (
-                      <div className="space-y-3">
-                        <div className="flex gap-2 items-center">
-                          <span className="text-xs text-muted-foreground">Source :</span>
-                          <Select
-                            value={block.embed_type || "other"}
-                            onValueChange={(val: any) => onUpdateBlock(module.id, lesson.id, index, { embed_type: val })}
-                          >
-                            <SelectTrigger className="w-32 h-8 text-xs">
-                              <SelectValue />
-                            </SelectTrigger>
-                            <SelectContent>
-                              <SelectItem value="youtube">YouTube</SelectItem>
-                              <SelectItem value="vimeo">Vimeo</SelectItem>
-                              <SelectItem value="figma">Figma</SelectItem>
-                              <SelectItem value="other">Autre (Iframe)</SelectItem>
-                            </SelectContent>
-                          </Select>
-                        </div>
-                        <Input
-                          value={block.media_url}
-                          placeholder="Insérer l'URL ou le lien d'intégration..."
-                          onChange={(e) => onUpdateBlock(module.id, lesson.id, index, { media_url: e.target.value })}
-                        />
-                        {block.media_url && (
-                          <div className="aspect-video rounded-md overflow-hidden border mt-2 bg-gray-900">
-                            <iframe src={block.media_url} title="Contenu embarqué" className="w-full h-full" allowFullScreen />
-                          </div>
-                        )}
-                      </div>
-                    ));
+        return renderBlockWrapper("Intégration Externe", blockIcons.embed, (
+          <div className="space-y-3">
+            <div className="flex gap-2 items-center">
+              <span className="text-xs text-muted-foreground">Source :</span>
+              <Select
+                value={block.embed_type || "other"}
+                onValueChange={(val: EmbedBlock["embed_type"]) => onUpdateBlock(module.id, lesson.id, index, { embed_type: val })}
+              >
+                <SelectTrigger className="w-32 h-8 text-xs">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="youtube">YouTube</SelectItem>
+                  <SelectItem value="vimeo">Vimeo</SelectItem>
+                  <SelectItem value="figma">Figma</SelectItem>
+                  <SelectItem value="other">Autre (Iframe)</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            <Input
+              value={block.media_url}
+              placeholder="Insérer l'URL ou le lien d'intégration..."
+              onChange={(e) => onUpdateBlock(module.id, lesson.id, index, { media_url: e.target.value })}
+            />
+            {block.media_url && (
+              <div className="aspect-video rounded-md overflow-hidden border mt-2 bg-gray-900">
+                <iframe src={block.media_url} title="Contenu embarqué" className="w-full h-full" allowFullScreen />
+              </div>
+            )}
+          </div>
+        ));
       case "quiz":
-                          return renderBlockWrapper("Quiz Éducatif", blockIcons.quiz, (
-                            <div className="space-y-3">
-                              <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                                <div>
-                                  <label className="text-[11px] font-medium text-gray-500">Titre de {"l'exercice "}:</label>
-                                  <Input
-                                    value={block.title || ""}
-                                    placeholder="Ex: Évaluation sommative - Chapitre 1"
-                                    className="font-semibold text-sm"
-                                    onChange={(e) => onUpdateBlock(module.id, lesson.id, index, { title: e.target.value })}
-                                  />
-                                </div>
-                                <div>
-                                  <label className="text-[11px] font-medium text-gray-500">Description / Directives :</label>
-                                  <Input
-                                    value={block.description || ""}
-                                    placeholder="Ex: Répondez correctement aux questions pour valider ce module."
-                                    className="text-xs text-muted-foreground"
-                                    onChange={(e) => onUpdateBlock(module.id, lesson.id, index, { description: e.target.value })}
-                                  />
-                                </div>
-                              </div>
+        return renderBlockWrapper("Quiz Éducatif", blockIcons.quiz, (
+          <div className="space-y-3">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+              <div>
+                <label className="text-[11px] font-medium text-gray-500">Titre de {"l'exercice "}:</label>
+                <Input
+                  value={block.title || ""}
+                  placeholder="Ex: Évaluation sommative - Chapitre 1"
+                  className="font-semibold text-sm"
+                  onChange={(e) => onUpdateBlock(module.id, lesson.id, index, { title: e.target.value })}
+                />
+              </div>
+              <div>
+                <label className="text-[11px] font-medium text-gray-500">Description / Directives :</label>
+                <Input
+                  value={block.description || ""}
+                  placeholder="Ex: Répondez correctement aux questions pour valider ce module."
+                  className="text-xs text-muted-foreground"
+                  onChange={(e) => onUpdateBlock(module.id, lesson.id, index, { description: e.target.value })}
+                />
+              </div>
+            </div>
 
-                              {/* Rendu de l'éditeur avancé de questions */}
-                              <QuizEditor
-                                block={block}
-                                onUpdate={(updates) => onUpdateBlock(module.id, lesson.id, index, updates)}
-                              />
-                            </div>
-                          ));              
+            {/* Rendu de l'éditeur avancé de questions */}
+            <QuizEditor
+              block={block}
+              onUpdate={(updates) => onUpdateBlock(module.id, lesson.id, index, updates)}
+            />
+          </div>
+        ));              
       case "divider":
       return renderBlockWrapper("Séparateur Visuel", blockIcons.divider, (
         <div className="py-2 space-y-3">
@@ -1434,7 +1407,7 @@ switch (block.type) {
           <div className="flex justify-end">
             <Select
               value={block.style || "solid"}
-              onValueChange={(val: any) => onUpdateBlock(module.id, lesson.id, index, { style: val })}
+              onValueChange={(val: DividerBlock["style"]) => onUpdateBlock(module.id, lesson.id, index, { style: val })}
             >
               <SelectTrigger className="w-28 h-7 text-xs">
                 <SelectValue />
@@ -1449,41 +1422,41 @@ switch (block.type) {
         </div>
       ));
       case "callout":
-            return renderBlockWrapper("Encart d'Information", blockIcons.callout, (
-              <div className={cn(
-                "p-4 rounded-lg border-l-4 shadow-2xs",
-                block.callout_type === "note" && "bg-blue-50/60 border-blue-500 text-blue-900",
-                block.callout_type === "tip" && "bg-green-50/60 border-green-500 text-green-900",
-                block.callout_type === "warning" && "bg-yellow-50/60 border-yellow-500 text-yellow-900",
-                block.callout_type === "danger" && "bg-red-50/60 border-red-500 text-red-900",
-                block.callout_type === "info" && "bg-sky-50/40 border-sky-400 text-sky-950"
-              )}>
-                <div className="flex gap-3 items-start">
-                  <Select
-                    value={block.callout_type || "info"}
-                    onValueChange={(val: any) => onUpdateBlock(module.id, lesson.id, index, { callout_type: val })}
-                  >
-                    <SelectTrigger className="w-28 h-8 text-xs bg-white text-gray-800">
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="note">Note</SelectItem>
-                      <SelectItem value="tip"> Astuce</SelectItem>
-                      <SelectItem value="warning"> Warning</SelectItem>
-                      <SelectItem value="danger">Danger</SelectItem>
-                      <SelectItem value="info">Info</SelectItem>
-                    </SelectContent>
-                  </Select>
-                  <Textarea
-                    value={block.content}
-                    placeholder="Saisissez une remarque ou consigne importante..."
-                    className="flex-1 border-none shadow-none focus-visible:ring-0 resize-none bg-transparent p-0 min-h-12.5 font-medium placeholder:font-normal"
-                    onChange={(e) => onUpdateBlock(module.id, lesson.id, index, { content: e.target.value })}
-                  />
-                </div>
-              </div>
-            ));      
-      default:
+      return renderBlockWrapper("Encart d'Information", blockIcons.callout, (
+      <div className={cn(
+        "p-4 rounded-lg border-l-4 shadow-2xs",
+        block.settings.type === "info" && "bg-sky-50/40 border-sky-400 text-sky-950",
+        block.settings.type === "success" && "bg-green-50/60 border-green-500 text-green-900",
+        block.settings.type === "warning" && "bg-yellow-50/60 border-yellow-500 text-yellow-900",
+        block.settings.type === "danger" && "bg-red-50/60 border-red-500 text-red-900",
+      )}>
+      <div className="flex gap-3 items-start">
+        <Select
+          value={block.settings.type || "info"}
+          onValueChange={(val: CalloutBlock["settings"]["type"]) =>
+            onUpdateBlock(module.id, lesson.id, index, { settings: { type: val } })
+          }
+        >
+          <SelectTrigger className="w-28 h-8 text-xs bg-white text-gray-800">
+            <SelectValue />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="info">Info</SelectItem>
+            <SelectItem value="success">Succès</SelectItem>
+            <SelectItem value="warning">Warning</SelectItem>
+            <SelectItem value="danger">Danger</SelectItem>
+          </SelectContent>
+        </Select>
+        <Textarea
+          value={block.content}
+          placeholder="Saisissez une remarque ou consigne importante..."
+          className="flex-1 border-none shadow-none focus-visible:ring-0 resize-none bg-transparent p-0 min-h-12.5 font-medium placeholder:font-normal"
+          onChange={(e) => onUpdateBlock(module.id, lesson.id, index, { content: e.target.value })}
+        />
+      </div>
+    </div>
+  ));
+            default:
         return (
           <div key={index} className="p-4 rounded-xl border bg-yellow-50/50 text-xs text-yellow-700 italic">
             Type de bloc non supporté ou absent du rendu.

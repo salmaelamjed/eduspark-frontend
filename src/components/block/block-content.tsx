@@ -1,108 +1,192 @@
-import { Download, FileText } from 'lucide-react';
+import { Block } from '@/types/block';
+import { 
+  Download, 
+  FileText, 
+  AlertCircle, 
+  Info, 
+  Lightbulb, 
+  Terminal,
+  Play
+} from 'lucide-react';
 import Image from 'next/image';
 
-interface Block {
-  id: number;
-  type: 'heading' | 'text' | 'video' | 'image' | 'code' | 'file';
-  content: string;
-  media_url: string | null;
-  duration_seconds: number | null;
-  language: string | null;
-  order: number;
-}
+// ---- Sous-composant Callout pour la lisibilité ----
+const CalloutStyle = {
+  success: { bg: 'bg-emerald-50', border: 'border-emerald-500/20', text: 'text-emerald-900', icon: Lightbulb },
+  info: { bg: 'bg-blue-50', border: 'border-blue-500/20', text: 'text-blue-900', icon: Info },
+  warning: { bg: 'bg-amber-50', border: 'border-amber-500/20', text: 'text-amber-900', icon: AlertCircle },
+  danger: { bg: 'bg-rose-50', border: 'border-rose-500/20', text: 'text-rose-900', icon: AlertCircle },
+};
 
 // ---- Block Renderers ----
 const BlockRenderer = ({ block }: { block: Block }) => {
-  switch (block.type) {
-    case 'heading':
-      return (
-        <h2 className="text-2xl font-bold text-gray-800 mt-6 mb-2">
-          {block.content}
-        </h2>
-      );
+  if (block.is_hidden) return null;
 
-    case 'text':
+  switch (block.type) {
+    case 'heading': {
+      const level = block.settings.level ?? "h2";
+      const baseClass = "font-bold text-gray-900 tracking-tight mt-8 mb-3";
+      if (level === 'h1') return <h1 className={`${baseClass} text-3xl border-b pb-2`}>{block.content}</h1>;
+      if (level === 'h3') return <h3 className={`${baseClass} text-xl mt-6`}>{block.content}</h3>;
+      if (level === 'h2') return <h2 className={`${baseClass} text-3xl border-b pb-2`}>{block.content}</h2>;
+      if (level === 'h4') return <h4 className={`${baseClass} text-xl mt-6`}>{block.content}</h4>;
+      if (level === 'h5') return <h5 className={`${baseClass} text-3xl border-b pb-2`}>{block.content}</h5>;
+      if (level === 'h6') return <h6 className={`${baseClass} text-xl mt-6`}>{block.content}</h6>;
+      
+
+      return <h2 className={`${baseClass} text-2xl mt-7`}>{block.content}</h2>;
+    }
+
+    case 'paragraph':
       return (
-        <p className="text-gray-500 leading-relaxed">
+        <p className="text-gray-600 leading-relaxed text-base mb-4 max-w-none">
           {block.content}
         </p>
       );
 
+    case 'list': {
+  const items = block.content.split('\n').filter(item => item.trim() !== '');
+  const isOrdered = block.settings.style === 'ordered';
+  const ListTag = isOrdered ? 'ol' : 'ul';
+
+  return (
+    <div className="flex gap-3 my-4 pl-1">
+      <ListTag className={`space-y-2 text-gray-600 flex-1 pl-4 ${isOrdered ? 'list-decimal' : 'list-disc'}`}>
+        {items.map((item, idx) => (
+          <li key={idx} className="leading-relaxed">
+            {item.replace(/^[-*•\d+.]\s*/, '')}
+          </li>
+        ))}
+      </ListTag>
+    </div>
+  );
+}
+
+    case 'quote':
+      return (
+        <figure className="my-6 border-l-4 border-orange-500 pl-4 italic bg-gray-50/80 py-3 pr-4 rounded-r-xl">
+          <blockquote className="text-gray-700 text-lg leading-stable">
+            « {block.content} »
+          </blockquote>
+          {block.author && (
+            <figcaption className="text-sm text-gray-500 mt-2 font-medium not-italic">
+              — {block.author}
+            </figcaption>
+          )}
+        </figure>
+      );
+
     case 'video':
       return (
-        <div className="rounded-xl h-[70vh] w-full overflow-hidden bg-gray-900 aspect-video flex items-center justify-center my-4">
+        <div className="my-6 rounded-2xl overflow-hidden border border-gray-100 bg-gray-950 aspect-video w-full max-h-[65vh] shadow-sm relative group">
           {block.media_url ? (
-            <video controls className='' src={block.media_url} />
+            <video controls className="w-full h-full object-contain" src={block.media_url} />
           ) : (
-            <div className="text-center text-gray-400">
-              <div className="w-16 h-16 rounded-full bg-white/10 flex items-center justify-center mx-auto mb-3">
-                <span className="text-3xl">▶</span>
+            <div className="absolute inset-0 flex flex-col items-center justify-center text-center p-6 bg-linear-to-b from-gray-900 to-gray-950">
+              <div className="w-14 h-14 rounded-full bg-white/10 flex items-center justify-center mb-3 group-hover:scale-105 transition-transform duration-200 backdrop-blur-sm">
+                <Play className="w-6 h-6 text-white fill-white" />
               </div>
-              <p className="text-sm">{block.content}</p>
               {block.duration_seconds && (
-                <p className="text-xs mt-1 text-gray-500">
-                  {Math.floor(block.duration_seconds / 60)}min {block.duration_seconds % 60}s
-                </p>
+                <span className="absolute top-4 right-4 text-xs font-mono bg-black/40 text-gray-300 px-2 py-1 rounded-md backdrop-blur-sm">
+                  {Math.floor(block.duration_seconds / 60)}m {block.duration_seconds % 60}s
+                </span>
               )}
             </div>
           )}
         </div>
       );
 
-    case 'image':
+    case 'image': {
+      
       return (
-        <div className="my-4">
-          {block.media_url ? (
+        <figure className="my-6 overflow-hidden rounded-2xl border border-gray-100 bg-gray-50 p-1 shadow-sm">
+          <div className="relative w-full overflow-hidden rounded-xl">
             <Image
               src={block.media_url}
-              alt={block.type}
-              width={800}  
-              height={400}
-              className="rounded-xl w-full object-cover border border-gray-100"
+              alt={block.alt_text || "Illustration de la leçon"}
+              width={1200}
+              height={630}
+              className="w-full h-auto max-h-[60vh] object-cover hover:scale-[1.01] transition-transform duration-300"
+              priority={block.is_preview}
             />
-          ) : (
-            <div className="rounded-xl bg-gray-100 border border-dashed border-gray-300 h-48 flex items-center justify-center text-gray-400 text-sm">
-              {block.content}
-            </div>
-          )}
-        </div>
-      );
-
-    case 'code':
-      return (
-        <div className="my-4 rounded-xl overflow-hidden border border-gray-200">
-          <div className="flex items-center justify-between px-4 py-2 bg-gray-800">
-            <span className="text-xs text-gray-400 font-mono uppercase tracking-wide">
-              {block.language ?? 'code'}
-            </span>
           </div>
-          <pre className="bg-gray-900 text-green-400 text-sm p-4 overflow-x-auto font-mono leading-relaxed">
-            <code>{block.content}</code>
+          
+        </figure>
+      );
+    }
+    case 'code': {
+      const config = block.code_data ?? { language: 'text', code: block.code_data };
+      return (
+        <div className="my-5 rounded-xl overflow-hidden border border-gray-800 shadow-lg bg-[#0d1117]">
+          <div className="flex items-center justify-between px-4 py-2 bg-gray-900 border-b border-gray-800/60 select-none">
+            <div className="flex items-center gap-2">
+              <Terminal className="w-4 h-4 text-gray-400" />
+              <span className="text-xs text-gray-400 font-mono tracking-wide lowercase">
+                {config.language}
+              </span>
+            </div>
+            <div className="flex gap-1.5">
+              <div className="w-2.5 h-2.5 rounded-full bg-rose-500/80" />
+              <div className="w-2.5 h-2.5 rounded-full bg-amber-500/80" />
+              <div className="w-2.5 h-2.5 rounded-full bg-emerald-500/80" />
+            </div>
+          </div>
+          <pre className="text-gray-100 text-sm p-4 overflow-x-auto font-mono leading-relaxed selection:bg-orange-500/20">
+            <code>{config.code}</code>
           </pre>
         </div>
       );
+    }
 
-    case 'file':
+    case 'file': {
+      const url = block.file_url ?? '#';
+      const name = block.file_name || "Document de cours";
       return (
-        <div className="my-3">
+        <div className="my-4">
           <a
-            href={block.media_url ?? '#'}
+            href={url}
             download
-            className="inline-flex items-center gap-3 px-4 py-3 rounded-xl border border-orange-200 bg-orange-50 hover:bg-orange-100 transition-all duration-200 text-orange-700 text-sm font-medium group"
+            className="inline-flex items-center gap-4 px-4 py-3.5 rounded-xl border border-orange-200/80 bg-linear-to-r from-orange-50/60 to-orange-50/20 hover:from-orange-50 hover:to-orange-100/60 transition-all duration-200 text-orange-800 text-sm font-medium group w-full sm:w-auto shadow-sm"
           >
-            <div className="w-8 h-8 rounded-lg bg-orange-500 flex items-center justify-center shrink-0">
-              <FileText className="w-4 h-4 text-white" />
+            <div className="w-9 h-9 rounded-lg bg-orange-600 flex items-center justify-center shrink-0 shadow-sm shadow-orange-500/20">
+              <FileText className="w-5 h-5 text-white" />
             </div>
-            <span className="flex-1">{block.content}</span>
-            <Download className="w-4 h-4 opacity-60 group-hover:opacity-100 transition-opacity" />
+            <div className="flex flex-col text-left pr-4">
+              <span className="font-semibold text-gray-800 group-hover:text-orange-900 transition-colors line-clamp-1">{name}</span>
+              {block.file_size && (
+                <span className="text-xs text-gray-400 font-normal mt-0.5">
+                  {(block.file_size / (1024 * 1024)).toFixed(2)} MB
+                </span>
+              )}
+            </div>
+            <Download className="w-4 h-4 opacity-50 group-hover:opacity-100 group-hover:translate-y-0.5 transition-all ml-auto sm:ml-4" />
           </a>
         </div>
       );
+    }
+
+    case 'callout': {
+      const type = block.settings.type ?? 'info';
+      const styles = CalloutStyle[type];
+      const Icon = styles.icon;
+      return (
+        <div className={`my-5 p-4 rounded-xl border ${styles.bg} ${styles.border} flex gap-3 shadow-sm`}>
+          <Icon className={`w-5 h-5 ${styles.text} shrink-0 mt-0.5`} />
+          <div className={`text-sm leading-relaxed ${styles.text}`}>
+            {block.content}
+          </div>
+        </div>
+      );
+    }
+
+    case 'divider': {
+      const styleClass = block.style === 'dashed' ? 'border-dashed' : block.style === 'dotted' ? 'border-dotted' : 'border-solid';
+      return <hr className={`my-8 border-t-2 ${styleClass} border-gray-100 w-full`} />;
+    }
 
     default:
       return null;
   }
 };
-
 
 export default BlockRenderer;

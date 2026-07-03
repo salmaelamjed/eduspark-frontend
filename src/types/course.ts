@@ -1,5 +1,12 @@
 import { Module } from "./module";
 
+// Forme possible de `settings` selon le type de bloc — union au lieu de `any`
+type BlockSettingsPayload =
+  | { level: "h1" | "h2" | "h3" | "h4" | "h5" | "h6" }        // heading
+  | { style: "ordered" | "unordered" }                          // list
+  | { type: "info" | "success" | "warning" | "danger" }         // callout
+  | { style: "solid" | "dashed" | "dotted" };                   // divider
+
 export interface Course {
   id: number;
   title: string;
@@ -59,7 +66,7 @@ export interface CourseRequestPayload {
               media_url?: string | null;
               duration_seconds?: number | null;
               language?: string | null;
-              settings?: Record<string, any> | null;
+              settings?: BlockSettingsPayload | null;
               code_data?: { language: string; code: string } | null;
               quiz_data?: {
                 settings: { passing_score_percent: number };

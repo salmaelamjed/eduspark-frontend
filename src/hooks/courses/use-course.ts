@@ -37,70 +37,94 @@ export const UseCourses = ({ getModulesForBackend }: UseCoursesProps = {}) => {
       is_free: true,
       price: 0,
       thumbnail: undefined,
-      modules: [],
+      modules: [
+        {
+          title: "",
+          description: null,
+          order: 0,
+          lessons: [
+            {
+              title: "",
+              slug: "",
+              order: 0,
+              is_preview: false,
+              blocks: [],
+            },
+          ],
+        },
+      ],
     },
     mode: "onChange",
   });
 
-  const createCourse = async (formData: CourseCreationProps) => {
-    setLoading(true);
+ const createCourse = async (formData: CourseCreationProps) => {
+   setLoading(true);
 
-    try {
-      if (!token) {
-        toast.error("Vous devez être connecté pour créer un cours");
-        return;
-      }
+   try {
+     if (!token) {
+       toast.error("Vous devez être connecté");
+       return;
+     }
 
-      if (!getModulesForBackend) {
-        toast.error("Erreur: fonction getModulesForBackend non disponible");
-        return;
-      }
+     let modules = getModulesForBackend?.() || [];
 
-      const modules = getModulesForBackend();
-      if (!modules || modules.length === 0) {
-        toast.error("Le cours doit contenir au moins un module");
-        return;
-      }
+     const payload = new FormData();
 
-      const modulesWithoutLessons = modules.filter(
-        (m) => !m.lessons || m.lessons.length === 0,
-      );
-      if (modulesWithoutLessons.length > 0) {
-        toast.error(
-          `Les modules suivants n'ont pas de leçons: ${modulesWithoutLessons.map((m) => m.title).join(", ")}`,
-        );
-        return;
-      }
+     // Données principales
+     payload.append("title", formData.title.trim());
+     payload.append("description", formData.description.trim());
+     payload.append("level", formData.level);
+     payload.append("language", formData.language);
+     payload.append("is_free", formData.is_free ? "1" : "0");
+     payload.append(
+       "price",
+       formData.is_free ? "0" : String(formData.price || 0),
+     );
 
-      const formDataPayload = new FormData();
-      formDataPayload.append("title", formData.title.trim());
-      formDataPayload.append("description", formData.description.trim());
-      formDataPayload.append("level", formData.level);
-      formDataPayload.append("language", formData.language);
-      formDataPayload.append("is_free", formData.is_free ? "1" : "0");
-      formDataPayload.append(
-        "price",
-        formData.is_free ? "0" : String(formData.price),
-      );
+     if (formData.thumbnail?.[0]) {
+       payload.append("thumbnail", formData.thumbnail[0]);
+     }
 
-      if (formData.thumbnail?.[0]) {
-        formDataPayload.append("thumbnail", formData.thumbnail[0]);
-      }
+     // === GESTION DES FICHIERS MÉDIAS ===
 
-      formDataPayload.append("modules", JSON.stringify(modules));
+    modules = modules.map((mod: any, modIdx: number) => ({
+      ...mod,
+      lessons: mod.lessons.map((lesson: any, lesIdx: number) => ({
+        ...lesson,
+        blocks: lesson.blocks.map((block: any, blockIdx: number) => {
+          const { file, ...rest } = block; 
 
-      const response = await coursesApi.create(formDataPayload as any, token);
+          if (
+            ["image", "video", "audio", "file"].includes(block.type) &&
+            file instanceof File
+          ) {
+            const fileKey = `modules[${modIdx}][lessons][${lesIdx}][blocks][${blockIdx}][media_url]`;
+            payload.append(fileKey, file); 
+          }
 
-      toast.success(response?.message || "Cours créé avec succès");
-      router.push("/dashboard/courses");
-      router.refresh();
-    } catch (error: any) {
-      toast.error(error?.message || "Erreur lors de la création du cours");
-      console.error(error);
-    } finally {
-      setLoading(false);
-    }
-  };
+          return rest;
+        }),
+      })),
+    }));
+
+    payload.append("modules", JSON.stringify(modules));
+
+
+     console.log("📤 Modules envoyés :", JSON.stringify(modules, null, 2));
+
+     const response = await coursesApi.create(payload, token);
+
+     toast.success(response?.message || "Cours créé avec succès");
+     router.push("/dashboard/courses");
+   } catch (error: any) {
+     console.error(error);
+     toast.error(
+       error?.response?.data?.message || "Erreur lors de la création",
+     );
+   } finally {
+     setLoading(false);
+   }
+ };
 
   const onHandleCreateCourse = methods.handleSubmit(createCourse);
 

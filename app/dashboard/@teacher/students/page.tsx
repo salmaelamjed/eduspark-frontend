@@ -86,7 +86,7 @@ export default function StudentsPage() {
   };
 
   return (
-    <div className="container mx-auto px-4 py-6 lg:py-10">
+    <div className="container mx-auto ">
       <div className="flex justify-between items-center mb-8">
         <div>
           <h1 className="text-3xl font-bold">Gestion des Étudiants</h1>
@@ -114,7 +114,7 @@ export default function StudentsPage() {
               <TableHead className="h-12 px-4 font-medium">Rôle</TableHead>
               <TableHead className="h-12 px-4 font-medium text-center">Statut</TableHead>
               <TableHead className="h-12 px-4 font-medium">Date de jointure</TableHead>
-              <TableHead className="h-12 w-[180px] px-4 font-medium text-center">Actions</TableHead>
+              <TableHead className="h-12 w-45 px-4 font-medium text-center">Actions</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
