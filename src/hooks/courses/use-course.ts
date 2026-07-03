@@ -6,6 +6,7 @@ import {
   CourseListFilters,
   CourseDetail,
 } from "@/api/courses";
+import { getErrorMessage } from "@/components/ErrorMessage";
 import { useAuth } from "@/context/auth-context";
 import {
   CourseCreationProps,
@@ -17,8 +18,29 @@ import { useCallback, useEffect, useState } from "react";
 import { useForm } from "react-hook-form";
 import { toast } from "sonner";
 
+interface BackendBlock {
+  type: string;
+  order: number;
+  is_preview: number;
+  file?: File | null;
+  [key: string]: unknown;
+}
+
+interface BackendLesson {
+  title: string;
+  is_preview: number;
+  order: number;
+  blocks: BackendBlock[];
+}
+interface BackendModule {
+  title: string;
+  description: string | null;
+  order: number;
+  lessons: BackendLesson[];
+}
+
 interface UseCoursesProps {
-  getModulesForBackend?: () => any[];
+  getModulesForBackend?: () => BackendModule[];
 }
 
 // ====================== HOOK DE CRÉATION ======================
@@ -87,11 +109,11 @@ export const UseCourses = ({ getModulesForBackend }: UseCoursesProps = {}) => {
 
      // === GESTION DES FICHIERS MÉDIAS ===
 
-    modules = modules.map((mod: any, modIdx: number) => ({
+    modules = modules.map((mod, modIdx: number) => ({
       ...mod,
-      lessons: mod.lessons.map((lesson: any, lesIdx: number) => ({
+      lessons: mod.lessons.map((lesson, lesIdx: number) => ({
         ...lesson,
-        blocks: lesson.blocks.map((block: any, blockIdx: number) => {
+        blocks: lesson.blocks.map((block, blockIdx: number) => {
           const { file, ...rest } = block; 
 
           if (
@@ -106,21 +128,14 @@ export const UseCourses = ({ getModulesForBackend }: UseCoursesProps = {}) => {
         }),
       })),
     }));
-
     payload.append("modules", JSON.stringify(modules));
-
-
-     console.log("📤 Modules envoyés :", JSON.stringify(modules, null, 2));
 
      const response = await coursesApi.create(payload, token);
 
      toast.success(response?.message || "Cours créé avec succès");
      router.push("/dashboard/courses");
-   } catch (error: any) {
-     console.error(error);
-     toast.error(
-       error?.response?.data?.message || "Erreur lors de la création",
-     );
+   } catch (error: unknown) {
+     toast.error(getErrorMessage(error, "Erreur lors de la création"));
    } finally {
      setLoading(false);
    }
@@ -150,8 +165,8 @@ export const UseGetCourses = (initialFilters?: CourseListFilters) => {
       try {
         const response = await coursesApi.getAll(filters || initialFilters);
         setCourses(response);
-      } catch (err: any) {
-        setError(err?.message || "Une erreur est survenue");
+      } catch (err: unknown) {
+        setError(getErrorMessage(err, "Une erreur est survenue"));
         setCourses(null);
       } finally {
         setLoading(false);
@@ -184,12 +199,8 @@ export const useMyCourses = (initialFilters: CourseListFilters = {}) => {
     try {
       const response = await coursesApi.getMyCourses(filters,token as string );
       setCourses(response);
-    } catch (err: any) {
-      const message = 
-        err?.response?.data?.message || 
-        err?.message || 
-        "Impossible de charger vos cours";
-      
+    } catch (err: unknown) {
+      const message = getErrorMessage(err, "Impossible de charger vos cours");
       setError(message);
       setCourses(null);
       toast.error(message);
@@ -230,8 +241,8 @@ export const useCourseDetail = (courseId: number | string | null) => {
     try {
       const response = await coursesApi.getOne(Number(courseId));
       setCourse(response ?? null);
-    } catch (err: any) {
-      setError(err?.message || "Impossible de charger les détails du cours");
+    } catch (err: unknown) {
+     setError(getErrorMessage(err, "Impossible de charger les détails du cours"));
       setCourse(null);
     } finally {
       setLoading(false);

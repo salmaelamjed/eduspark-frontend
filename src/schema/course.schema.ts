@@ -228,10 +228,8 @@ const blockSchema = z.discriminatedUnion("type", [
           z.object({
             question: z.string().min(1, "La question est requise"),
             type: z.enum([
-              "multiple_choice",
-              "single_choice",
-              "text",
-              "true_false",
+              "multiple",
+              "single",
             ]),
             options: z.array(z.string()).optional(),
             correct_answers: z.array(z.number()),
