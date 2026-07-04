@@ -1,5 +1,4 @@
 "use client";
-
 import {
   coursesApi,
   PaginatedCourses,
@@ -89,10 +88,8 @@ export const UseCourses = ({ getModulesForBackend }: UseCoursesProps = {}) => {
      }
 
      let modules = getModulesForBackend?.() || [];
-
      const payload = new FormData();
 
-     // Données principales
      payload.append("title", formData.title.trim());
      payload.append("description", formData.description.trim());
      payload.append("level", formData.level);
@@ -107,28 +104,26 @@ export const UseCourses = ({ getModulesForBackend }: UseCoursesProps = {}) => {
        payload.append("thumbnail", formData.thumbnail[0]);
      }
 
-     // === GESTION DES FICHIERS MÉDIAS ===
+     modules = modules.map((mod, modIdx: number) => ({
+       ...mod,
+       lessons: mod.lessons.map((lesson, lesIdx: number) => ({
+         ...lesson,
+         blocks: lesson.blocks.map((block, blockIdx: number) => {
+           const { file, ...rest } = block;
 
-    modules = modules.map((mod, modIdx: number) => ({
-      ...mod,
-      lessons: mod.lessons.map((lesson, lesIdx: number) => ({
-        ...lesson,
-        blocks: lesson.blocks.map((block, blockIdx: number) => {
-          const { file, ...rest } = block; 
+           if (
+             ["image", "video", "audio", "file"].includes(block.type) &&
+             file instanceof File
+           ) {
+             const fileKey = `modules[${modIdx}][lessons][${lesIdx}][blocks][${blockIdx}][media_url]`;
+             payload.append(fileKey, file);
+           }
 
-          if (
-            ["image", "video", "audio", "file"].includes(block.type) &&
-            file instanceof File
-          ) {
-            const fileKey = `modules[${modIdx}][lessons][${lesIdx}][blocks][${blockIdx}][media_url]`;
-            payload.append(fileKey, file); 
-          }
-
-          return rest;
-        }),
-      })),
-    }));
-    payload.append("modules", JSON.stringify(modules));
+           return rest;
+         }),
+       })),
+     }));
+     payload.append("modules", JSON.stringify(modules));
 
      const response = await coursesApi.create(payload, token);
 
@@ -141,8 +136,11 @@ export const UseCourses = ({ getModulesForBackend }: UseCoursesProps = {}) => {
    }
  };
 
-  const onHandleCreateCourse = methods.handleSubmit(createCourse);
+ const onHandleCreateCourse = methods.handleSubmit((formData) =>
+   createCourse(formData as CourseCreationProps),
+ );
 
+   
   return {
     loading,
     onHandleCreateCourse,
@@ -191,23 +189,28 @@ export const useMyCourses = (initialFilters: CourseListFilters = {}) => {
   
 
 
-  const getMyCourses = useCallback(async (filters: CourseListFilters = {}) => {
+  const getMyCourses = useCallback(
+    async (filters: CourseListFilters = {}) => {
+      setLoading(true);
+      setError(null);
 
-    setLoading(true);
-    setError(null);
-
-    try {
-      const response = await coursesApi.getMyCourses(filters,token as string );
-      setCourses(response);
-    } catch (err: unknown) {
-      const message = getErrorMessage(err, "Impossible de charger vos cours");
-      setError(message);
-      setCourses(null);
-      toast.error(message);
-    } finally {
-      setLoading(false);
-    }
-  }, []);
+      try {
+        const response = await coursesApi.getMyCourses(
+          filters,
+          token as string,
+        );
+        setCourses(response);
+      } catch (err: unknown) {
+        const message = getErrorMessage(err, "Impossible de charger vos cours");
+        setError(message);
+        setCourses(null);
+        toast.error(message);
+      } finally {
+        setLoading(false);
+      }
+    },
+    [token],
+  );
 
   // Chargement initial
   useEffect(() => {

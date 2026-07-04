@@ -4,11 +4,10 @@ import { useParams } from 'next/navigation';
 import { useCourseDetail } from '@/hooks/courses/use-course'; 
  import LoadingCourseDetails from './loading';
 import Image from 'next/image';
-import { BarChart2, Book, BookOpen, CalendarDays, Globe, Languages, Quote, UserCircle } from 'lucide-react';
+import { BarChart2, BookOpen, CalendarDays, Globe, Languages, Quote, UserCircle } from 'lucide-react';
 import { Separator } from '@/components/ui/separator';
 import { Button } from '@/components/ui/button';
 import { useRouter } from 'next/navigation';
-import Navbar from '@/components/navbar';
 
 const CourseDetails = () => {
   const params = useParams();
@@ -34,9 +33,9 @@ const CourseDetails = () => {
   // ✅ Handler du bouton
   const handleEnroll = () => {
     if (course.is_free) {
-      router.push(`/courses/${courseId}/read`);
+      router.push(`/cours/${courseId}/read`);
     } else {
-      router.push(`/courses/${courseId}/subscribe`);
+      router.push(`/cours/${courseId}/subscribe`);
     }
   };
 

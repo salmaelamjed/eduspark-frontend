@@ -114,11 +114,11 @@ export const coursesApi = {
     );
   },
 
-  getOne: (id: number) => apiClient.get<CourseDetail>(`/courses/${id}`),
-  getBySlug: (slug: string) =>
-    apiClient.get<CourseDetail>(`/courses/${slug}`),
+  getOne: (id: string | number) =>
+    apiClient.get<CourseDetail>(`/courses/${id}`),
+  getBySlug: (slug: string) => apiClient.get<CourseDetail>(`/courses/${slug}`),
 
-  create: (data: CourseRequestPayload, token: string) =>
+  create: (data: CourseRequestPayload | FormData, token: string) =>
     apiClient.post<CourseResponsePayload>("/courses", data, token),
 
   //   update: (id: number, data: UpdateTeacherRequestPayload, token: string) =>
