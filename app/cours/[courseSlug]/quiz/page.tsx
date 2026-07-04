@@ -2,29 +2,28 @@
 
 import { useParams, useSearchParams } from 'next/navigation';
 import { useMemo, useState } from 'react';
-import { useCourseDetail, useCourseDetailBySlug } from '@/hooks/courses/use-course';
+import { useCourseDetailBySlug } from '@/hooks/courses/use-course';
 import { findQuizByNumber } from '@/lib/quiz-numbering';
-import { CheckCircle2, XCircle, ArrowLeft, Trophy, Loader2 } from 'lucide-react';
+import { XCircle, ArrowLeft, Trophy, Loader2 } from 'lucide-react';
 import Link from 'next/link';
 
-interface QuizOption {
-  id: string;
-  text: string;
-}
+type OptionLike = string | { id?: string; text: string };
 
-interface QuizQuestion {
-  id: string;
-  question_text: string;
-  type: 'single' | 'multiple';
-  options: QuizOption[];
+function getOptionText(option: OptionLike): string {
+  return typeof option === 'string' ? option : option.text;
 }
-
+function getOptionKey(option: OptionLike, index: number): string | number {
+  return typeof option === 'string' ? index : (option.id ?? index);
+}
 interface QuizResult {
   score_percent: number;
   passed: boolean;
   correct_count: number;
   total: number;
 }
+
+// answers[questionIndex] = index d'option (single) ou tableau d'indices (multiple)
+type AnswerValue = number | number[];
 
 const QuizPage = () => {
   const params = useParams();
@@ -35,7 +34,7 @@ const QuizPage = () => {
 
   const { course, loading: courseLoading, error: courseError } = useCourseDetailBySlug(courseSlug);
 
-  const [answers, setAnswers] = useState<Record<string, string>>({});
+  const [answers, setAnswers] = useState<Record<number, AnswerValue>>({});
   const [submitting, setSubmitting] = useState(false);
   const [result, setResult] = useState<QuizResult | null>(null);
   const [submitError, setSubmitError] = useState<string | null>(null);
@@ -45,17 +44,28 @@ const QuizPage = () => {
     [course, quizNumber]
   );
 
-  const questions: QuizQuestion[] = quizLocation?.block.quiz_data?.questions ?? [];
+  const questions = quizLocation?.block.quiz_data?.questions ?? [];
   const passingScore = quizLocation?.block.quiz_data?.settings?.passing_score_percent;
-  const allAnswered = questions.length > 0 && questions.every((q) => answers[q.id]);
+  const allAnswered = questions.length > 0 && questions.every((_, idx) => answers[idx] !== undefined);
 
-  const handleSelect = (questionId: string, optionId: string) => {
+  const handleSelectSingle = (questionIdx: number, optionIdx: number) => {
     if (result) return;
-    setAnswers((prev) => ({ ...prev, [questionId]: optionId }));
+    setAnswers((prev) => ({ ...prev, [questionIdx]: optionIdx }));
+  };
+
+  const handleToggleMultiple = (questionIdx: number, optionIdx: number) => {
+    if (result) return;
+    setAnswers((prev) => {
+      const current = Array.isArray(prev[questionIdx]) ? (prev[questionIdx] as number[]) : [];
+      const next = current.includes(optionIdx)
+        ? current.filter((i) => i !== optionIdx)
+        : [...current, optionIdx];
+      return { ...prev, [questionIdx]: next };
+    });
   };
 
   const handleSubmit = async () => {
-    if (!quizLocation) return;
+    if (!quizLocation?.block.id) return;
     setSubmitting(true);
     setSubmitError(null);
 
@@ -70,7 +80,7 @@ const QuizPage = () => {
 
       const data: QuizResult = await res.json();
       setResult(data);
-    } catch (err) {
+    } catch {
       setSubmitError("Impossible d'envoyer vos réponses. Réessayez.");
     } finally {
       setSubmitting(false);
@@ -128,8 +138,11 @@ const QuizPage = () => {
           )}
         </div>
         <h1 className="text-2xl font-bold text-gray-900">
-          {quizLocation.block.content || `Quiz — ${quizLocation.lessonTitle}`}
+          {quizLocation.block.title || `Quiz — ${quizLocation.lessonTitle}`}
         </h1>
+        {quizLocation.block.description && (
+          <p className="text-sm text-gray-500 mt-1">{quizLocation.block.description}</p>
+        )}
       </div>
 
       {result && (
@@ -162,39 +175,63 @@ const QuizPage = () => {
       )}
 
       <div className="space-y-6">
-        {questions.map((question, idx) => (
-          <div key={question.id} className="p-5 rounded-2xl border border-gray-100 bg-white shadow-sm">
-            <p className="font-semibold text-gray-900 mb-4">
-              {idx + 1}. {question.question_text}
-            </p>
-            <div className="space-y-2">
-              {question.options.map((option) => {
-                const isSelected = answers[question.id] === option.id;
-                return (
-                  <button
-                    key={option.id}
-                    onClick={() => handleSelect(question.id, option.id)}
-                    disabled={!!result}
-                    className={`w-full text-left px-4 py-3 rounded-xl border text-sm font-medium transition-all flex items-center gap-3 ${
-                      isSelected
-                        ? 'border-orange-500 bg-orange-50 text-orange-900'
-                        : 'border-gray-200 hover:border-orange-200 hover:bg-orange-50/40 text-gray-700'
-                    } ${result ? 'cursor-default opacity-90' : 'cursor-pointer'}`}
-                  >
-                    <span
-                      className={`w-4 h-4 rounded-full border-2 flex items-center justify-center shrink-0 ${
-                        isSelected ? 'border-orange-500' : 'border-gray-300'
-                      }`}
-                    >
-                      {isSelected && <span className="w-2 h-2 rounded-full bg-orange-500" />}
-                    </span>
-                    {option.text}
-                  </button>
-                );
-              })}
+        {questions.map((question, qIdx) => {
+          const isMultiple = question.type === 'multiple';
+          const selected = answers[qIdx];
+
+          return (
+            <div key={qIdx} className="p-5 rounded-2xl border border-gray-100 bg-white shadow-sm">
+              <div className="flex items-start justify-between gap-3 mb-4">
+                <p className="font-semibold text-gray-900">
+                  {qIdx + 1}. {question.question}
+                </p>
+                {isMultiple && (
+                  <span className="text-xs text-gray-400 shrink-0 mt-0.5">Plusieurs réponses</span>
+                )}
+              </div>
+              <div className="space-y-2">
+                {question.options.map((option, oIdx) => {
+                    const optionText = getOptionText(option);
+                    const isSelected = isMultiple
+                        ? Array.isArray(selected) && selected.includes(oIdx)
+                        : selected === oIdx;
+
+                    return (
+                        <button
+                        key={getOptionKey(option, oIdx)}
+                        onClick={() =>
+                            isMultiple
+                            ? handleToggleMultiple(qIdx, oIdx)
+                            : handleSelectSingle(qIdx, oIdx)
+                        }
+                        disabled={!!result}
+                        className={`w-full text-left px-4 py-3 rounded-xl border text-sm font-medium transition-all flex items-center gap-3 ${
+                            isSelected
+                            ? 'border-orange-500 bg-orange-50 text-orange-900'
+                            : 'border-gray-200 hover:border-orange-200 hover:bg-orange-50/40 text-gray-700'
+                        } ${result ? 'cursor-default opacity-90' : 'cursor-pointer'}`}
+                        >
+                        <span
+                            className={`w-4 h-4 shrink-0 flex items-center justify-center border-2 ${
+                            isMultiple ? 'rounded-md' : 'rounded-full'
+                            } ${isSelected ? 'border-orange-500' : 'border-gray-300'}`}
+                        >
+                            {isSelected && (
+                            <span
+                                className={`bg-orange-500 ${
+                                isMultiple ? 'w-2 h-2 rounded-sm' : 'w-2 h-2 rounded-full'
+                                }`}
+                            />
+                            )}
+                        </span>
+                        {optionText}
+                        </button>
+                    );
+                    })}
+              </div>
             </div>
-          </div>
-        ))}
+          );
+        })}
       </div>
 
       {!result && (
