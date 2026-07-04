@@ -1,4 +1,5 @@
 import { Block } from '@/types/block';
+import Link from 'next/link';
 import { 
   Download, 
   FileText, 
@@ -6,7 +7,11 @@ import {
   Info, 
   Lightbulb, 
   Terminal,
-  Play
+  Play,
+  HelpCircle,
+  Clock,
+  ArrowRight,
+  Trophy
 } from 'lucide-react';
 import Image from 'next/image';
 
@@ -19,7 +24,12 @@ const CalloutStyle = {
 };
 
 // ---- Block Renderers ----
-const BlockRenderer = ({ block }: { block: Block }) => {
+interface BlockRendererProps {
+  block: Block;
+  courseSlug: string;
+   quizNumber?: number;
+}
+const BlockRenderer = ({ block, courseSlug,quizNumber }: BlockRendererProps) => {
   if (block.is_hidden) return null;
 
   switch (block.type) {
@@ -45,22 +55,22 @@ const BlockRenderer = ({ block }: { block: Block }) => {
       );
 
     case 'list': {
-  const items = block.content.split('\n').filter(item => item.trim() !== '');
-  const isOrdered = block.settings.style === 'ordered';
-  const ListTag = isOrdered ? 'ol' : 'ul';
+      const items = block.content.split('\n').filter(item => item.trim() !== '');
+      const isOrdered = block.settings.style === 'ordered';
+      const ListTag = isOrdered ? 'ol' : 'ul';
 
-  return (
-    <div className="flex gap-3 my-4 pl-1">
-      <ListTag className={`space-y-2 text-gray-600 flex-1 pl-4 ${isOrdered ? 'list-decimal' : 'list-disc'}`}>
-        {items.map((item, idx) => (
-          <li key={idx} className="leading-relaxed">
-            {item.replace(/^[-*•\d+.]\s*/, '')}
-          </li>
-        ))}
-      </ListTag>
-    </div>
-  );
-}
+      return (
+        <div className="flex gap-3 my-4 pl-1">
+          <ListTag className={`space-y-2 text-gray-600 flex-1 pl-4 ${isOrdered ? 'list-decimal' : 'list-disc'}`}>
+            {items.map((item, idx) => (
+              <li key={idx} className="leading-relaxed">
+                {item.replace(/^[-*•\d+.]\s*/, '')}
+              </li>
+            ))}
+          </ListTag>
+        </div>
+      );
+    }
 
     case 'quote':
       return (
@@ -96,24 +106,25 @@ const BlockRenderer = ({ block }: { block: Block }) => {
         </div>
       );
 
-    case 'image': {
-      
-      return (
-        <figure className="my-6 overflow-hidden rounded-2xl border border-gray-100 bg-gray-50 p-1 shadow-sm">
-          <div className="relative w-full overflow-hidden rounded-xl">
-            <Image
-              src={block.media_url}
-              alt={block.alt_text || "Illustration de la leçon"}
-              width={1200}
-              height={630}
-              className="w-full h-auto max-h-[60vh] object-cover hover:scale-[1.01] transition-transform duration-300"
-              priority={block.is_preview}
-            />
-          </div>
-          
-        </figure>
-      );
-    }
+   case 'image': {
+  return (
+  <figure className="my-6 w-full rounded-2xl p-1">
+    <div 
+      className="relative w-full rounded-xl overflow-hidden"
+      style={{ height: '70vh', width: '100%' }}
+    >
+      <Image
+        src={block.media_url}
+        alt={block.alt_text || "Illustration de la leçon"}
+        fill
+        sizes="100vw"
+        className="object-cover transition-transform duration-300"
+        priority={block.is_preview}
+      />
+    </div>
+  </figure>
+);
+}
     case 'code': {
       const config = block.code_data ?? { language: 'text', code: block.code_data };
       return (
@@ -170,7 +181,7 @@ const BlockRenderer = ({ block }: { block: Block }) => {
       const styles = CalloutStyle[type];
       const Icon = styles.icon;
       return (
-        <div className={`my-5 p-4 rounded-xl border ${styles.bg} ${styles.border} flex gap-3 shadow-sm`}>
+        <div className={`my-5 p-4 rounded-xl border ${styles.bg} ${styles.border} flex gap-3 `}>
           <Icon className={`w-5 h-5 ${styles.text} shrink-0 mt-0.5`} />
           <div className={`text-sm leading-relaxed ${styles.text}`}>
             {block.content}
@@ -183,6 +194,76 @@ const BlockRenderer = ({ block }: { block: Block }) => {
       const styleClass = block.style === 'dashed' ? 'border-dashed' : block.style === 'dotted' ? 'border-dotted' : 'border-solid';
       return <hr className={`my-8 border-t-2 ${styleClass} border-gray-100 w-full`} />;
     }
+
+  case 'quiz': {
+  const quizData = block.quiz_data ?? {};
+  const questions = quizData.questions ?? [];
+  const questionsCount = questions.length;
+  const passingScore = quizData.settings?.passing_score_percent;
+
+  const title = block.content || "Quiz de vérification";
+  const description = questionsCount > 0
+    ? `Évaluez vos connaissances avec ${questionsCount} question${questionsCount > 1 ? 's' : ''} sur cette leçon.`
+    : "Testez vos connaissances sur cette leçon.";
+
+  const duration = block.duration_seconds
+    ? `${Math.ceil(block.duration_seconds / 60)} min`
+    : questionsCount > 0
+      ? `~${Math.max(1, Math.ceil(questionsCount * 0.75))} min`
+      : null;
+
+   const quizUrl = `/cours/${courseSlug}/quiz?quiz=${quizNumber ?? block.id}`;
+
+
+  return (
+    <div className="my-6 relative overflow-hidden rounded-2xl border border-orange-200/70 bg-linear-to-br from-orange-50 via-white to-orange-50/40 shadow-sm">
+      <div className="absolute -top-8 -right-8 w-32 h-32 rounded-full bg-orange-100/60 blur-2xl" />
+      <div className="absolute -bottom-10 -left-10 w-40 h-40 rounded-full bg-orange-100/40 blur-2xl" />
+
+      <div className="relative flex flex-col sm:flex-row sm:items-center gap-5 p-6">
+        <div className="w-14 h-14 rounded-xl bg-orange-600 flex items-center justify-center shrink-0 shadow-md shadow-orange-500/25">
+          <Trophy className="w-7 h-7 text-white" />
+        </div>
+
+        <div className="flex-1 min-w-0">
+          <div className="flex flex-wrap items-center gap-2 mb-1">
+            <span className="text-xs font-semibold uppercase tracking-wide text-orange-600 bg-orange-100 px-2 py-0.5 rounded-full">
+              Quiz
+            </span>
+            {questionsCount > 0 && (
+              <span className="flex items-center gap-1 text-xs text-gray-500">
+                <HelpCircle className="w-3.5 h-3.5" />
+                {questionsCount} question{questionsCount > 1 ? 's' : ''}
+              </span>
+            )}
+            {duration && (
+              <span className="flex items-center gap-1 text-xs text-gray-500">
+                <Clock className="w-3.5 h-3.5" />
+                {duration}
+              </span>
+            )}
+            {typeof passingScore === 'number' && (
+              <span className="flex items-center gap-1 text-xs text-gray-500">
+                <AlertCircle className="w-3.5 h-3.5" />
+                Seuil de réussite : {passingScore}%
+              </span>
+            )}
+          </div>
+          <h3 className="text-lg font-bold text-gray-900 mb-1">{title}</h3>
+          <p className="text-sm text-gray-600 leading-relaxed">{description}</p>
+        </div>
+
+        <Link
+          href={quizUrl}
+          className="group inline-flex items-center justify-center gap-2 px-5 py-3 rounded-xl bg-orange-600 hover:bg-orange-700 text-white text-sm font-semibold shadow-sm shadow-orange-500/25 transition-all duration-200 shrink-0 whitespace-nowrap"
+        >
+          Passer le quiz
+          <ArrowRight className="w-4 h-4 group-hover:translate-x-0.5 transition-transform" />
+        </Link>
+      </div>
+    </div>
+  );
+}
 
     default:
       return null;

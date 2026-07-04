@@ -227,17 +227,18 @@ const blockSchema = z.discriminatedUnion("type", [
         questions: z.array(
           z.object({
             question: z.string().min(1, "La question est requise"),
-            type: z.enum([
-              "multiple",
-              "single",
-            ]),
-            options: z.array(z.string()).optional(),
-            correct_answers: z.array(z.number()),
+            type: z.enum(["multiple", "single"]),
+            options: z.array(z.string()).min(2, "Au moins 2 options requises"),
+            correct_answers: z
+              .array(z.number())
+              .min(1, "Au moins une bonne réponse"),
             explanation: z.string().optional(),
             points: z.number().min(1).default(1),
           }),
         ),
-        passing_score: z.number().min(0).max(100).default(70),
+        settings: z.object({
+          passing_score_percent: z.number().min(0).max(100).default(70),
+        }),
         shuffle_questions: z.boolean().default(false),
         show_explanation_after_submit: z.boolean().default(true),
         time_limit_minutes: z.number().positive().optional(),

@@ -14,6 +14,7 @@ export type BlockType =
   | "callout"; // encart d'information (note, tip, warning...)
 
 export interface BaseBlock {
+  id?:number ;
   type: BlockType;
   order?: number;
   is_preview?: boolean;

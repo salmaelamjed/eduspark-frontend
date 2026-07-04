@@ -1,7 +1,7 @@
 'use client';
 
 import { useParams } from 'next/navigation';
-import { useEffect, useState, useCallback } from 'react';
+import { useEffect, useState, useCallback, useMemo } from 'react';
 import { useCourseDetail } from '@/hooks/courses/use-course';
 import { ModuleReadSidebar } from '@/components/read-sidebar';
 import { FileText } from 'lucide-react';
@@ -29,10 +29,29 @@ const Page = () => {
     setSelectedLessonId(lessonId);
   }, []);
 
+  // Numérotation globale des quiz dans le cours (1, 2, 3...)
+  const quizNumberMap = useMemo(() => {
+    const map = new Map<number, number>();
+    let counter = 0;
+
+    course?.modules?.forEach((mod) => {
+      mod.lessons?.forEach((lesson) => {
+        lesson.blocks
+          ?.slice()
+          .sort((a, b) => (a.order ?? 0) - (b.order ?? 0))
+          .forEach((block) => {
+            if (block.type === 'quiz') {
+              counter += 1;
+              map.set(block.id, counter);
+            }
+          });
+      });
+    });
+
+    return map;
+  }, [course]);
+
   useEffect(() => {
-     console.log("Course data:", course);
-  console.log("Modules:", course?.modules);
-  console.log("First lesson:", course?.modules?.[0]?.lessons?.[0]);
     if (loading || !course) return;
   }, [course, loading, selectedLessonId]);
 
@@ -54,8 +73,7 @@ const Page = () => {
 
   return (
     <div className="flex h-screen overflow-hidden bg-white">
-      {/* Sidebar fixe */}
-      <aside className=" shrink-0 ">
+      <aside className="shrink-0">
         <ModuleReadSidebar
           modules={modulesWithExpand}
           selectedModuleId={selectedModuleId}
@@ -67,14 +85,16 @@ const Page = () => {
         />
       </aside>
 
-      {/* Contenu principal avec défilement */}
       <main className="flex-1 overflow-y-auto [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
-        <div className=" mx-auto mt-4">
+        <div className="mx-auto mt-4">
           {selectedLesson ? (
-            
-          <ScrollArea className="h-screen w-full  p-4">
-            <LessonContent lesson={selectedLesson} />
-          </ScrollArea>
+            <ScrollArea className="h-screen w-full p-4">
+              <LessonContent 
+                lesson={selectedLesson} 
+                courseSlug={course.slug} 
+                quizNumberMap={quizNumberMap}
+              />
+            </ScrollArea>
           ) : (
             <div className="flex flex-col items-center justify-center min-h-[60vh] text-center text-muted-foreground gap-3">
               <div className="w-20 h-20 rounded-full bg-orange-50 flex items-center justify-center">
@@ -87,9 +107,8 @@ const Page = () => {
         </div>
       </main>
       <Separator orientation="vertical" />
-      <aside className=" shrink-0 w-90">
-      
-       <BotWindow/>
+      <aside className="shrink-0 w-90">
+        <BotWindow/>
       </aside>
     </div>
   );
