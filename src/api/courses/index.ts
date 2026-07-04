@@ -108,10 +108,15 @@ export const coursesApi = {
     });
 
     const queryString = params.toString();
-    return apiClient.get<PaginatedCourses>(`/teacher/courses?${queryString}`,token);
+    return apiClient.get<PaginatedCourses>(
+      `/teacher/courses?${queryString}`,
+      token,
+    );
   },
 
   getOne: (id: number) => apiClient.get<CourseDetail>(`/courses/${id}`),
+  getBySlug: (slug: string) =>
+    apiClient.get<CourseDetail>(`/courses/${slug}`),
 
   create: (data: CourseRequestPayload, token: string) =>
     apiClient.post<CourseResponsePayload>("/courses", data, token),

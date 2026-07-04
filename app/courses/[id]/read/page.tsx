@@ -10,6 +10,7 @@ import { ScrollArea } from "@/components/ui/scroll-area"
 import { Separator } from '@/components/ui/separator';
 import BotWindow from '@/components/chatbot/window';
 import Loading from './loading';
+import { buildQuizNumberMap } from '@/lib/quiz-numbering';
 
 const Page = () => {
   const params = useParams();
@@ -30,26 +31,8 @@ const Page = () => {
   }, []);
 
   // Numérotation globale des quiz dans le cours (1, 2, 3...)
-  const quizNumberMap = useMemo(() => {
-    const map = new Map<number, number>();
-    let counter = 0;
+  const quizNumberMap = useMemo(() => buildQuizNumberMap(course), [course]);
 
-    course?.modules?.forEach((mod) => {
-      mod.lessons?.forEach((lesson) => {
-        lesson.blocks
-          ?.slice()
-          .sort((a, b) => (a.order ?? 0) - (b.order ?? 0))
-          .forEach((block) => {
-            if (block.type === 'quiz') {
-              counter += 1;
-              map.set(block.id, counter);
-            }
-          });
-      });
-    });
-
-    return map;
-  }, [course]);
 
   useEffect(() => {
     if (loading || !course) return;

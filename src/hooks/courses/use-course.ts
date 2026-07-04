@@ -261,3 +261,44 @@ export const useCourseDetail = (courseId: number | string | null) => {
     isSuccess: !!course && !error,
   };
 };
+
+// ====================== HOOK DÉTAIL COURS PAR SLUG ======================
+export const useCourseDetailBySlug = (slug: string | null) => {
+  const [course, setCourse] = useState<CourseDetail | null>(null);
+  const [loading, setLoading] = useState<boolean>(true);
+  const [error, setError] = useState<string | null>(null);
+
+  const fetchCourseBySlug = useCallback(async () => {
+    if (!slug) {
+      setLoading(false);
+      return;
+    }
+
+    setLoading(true);
+    setError(null);
+
+    try {
+      const response = await coursesApi.getBySlug(slug);
+      setCourse(response ?? null);
+    } catch (err: unknown) {
+      setError(
+        getErrorMessage(err, "Impossible de charger les détails du cours"),
+      );
+      setCourse(null);
+    } finally {
+      setLoading(false);
+    }
+  }, [slug]);
+
+  useEffect(() => {
+    fetchCourseBySlug();
+  }, [fetchCourseBySlug]);
+
+  return {
+    course,
+    loading,
+    error,
+    refetch: fetchCourseBySlug,
+    isSuccess: !!course && !error,
+  };
+};
