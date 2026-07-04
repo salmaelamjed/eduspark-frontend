@@ -2,7 +2,7 @@
 
 import { useParams, useSearchParams } from 'next/navigation';
 import { useMemo, useState } from 'react';
-import { useCourseDetail } from '@/hooks/courses/use-course';
+import { useCourseDetail, useCourseDetailBySlug } from '@/hooks/courses/use-course';
 import { findQuizByNumber } from '@/lib/quiz-numbering';
 import { CheckCircle2, XCircle, ArrowLeft, Trophy, Loader2 } from 'lucide-react';
 import Link from 'next/link';
@@ -33,7 +33,7 @@ const QuizPage = () => {
   const courseSlug = params.courseSlug as string;
   const quizNumber = searchParams.get('quiz');
 
-  const { course, loading: courseLoading, error: courseError } = useCourseDetail(courseSlug);
+  const { course, loading: courseLoading, error: courseError } = useCourseDetailBySlug(courseSlug);
 
   const [answers, setAnswers] = useState<Record<string, string>>({});
   const [submitting, setSubmitting] = useState(false);
@@ -100,7 +100,7 @@ const QuizPage = () => {
       <div className="flex flex-col items-center justify-center min-h-screen gap-3 text-center px-4">
         <XCircle className="w-10 h-10 text-gray-300" />
         <p className="font-medium text-gray-700">Quiz introuvable</p>
-        <Link href={`/cours/${courseSlug}`} className="text-sm text-orange-600 hover:underline">
+        <Link href={`/courses/${courseSlug}`} className="text-sm text-orange-600 hover:underline">
           Retour au cours
         </Link>
       </div>
@@ -111,7 +111,7 @@ const QuizPage = () => {
     <div className="max-w-2xl mx-auto px-4 py-10">
       <div className="mb-8">
         <Link
-          href={`/cours/${courseSlug}`}
+          href={`/courses/${courseSlug}`}
           className="inline-flex items-center gap-1.5 text-sm text-gray-500 hover:text-orange-600 transition-colors mb-4"
         >
           <ArrowLeft className="w-4 h-4" />

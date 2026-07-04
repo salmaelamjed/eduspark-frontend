@@ -286,7 +286,7 @@ const Page = () => {
                   {/* Overlay on hover */}
                   <div className="absolute inset-0 bg-black/50 opacity-0 transition-opacity duration-300 group-hover:opacity-100 flex items-center justify-center">
                     <Link 
-                      href={`/courses/${course.id}`} 
+                      href={`/courses/${course.slug}`} 
                       className="rounded-md bg-orange-500 hover:bg-orange-400 px-4 py-2 text-sm font-semibold text-white transition-colors"
                     >
                       Voir le cours

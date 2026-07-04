@@ -2,7 +2,7 @@
 
 import { useParams } from 'next/navigation';
 import { useEffect, useState, useCallback, useMemo } from 'react';
-import { useCourseDetail } from '@/hooks/courses/use-course';
+import {  useCourseDetail } from '@/hooks/courses/use-course';
 import { ModuleReadSidebar } from '@/components/read-sidebar';
 import { FileText } from 'lucide-react';
 import LessonContent from '@/components/lesson/lesson-content';
@@ -14,9 +14,10 @@ import { buildQuizNumberMap } from '@/lib/quiz-numbering';
 
 const Page = () => {
   const params = useParams();
-  const courseId = params.id as string;
+    const courseId = params.id as string;
 
-  const { course, loading, error } = useCourseDetail(courseId);
+
+   const { course, loading, error } = useCourseDetail(courseId);
   const [selectedModuleId, setSelectedModuleId] = useState<number | null>(null);
   const [selectedLessonId, setSelectedLessonId] = useState<number | null>(null);
   const [expandedModules, setExpandedModules] = useState<Record<number, boolean>>({});

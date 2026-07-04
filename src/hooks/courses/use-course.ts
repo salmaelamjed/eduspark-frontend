@@ -239,7 +239,7 @@ export const useCourseDetail = (courseId: number | string | null) => {
     setError(null);
 
     try {
-      const response = await coursesApi.getOne(Number(courseId));
+      const response = await coursesApi.getOne(courseId);
       setCourse(response ?? null);
     } catch (err: unknown) {
      setError(getErrorMessage(err, "Impossible de charger les détails du cours"));
