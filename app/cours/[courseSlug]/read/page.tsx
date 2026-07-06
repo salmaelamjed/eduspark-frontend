@@ -17,7 +17,7 @@ const Page = () => {
     const courseId = params.courseSlug  as string;
 
 
-   const { course, loading, error } = useCourseDetailBySlug(courseId);
+  const {course, loading, error } = useCourseDetailBySlug(courseId);
   const [selectedModuleId, setSelectedModuleId] = useState<number | null>(null);
   const [selectedLessonId, setSelectedLessonId] = useState<number | null>(null);
   const [expandedModules, setExpandedModules] = useState<Record<number, boolean>>({});

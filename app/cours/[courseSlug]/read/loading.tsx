@@ -1,5 +1,9 @@
 import { Skeleton } from "@/components/ui/skeleton"
 import { Separator } from "@/components/ui/separator"
+import Image from "next/image"
+import { Avatar, AvatarImage ,AvatarFallback} from '@/components/ui/avatar';
+import RealTimeMode from "@/components/chatbot/real-time";
+
 
 export default function Loading() {
   return (
@@ -7,9 +11,17 @@ export default function Loading() {
       
       {/* 1. SKELETON SIDEBAR GAUCHE (ModuleReadSidebar) */}
       <aside className="w-80 shrink-0 border-r border-gray-100 p-6 flex flex-col gap-6">
-        {/* Titre du cours */}
-        <Skeleton className="h-7 w-3/4 rounded-lg" />
-        <Skeleton className="h-4 w-1/2 rounded-md mb-4" />
+        <div className="p-4 border-b border-border">
+                  <div className="flex items-center justify-center mb-3">
+                      <Image
+                        src="/images/EduSparkL.svg"
+                        alt="EduSpark logo"
+                        width={150}
+                        height={150}
+                        priority
+                    />
+                  </div>
+                </div>
         
         {/* Liste des Modules (Simule 3 modules) */}
         <div className="space-y-6">
@@ -71,12 +83,31 @@ export default function Loading() {
       {/* 3. SKELETON CHATBOT DROIT (BotWindow) */}
       <aside className="w-90 shrink-0 bg-gray-50/50 p-4 flex flex-col justify-between h-full">
         {/* Header du Bot */}
-        <div className="flex items-center gap-3 border-b border-gray-100 pb-4">
-          <Skeleton className="h-10 w-10 rounded-full" />
-          <div className="space-y-2 flex-1">
-            <Skeleton className="h-4 w-1/3 rounded-md" />
-            <Skeleton className="h-3 w-1/4 rounded-md" />
+        <div className="flex justify-between px-4 pt-4">
+          <div className="flex gap-2">
+                <Avatar className="w-14 h-14">
+                      <AvatarImage
+                    src="https://github.com/shadcn.png"
+                    alt="@shadcn"
+                    />
+                    <AvatarFallback>CN</AvatarFallback>
+
+                </Avatar>
+
+                <div className="flex items-start flex-col">
+                  <h3 className="text-md font-black leading-none">
+                    Mohammed el amjed 
+                  </h3>
+                  <p className="text-sm"></p>
+                  {/* {realtimeMode?.mode && (
+                    
+                  )} */}
+                  <RealTimeMode/>
+                </div>
           </div>
+          <div className="relative w-20 h-20">
+            
+         </div>
         </div>
 
         {/* Zone des messages simulée */}
