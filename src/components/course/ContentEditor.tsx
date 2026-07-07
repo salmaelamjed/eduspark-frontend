@@ -56,6 +56,8 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { QuizEditor } from "../quiz";
+import { blockVariants } from "@/lib/block";
+
 
 interface ContentEditorProps {
   lesson: Lesson | undefined;
@@ -374,48 +376,6 @@ const simulateFileUpload = async (
     return blockLabels[type] || type;
   };
 
-
-  type BlockVariant = {
-  key: string;
-  label: string;
-  badge?: string; 
-  data: Partial<Block>;
-};
-
-const blockVariants: Partial<Record<BlockType, BlockVariant[]>> = {
-  heading: [
-    { key: "h1", label: "Titre principal", badge: "H1", data: { settings: { level: "h1" } } },
-    { key: "h2", label: "Titre",           badge: "H2", data: { settings: { level: "h2" } } },
-    { key: "h3", label: "Sous-titre",       badge: "H3", data: { settings: { level: "h3" } } },
-    { key: "h4", label: "Petit titre",      badge: "H4", data: { settings: { level: "h4" } } },
-     { key: "h5", label: "Sous-titre",       badge: "H5", data: { settings: { level: "h5" } } },
-    { key: "h6", label: "Petit titre",      badge: "H6", data: { settings: { level: "h6" } } },
-  ],
-  list: [
-    { key: "unordered", label: "Liste à puces",   data: { settings: { style: "unordered" } } },
-    { key: "ordered",   label: "Liste numérotée", data: { settings: { style: "ordered" } } },
-  ],
-  callout: [
-    { key: "info",    label: "Info",     data: { settings: { type: "info" } } },
-    { key: "success", label: "Succès",   data: { settings: { type: "success" } } },
-    { key: "warning", label: "Warning",  data: { settings: { type: "warning" } } },
-    { key: "danger",  label: "Danger",   data: { settings: { type: "danger" } } },
-  ],
-  code: [
-    { key: "javascript", label: "JavaScript", data: { code_data: { code: "", language: "javascript" } } },
-    { key: "php",        label: "PHP",        data: { code_data: { code: "", language: "php" } } },
-    { key: "python",     label: "Python",      data: { code_data: { code: "", language: "python" } } },
-    { key: "markup",     label: "HTML",        data: { code_data: { code: "", language: "markup" } } },
-    { key: "css",        label: "CSS",         data: { code_data: { code: "", language: "css" } } },
-    { key: "java",       label: "Java",        data: { code_data: { code: "", language: "java" } } },
-  ],
-  embed: [
-    { key: "youtube", label: "YouTube", data: { embed_type: "youtube" } },
-    { key: "vimeo",   label: "Vimeo",   data: { embed_type: "vimeo" } },
-    { key: "figma",   label: "Figma",   data: { embed_type: "figma" } },
-    { key: "other",   label: "Autre (Iframe)", data: { embed_type: "other" } },
-  ],
-};
 return (
     <div className="flex flex-col h-screen from-gray-50 w-full  ">
   <header className=" bg-white/90 backdrop-blur-md  border-b">
@@ -1193,28 +1153,6 @@ switch (block.type) {
       case "quiz":
         return renderBlockWrapper("Quiz Éducatif", blockIcons.quiz, (
           <div className="space-y-3">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-              <div>
-                <label className="text-[11px] font-medium text-gray-500">Titre de {"l'exercice "}:</label>
-                <Input
-                  value={block.title || ""}
-                  placeholder="Ex: Évaluation sommative - Chapitre 1"
-                  className="font-semibold text-sm"
-                  onChange={(e) => onUpdateBlock(module.id, lesson.id, index, { title: e.target.value })}
-                />
-              </div>
-              <div>
-                <label className="text-[11px] font-medium text-gray-500">Description / Directives :</label>
-                <Input
-                  value={block.description || ""}
-                  placeholder="Ex: Répondez correctement aux questions pour valider ce module."
-                  className="text-xs text-muted-foreground"
-                  onChange={(e) => onUpdateBlock(module.id, lesson.id, index, { description: e.target.value })}
-                />
-              </div>
-            </div>
-
-            {/* Rendu de l'éditeur avancé de questions */}
             <QuizEditor
               block={block}
               onUpdate={(updates) => onUpdateBlock(module.id, lesson.id, index, updates)}
@@ -1268,85 +1206,85 @@ switch (block.type) {
         <aside className="w-38 shrink-0 border-l bg-white overflow-y-auto shadow-sm">
           <div className="p-4">
             <div className="w-full flex flex-col gap-1">
-  {Object.entries(blockLabels).map(([type, label]) => {
-    const variants = blockVariants[type as BlockType];
+              {Object.entries(blockLabels).map(([type, label]) => {
+                const variants = blockVariants[type as BlockType];
 
-    if (variants) {
-      return (
-        <DropdownMenu key={type}>
-          <DropdownMenuTrigger asChild>
-            <Button
-              variant="ghost"
-              className="w-full justify-start gap-3 hover:bg-orange-50 hover:text-orange-700 text-gray-700 transition-colors duration-200 rounded-lg py-2 h-9"
-            >
-              <span className="text-orange-500">{blockIcons[type as BlockType]}</span>
-              <span className="text-xs font-medium">{label}</span>
-            </Button>
-          </DropdownMenuTrigger>
-          <DropdownMenuContent align="start" className="w-56">
-            {variants.map((v) => (
-              <DropdownMenuItem
-                key={v.key}
-                onClick={() => handleAddBlock(type as BlockType, v.data)}
-                className="gap-2"
-              >
-                {v.badge && (
-                  <span className="text-[10px] font-bold text-gray-400 w-6">{v.badge}</span>
-                )}
-                <span className="text-sm">{v.label}</span>
-              </DropdownMenuItem>
-            ))}
-          </DropdownMenuContent>
-        </DropdownMenu>
-      );
-    }
+                if (variants) {
+                  return (
+                    <DropdownMenu key={type}>
+                      <DropdownMenuTrigger asChild>
+                        <Button
+                          variant="ghost"
+                          className="w-full justify-start gap-3 hover:bg-orange-50 hover:text-orange-700 text-gray-700 transition-colors duration-200 rounded-lg py-2 h-9"
+                        >
+                          <span className="text-orange-500">{blockIcons[type as BlockType]}</span>
+                          <span className="text-xs font-medium">{label}</span>
+                        </Button>
+                      </DropdownMenuTrigger>
+                      <DropdownMenuContent align="start" className="w-46">
+                        {variants.map((v) => (
+                          <DropdownMenuItem
+                            key={v.key}
+                            onClick={() => handleAddBlock(type as BlockType, v.data)}
+                            className="gap-2"
+                          >
+                            {v.badge && (
+                              <span className="text-[10px] font-bold text-orange-400 w-6">{v.badge}</span>
+                            )}
+                            <span className="text-sm">{v.label}</span>
+                          </DropdownMenuItem>
+                        ))}
+                      </DropdownMenuContent>
+                    </DropdownMenu>
+                  );
+                }
 
-    return (
-      <Button
-        key={type}
-        variant="ghost"
-        className="w-full justify-start gap-3 hover:bg-orange-50 hover:text-orange-700 text-gray-700 transition-colors duration-200 rounded-lg py-2 h-9"
-        onClick={() => handleAddBlock(type as BlockType)}
-      >
-        <span className="text-orange-500">{blockIcons[type as BlockType]}</span>
-        <span className="text-xs font-medium">{label}</span>
-      </Button>
-    );
-  })}
-</div>
+                return (
+                  <Button
+                    key={type}
+                    variant="ghost"
+                    className="w-full justify-start gap-3 hover:bg-orange-50 hover:text-orange-700 text-gray-700 transition-colors duration-200 rounded-lg py-2 h-9"
+                    onClick={() => handleAddBlock(type as BlockType)}
+                  >
+                    <span className="text-orange-500">{blockIcons[type as BlockType]}</span>
+                    <span className="text-xs font-medium">{label}</span>
+                  </Button>
+                );
+              })}
+            </div>
           </div>
         </aside>
-  </div>
+        </div>
 
-  {/* Boîte de dialogue de confirmation de suppression */}
-  <AlertDialog open={deleteConfirmation.isOpen} onOpenChange={(open) => {
-    if (!open) cancelDelete();
-  }}>
-    <AlertDialogContent>
-      <AlertDialogHeader>
-        <AlertDialogTitle>Confirmer la suppression</AlertDialogTitle>
-        <AlertDialogDescription>
-          Êtes-vous sûr de vouloir supprimer ce bloc{" "}
-          <span className="font-semibold text-foreground">
-            {getBlockTypeLabel(deleteConfirmation.blockType)}
-          </span>
-          {" "}? Cette action est irréversible et supprimera définitivement tout le contenu associé à ce bloc.
-        </AlertDialogDescription>
-      </AlertDialogHeader>
-      <AlertDialogFooter>
-        <AlertDialogCancel onClick={cancelDelete}>
-          Annuler
-        </AlertDialogCancel>
-        <AlertDialogAction 
-          onClick={confirmDelete}
-          className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
-        >
-          <Trash2 className="h-4 w-4 mr-2" />
-          Supprimer définitivement
-        </AlertDialogAction>
-      </AlertDialogFooter>
-    </AlertDialogContent>
-  </AlertDialog>
+        {/* Boîte de dialogue de confirmation de suppression */}
+        <AlertDialog open={deleteConfirmation.isOpen} onOpenChange={(open) => {
+          if (!open) cancelDelete();
+        }}>
+          <AlertDialogContent>
+            <AlertDialogHeader>
+              <AlertDialogTitle>Confirmer la suppression</AlertDialogTitle>
+              <AlertDialogDescription>
+                Êtes-vous sûr de vouloir supprimer ce bloc{" "}
+                <span className="font-semibold text-foreground">
+                  {getBlockTypeLabel(deleteConfirmation.blockType)}
+                </span>
+                {" "}? Cette action est irréversible et supprimera définitivement tout le contenu associé à ce bloc.
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+              <AlertDialogCancel onClick={cancelDelete}>
+                Annuler
+              </AlertDialogCancel>
+              <AlertDialogAction 
+                onClick={confirmDelete}
+                className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+              >
+                <Trash2 className="h-4 w-4 mr-2" />
+                Supprimer définitivement
+              </AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
 </div>
 
 

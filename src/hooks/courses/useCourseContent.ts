@@ -278,6 +278,13 @@ const getModulesForBackend = useCallback(() => {
                 explanation: q.explanation || null,
               })),
             };
+
+            baseBlock.settings = {
+              quiz_title:
+                b.quiz_data?.settings?.title || b.title || "Quiz sans titre",
+              quiz_description:
+                b.quiz_data?.settings?.description || b.description || "",
+            };
             break;
           }
 
@@ -416,6 +423,12 @@ const getModulesForBackend = useCallback(() => {
                     description: data.description || "",
                     quiz_data: {
                       settings: {
+                        title:
+                          data.quiz_data?.settings?.title || "Nouveau Quiz",
+                        description:
+                          data.quiz_data?.settings?.description ||
+                          data.description ||
+                          "",
                         passing_score_percent:
                           data.quiz_data?.settings?.passing_score_percent || 70,
                       },

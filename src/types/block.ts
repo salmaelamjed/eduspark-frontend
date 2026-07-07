@@ -116,6 +116,8 @@ export interface QuizBlock extends BaseBlock {
   quiz_data: {
     questions: QuizQuestion[];
     settings: {
+      title:string;
+      description: string;
       passing_score_percent: number;
     };
     shuffle_questions?: boolean;

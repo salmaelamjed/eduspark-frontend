@@ -10,6 +10,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { Textarea } from "../ui/textarea";
 
 interface QuizEditorProps {
   block: QuizBlock;
@@ -17,7 +18,12 @@ interface QuizEditorProps {
 }
 
 export function QuizEditor({ block, onUpdate }: QuizEditorProps) {
-const quizData = block.quiz_data || { questions: [], settings: { passing_score_percent: 70 } };
+const quizData = block.quiz_data || { questions: [],
+   settings: {  title: "",
+                description: "",
+                passing_score_percent: 70 
+              } 
+              };
 
   const updateQuestion = (qIndex: number, updatedQuestion: Partial<QuizQuestion>) => {
     const newQuestions = [...quizData.questions];
@@ -67,9 +73,59 @@ const quizData = block.quiz_data || { questions: [], settings: { passing_score_p
   };
   return (
     <div className="space-y-6 mt-4 p-4 bg-gray-50 rounded-xl border border-dashed border-gray-300">
+
+         {/* Titre et Description du Quiz */}
+      <div className="space-y-3 p-4 bg-white rounded-lg border">
+        <h4 className="text-sm font-semibold text-gray-700">Informations générales</h4>
+        
+        <div>
+          <label className="text-xs font-medium text-gray-600">Titre du quiz</label>
+          <Input
+            value={quizData.settings.title || block.title || ""}
+            placeholder="Ex: Évaluation du module 1"
+            className="text-sm"
+            onChange={(e) => {
+              const newTitle = e.target.value;
+              onUpdate({
+                title: newTitle,
+                quiz_data: {
+                  ...quizData,
+                  settings: {
+                    ...quizData.settings,
+                    title: newTitle
+                  }
+                }
+              });
+            }}
+          />
+        </div>
+        
+        <div>
+          <label className="text-xs font-medium text-gray-600">Description du quiz</label>
+          <Textarea
+            value={quizData.settings.description || block.description || ""}
+            placeholder="Ex: Ce quiz évalue vos connaissances sur les concepts fondamentaux..."
+            className="text-sm resize-none min-h-[60px]"
+            onChange={(e) => {
+              const newDescription = e.target.value;
+              onUpdate({
+                description: newDescription,
+                quiz_data: {
+                  ...quizData,
+                  settings: {
+                    ...quizData.settings,
+                    description: newDescription
+                  }
+                }
+              });
+            }}
+          />
+        </div>
+      </div>
       <div className="flex items-center justify-between">
-        <h4 className="text-sm font-semibold text-gray-700">Configuration des Questions</h4>
-        <div className="flex items-center gap-4 text-xs">
+      <h4 className="text-sm font-semibold text-gray-700">Configuration des Questions</h4>         
+       <div className="flex items-center gap-4 text-xs">
+
           <label className="flex items-center gap-1 font-medium">
             Score requis (%) :
             <Input
@@ -194,7 +250,7 @@ const quizData = block.quiz_data || { questions: [], settings: { passing_score_p
           {/* Explication technique */}
           <div className="space-y-1">
             <span className="text-xs text-muted-foreground">Explication / Justification (optionnel) :</span>
-            <Input
+            <Textarea
               value={q.explanation || ""}
               className="text-xs"
               placeholder="Pourquoi cette réponse est correcte..."
