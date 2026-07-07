@@ -1,17 +1,17 @@
 export type BlockType =
-  | "heading" // titres structurants (h1 à h6)
-  | "paragraph" // texte standard / paragraphe
-  | "list" // liste ordonnée ou non ordonnée
-  | "quote" // citation / blockquote
+  | "heading"
+  | "paragraph" 
+  | "list" 
+  | "quote" 
   | "image"
   | "video"
   | "audio"
   | "file" // pdf, zip, doc...
-  | "code" // bloc de code avec coloration
-  | "quiz" // question / exercice interactif
-  | "embed" // iframe (youtube, figma, tweet, etc.)
-  | "divider" // séparation visuelle (hr-like)
-  | "callout"; // encart d'information (note, tip, warning...)
+  | "code" 
+  | "quiz" 
+  | "embed" 
+  | "divider" 
+  | "callout";
 
 export interface BaseBlock {
   id?:number ;
@@ -24,7 +24,7 @@ export interface BaseBlock {
 /* ---------- Settings spécifiques par type ---------- */
 
 export interface HeadingSettings {
-  level: "h1" | "h2" | "h3" | "h4" | "h5" | "h6"; // aligné avec Rule::in du backend
+  level: "h1" | "h2" | "h3" | "h4" | "h5" | "h6"; 
 }
 
 export interface ListSettings {

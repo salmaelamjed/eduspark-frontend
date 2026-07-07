@@ -23,7 +23,7 @@ import {
   Video,
   Music,
 } from "lucide-react";
-import { Lesson, Block, BlockType, QuizBlock, QuizQuestion, HeadingBlock, CalloutBlock, EmbedBlock, DividerBlock } from "@/types/block";
+import { Lesson, Block, BlockType, QuizBlock, QuizQuestion } from "@/types/block";
 import { useState, ChangeEvent } from "react";
 import { cn } from "@/lib/utils";
 import Image from "next/image";
@@ -50,7 +50,12 @@ import "prismjs/components/prism-python";
 import "prismjs/components/prism-markup"; 
 import "prismjs/components/prism-css";
 import "prismjs/components/prism-java";
-
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 
 interface ContentEditorProps {
   lesson: Lesson | undefined;
@@ -311,7 +316,20 @@ export function ContentEditor({
     );
   }
 
- const handleAddBlock = (type: BlockType) => {
+
+  const mergeNested = (
+  base: unknown,
+  override: unknown
+): Record<string, unknown> => ({
+  ...(isRecord(base) ? base : {}),
+  ...(isRecord(override) ? override : {}),
+});
+
+const isRecord = (value: unknown): value is Record<string, unknown> =>
+  typeof value === "object" && value !== null;
+
+
+ const handleAddBlock = (type: BlockType,overrideData?: Partial<Block>) => {
   if (!module?.id || !lesson?.id) return;
 
   const base = {
@@ -386,43 +404,68 @@ export function ContentEditor({
       initialData = { type, ...base } as Partial<Block>;
   }
 
+   if (overrideData) {
+    const baseData = initialData as Record<string, unknown>;
+    const overrideDataObj = overrideData as Record<string, unknown>;
+
+    initialData = {
+      ...baseData,
+      ...overrideDataObj,
+      settings: mergeNested(baseData.settings, overrideDataObj.settings),
+      code_data: mergeNested(baseData.code_data, overrideDataObj.code_data),
+    } as Partial<Block>;
+  }
+
   onAddBlock(module.id, lesson.id, type, initialData);
 };
 
-const simulateFileUpload = async (file: File, blockIndex: number, type: 'video' | 'file' | 'image' | 'audio') => {
-  setUploading(`${type}-${blockIndex}`);
-  await new Promise(resolve => setTimeout(resolve, 1200));
-  const objectUrl = URL.createObjectURL(file);
-  
-   const updateData: any = {
-    file: file, 
-  };
 
-    switch(type) {
-    case 'image':
+type UploadUpdateData = {
+  file?: File;
+  media_url?: string;
+  alt_text?: string;
+  file_name?: string;
+  file_size?: number;
+  mime_type?: string;
+  file_url?: string;
+};
+
+const simulateFileUpload = async (
+  file: File,
+  blockIndex: number,
+  type: "video" | "file" | "image" | "audio"
+) => {
+  setUploading(`${type}-${blockIndex}`);
+  await new Promise((resolve) => setTimeout(resolve, 1200));
+  const objectUrl = URL.createObjectURL(file);
+
+  const updateData: UploadUpdateData = { file };
+
+  switch (type) {
+    case "image":
       updateData.media_url = objectUrl;
       updateData.alt_text = file.name;
       break;
-    case 'video':
+    case "video":
       updateData.media_url = objectUrl;
       updateData.file_name = file.name;
       updateData.file_size = file.size;
       break;
-    case 'audio':
+    case "audio":
       updateData.media_url = objectUrl;
       updateData.file_name = file.name;
       updateData.file_size = file.size;
       updateData.mime_type = file.type;
       break;
-    case 'file':
+    case "file":
       updateData.file_url = objectUrl;
       updateData.file_name = file.name;
       updateData.file_size = file.size;
       updateData.mime_type = file.type;
       break;
   }
-  
-  onUpdateBlock(module.id, lesson.id, blockIndex, updateData);
+
+  onUpdateBlock(module.id, lesson.id, blockIndex, updateData as Partial<Block>);
   setUploading(null);
 };
 
@@ -536,6 +579,49 @@ const simulateFileUpload = async (file: File, blockIndex: number, type: 'video' 
     if (!type) return "bloc";
     return blockLabels[type] || type;
   };
+
+
+  type BlockVariant = {
+  key: string;
+  label: string;
+  badge?: string; 
+  data: Partial<Block>;
+};
+
+const blockVariants: Partial<Record<BlockType, BlockVariant[]>> = {
+  heading: [
+    { key: "h1", label: "Titre principal", badge: "H1", data: { settings: { level: "h1" } } },
+    { key: "h2", label: "Titre",           badge: "H2", data: { settings: { level: "h2" } } },
+    { key: "h3", label: "Sous-titre",       badge: "H3", data: { settings: { level: "h3" } } },
+    { key: "h4", label: "Petit titre",      badge: "H4", data: { settings: { level: "h4" } } },
+     { key: "h5", label: "Sous-titre",       badge: "H5", data: { settings: { level: "h5" } } },
+    { key: "h6", label: "Petit titre",      badge: "H6", data: { settings: { level: "h6" } } },
+  ],
+  list: [
+    { key: "unordered", label: "Liste à puces",   data: { settings: { style: "unordered" } } },
+    { key: "ordered",   label: "Liste numérotée", data: { settings: { style: "ordered" } } },
+  ],
+  callout: [
+    { key: "info",    label: "Info",     data: { settings: { type: "info" } } },
+    { key: "success", label: "Succès",   data: { settings: { type: "success" } } },
+    { key: "warning", label: "Warning",  data: { settings: { type: "warning" } } },
+    { key: "danger",  label: "Danger",   data: { settings: { type: "danger" } } },
+  ],
+  code: [
+    { key: "javascript", label: "JavaScript", data: { code_data: { code: "", language: "javascript" } } },
+    { key: "php",        label: "PHP",        data: { code_data: { code: "", language: "php" } } },
+    { key: "python",     label: "Python",      data: { code_data: { code: "", language: "python" } } },
+    { key: "markup",     label: "HTML",        data: { code_data: { code: "", language: "markup" } } },
+    { key: "css",        label: "CSS",         data: { code_data: { code: "", language: "css" } } },
+    { key: "java",       label: "Java",        data: { code_data: { code: "", language: "java" } } },
+  ],
+  embed: [
+    { key: "youtube", label: "YouTube", data: { embed_type: "youtube" } },
+    { key: "vimeo",   label: "Vimeo",   data: { embed_type: "vimeo" } },
+    { key: "figma",   label: "Figma",   data: { embed_type: "figma" } },
+    { key: "other",   label: "Autre (Iframe)", data: { embed_type: "other" } },
+  ],
+};
 return (
     <div className="flex flex-col h-screen from-gray-50 w-full  ">
   <header className=" bg-white/90 backdrop-blur-md  border-b">
@@ -583,25 +669,6 @@ switch (block.type) {
 
   return renderBlockWrapper("Titre", blockIcons.heading, (
     <div className="space-y-3">
-      <div className="flex items-center gap-2">
-        <span className="text-xs text-muted-foreground">Importance :</span>
-        <Select
-          value={block.settings.level || "h2"}
-          onValueChange={(val: HeadingBlock["settings"]["level"]) =>
-            onUpdateBlock(module.id, lesson.id, index, { settings: { level: val } })
-          }
-        >
-          <SelectTrigger className="w-24 h-8 text-xs">
-            <SelectValue />
-          </SelectTrigger>
-          <SelectContent>
-            {(["h1", "h2", "h3", "h4", "h5", "h6"] as const).map((lvl) => (
-              <SelectItem key={lvl} value={lvl}>{lvl.toUpperCase()}</SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
-      </div>
-
       <div className="relative max-w-3xl">
         <textarea
           value={block.content}
@@ -678,26 +745,8 @@ switch (block.type) {
 
         return renderBlockWrapper("Liste", blockIcons.list, (
           <div className="space-y-3">
-            <div className="flex gap-2 items-center">
-              <span className="text-xs text-muted-foreground">Format :</span>
-              <Select
-                value={block.settings.style || "unordered"}
-                onValueChange={(val: "ordered" | "unordered") => {
-                  onUpdateBlock(module.id, lesson.id, index, { settings:{style:val}});
-                }}
-              >
-                <SelectTrigger className="w-36 h-8 text-xs">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="unordered">• Puces</SelectItem>
-                  <SelectItem value="ordered">1. Numérotée</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-
       <Textarea
-        value={displayValue}   // ← On affiche avec les préfixes
+        value={displayValue}   
         placeholder="Commencez à écrire ici..."
         className="w-full border-none shadow-none focus-visible:ring-0 p-0 text-gray-800 leading-relaxed bg-transparent placeholder:italic placeholder:text-gray-400"
         rows={4}
@@ -1335,23 +1384,6 @@ switch (block.type) {
       case "embed":
         return renderBlockWrapper("Intégration Externe", blockIcons.embed, (
           <div className="space-y-3">
-            <div className="flex gap-2 items-center">
-              <span className="text-xs text-muted-foreground">Source :</span>
-              <Select
-                value={block.embed_type || "other"}
-                onValueChange={(val: EmbedBlock["embed_type"]) => onUpdateBlock(module.id, lesson.id, index, { embed_type: val })}
-              >
-                <SelectTrigger className="w-32 h-8 text-xs">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="youtube">YouTube</SelectItem>
-                  <SelectItem value="vimeo">Vimeo</SelectItem>
-                  <SelectItem value="figma">Figma</SelectItem>
-                  <SelectItem value="other">Autre (Iframe)</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
             <Input
               value={block.media_url}
               placeholder="Insérer l'URL ou le lien d'intégration..."
@@ -1405,19 +1437,6 @@ switch (block.type) {
             "border-gray-200"
           )} />
           <div className="flex justify-end">
-            <Select
-              value={block.style || "solid"}
-              onValueChange={(val: DividerBlock["style"]) => onUpdateBlock(module.id, lesson.id, index, { style: val })}
-            >
-              <SelectTrigger className="w-28 h-7 text-xs">
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="solid">Trait plein</SelectItem>
-                <SelectItem value="dashed">Tirets</SelectItem>
-                <SelectItem value="dotted">Pointillés</SelectItem>
-              </SelectContent>
-            </Select>
           </div>
         </div>
       ));
@@ -1431,22 +1450,6 @@ switch (block.type) {
         block.settings.type === "danger" && "bg-red-50/60 border-red-500 text-red-900",
       )}>
       <div className="flex gap-3 items-start">
-        <Select
-          value={block.settings.type || "info"}
-          onValueChange={(val: CalloutBlock["settings"]["type"]) =>
-            onUpdateBlock(module.id, lesson.id, index, { settings: { type: val } })
-          }
-        >
-          <SelectTrigger className="w-28 h-8 text-xs bg-white text-gray-800">
-            <SelectValue />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="info">Info</SelectItem>
-            <SelectItem value="success">Succès</SelectItem>
-            <SelectItem value="warning">Warning</SelectItem>
-            <SelectItem value="danger">Danger</SelectItem>
-          </SelectContent>
-        </Select>
         <Textarea
           value={block.content}
           placeholder="Saisissez une remarque ou consigne importante..."
@@ -1471,20 +1474,52 @@ switch (block.type) {
         <aside className="w-38 shrink-0 border-l bg-white overflow-y-auto shadow-sm">
           <div className="p-4">
             <div className="w-full flex flex-col gap-1">
-              {Object.entries(blockLabels).map(([type, label]) => (
-                <Button
-                  key={type}
-                  variant="ghost"
-                  className="w-full justify-start gap-3 hover:bg-orange-50 hover:text-orange-700 text-gray-700 transition-colors duration-200 rounded-lg py-2 h-9"
-                  onClick={() => handleAddBlock(type as BlockType)}
-                >
-                  <span className="text-orange-500">
-                    {blockIcons[type as BlockType]}
-                  </span>
-                  <span className="text-xs font-medium">{label}</span>
-                </Button>
-              ))}
-            </div>
+  {Object.entries(blockLabels).map(([type, label]) => {
+    const variants = blockVariants[type as BlockType];
+
+    if (variants) {
+      return (
+        <DropdownMenu key={type}>
+          <DropdownMenuTrigger asChild>
+            <Button
+              variant="ghost"
+              className="w-full justify-start gap-3 hover:bg-orange-50 hover:text-orange-700 text-gray-700 transition-colors duration-200 rounded-lg py-2 h-9"
+            >
+              <span className="text-orange-500">{blockIcons[type as BlockType]}</span>
+              <span className="text-xs font-medium">{label}</span>
+            </Button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="start" className="w-56">
+            {variants.map((v) => (
+              <DropdownMenuItem
+                key={v.key}
+                onClick={() => handleAddBlock(type as BlockType, v.data)}
+                className="gap-2"
+              >
+                {v.badge && (
+                  <span className="text-[10px] font-bold text-gray-400 w-6">{v.badge}</span>
+                )}
+                <span className="text-sm">{v.label}</span>
+              </DropdownMenuItem>
+            ))}
+          </DropdownMenuContent>
+        </DropdownMenu>
+      );
+    }
+
+    return (
+      <Button
+        key={type}
+        variant="ghost"
+        className="w-full justify-start gap-3 hover:bg-orange-50 hover:text-orange-700 text-gray-700 transition-colors duration-200 rounded-lg py-2 h-9"
+        onClick={() => handleAddBlock(type as BlockType)}
+      >
+        <span className="text-orange-500">{blockIcons[type as BlockType]}</span>
+        <span className="text-xs font-medium">{label}</span>
+      </Button>
+    );
+  })}
+</div>
           </div>
         </aside>
   </div>
