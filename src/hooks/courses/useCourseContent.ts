@@ -263,7 +263,7 @@ const getModulesForBackend = useCallback(() => {
               },
               questions: questions.map((q, qIdx) => ({
                 id: `q-${qIdx + 1}`,
-                question_text: q.question || "Question",
+                question_text: q.question_text || "Question",
                 type:
                   q.type === "multiple" && (q.correct_answers?.length || 0) > 1
                     ? "multiple"
@@ -408,7 +408,7 @@ const getModulesForBackend = useCallback(() => {
                   const data = initialData as Partial<QuizBlock>;
                   const defaultQuestions: QuizQuestion[] = [
                     {
-                      question: "Question par défaut...",
+                      question_text: "Question par défaut...",
                       type: "multiple",
                       options: ["Option 1", "Option 2", "Option 3"],
                       correct_answers: [0],

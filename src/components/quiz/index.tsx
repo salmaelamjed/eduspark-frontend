@@ -35,7 +35,7 @@ const quizData = block.quiz_data || { questions: [],
 
   const addQuestion = () => {
     const newQuestion: QuizQuestion = {
-      question: "",
+      question_text: "",
       type: "single",
       options: ["Option 1", "Option 2"],
       correct_answers: [0],
@@ -105,7 +105,7 @@ const quizData = block.quiz_data || { questions: [],
           <Textarea
             value={quizData.settings.description || block.description || ""}
             placeholder="Ex: Ce quiz évalue vos connaissances sur les concepts fondamentaux..."
-            className="text-sm resize-none min-h-[60px]"
+            className="text-sm resize-none min-h-15"
             onChange={(e) => {
               const newDescription = e.target.value;
               onUpdate({
@@ -163,9 +163,9 @@ const quizData = block.quiz_data || { questions: [],
           <div className="space-y-1">
             <span className="text-xs font-bold text-orange-600">Question n°{qIndex + 1}</span>
             <Input
-              value={q.question}
+              value={q.question_text}
               placeholder="Ex : Quelle est la définition d'une API ?"
-              onChange={(e) => updateQuestion(qIndex, { question: e.target.value })}
+              onChange={(e) => updateQuestion(qIndex, { question_text: e.target.value })}
             />
           </div>
 

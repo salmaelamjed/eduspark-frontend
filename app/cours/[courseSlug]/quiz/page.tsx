@@ -4,7 +4,7 @@ import { useParams, useSearchParams } from 'next/navigation';
 import { useMemo, useState } from 'react';
 import { useCourseDetailBySlug } from '@/hooks/courses/use-course';
 import { findQuizByNumber } from '@/lib/quiz-numbering';
-import { XCircle, ArrowLeft, Trophy, Loader2 } from 'lucide-react';
+import { XCircle, ArrowLeft, Trophy, Loader2, Check } from 'lucide-react';
 import Link from 'next/link';
 
 type OptionLike = string | { id?: string; text: string };
@@ -15,6 +15,7 @@ function getOptionText(option: OptionLike): string {
 function getOptionKey(option: OptionLike, index: number): string | number {
   return typeof option === 'string' ? index : (option.id ?? index);
 }
+
 interface QuizResult {
   score_percent: number;
   passed: boolean;
@@ -22,8 +23,8 @@ interface QuizResult {
   total: number;
 }
 
-// answers[questionIndex] = index d'option (single) ou tableau d'indices (multiple)
-type AnswerValue = number | number[];
+// answers[questionIndex] = tableau d'indices (pour toutes les questions)
+type AnswerValue = number[];
 
 const QuizPage = () => {
   const params = useParams();
@@ -46,17 +47,18 @@ const QuizPage = () => {
 
   const questions = quizLocation?.block.quiz_data?.questions ?? [];
   const passingScore = quizLocation?.block.quiz_data?.settings?.passing_score_percent;
-  const allAnswered = questions.length > 0 && questions.every((_, idx) => answers[idx] !== undefined);
+  
+  // Vérifier si toutes les questions ont au moins une réponse
+  const allAnswered = questions.length > 0 && questions.every((_, idx) => {
+    const answer = answers[idx];
+    return answer && answer.length > 0;
+  });
 
-  const handleSelectSingle = (questionIdx: number, optionIdx: number) => {
-    if (result) return;
-    setAnswers((prev) => ({ ...prev, [questionIdx]: optionIdx }));
-  };
-
-  const handleToggleMultiple = (questionIdx: number, optionIdx: number) => {
+  // Gérer le toggle pour toutes les questions (checkboxes)
+  const handleToggleOption = (questionIdx: number, optionIdx: number) => {
     if (result) return;
     setAnswers((prev) => {
-      const current = Array.isArray(prev[questionIdx]) ? (prev[questionIdx] as number[]) : [];
+      const current = prev[questionIdx] || [];
       const next = current.includes(optionIdx)
         ? current.filter((i) => i !== optionIdx)
         : [...current, optionIdx];
@@ -176,59 +178,59 @@ const QuizPage = () => {
 
       <div className="space-y-6">
         {questions.map((question, qIdx) => {
+          const selected = answers[qIdx] || [];
           const isMultiple = question.type === 'multiple';
-          const selected = answers[qIdx];
 
           return (
             <div key={qIdx} className="p-5 rounded-2xl border border-gray-100 bg-white shadow-sm">
               <div className="flex items-start justify-between gap-3 mb-4">
                 <p className="font-semibold text-gray-900">
-                  {qIdx + 1}. {question.question}
+                  {qIdx + 1}. {question.question_text}
+                 
+                    <span className="ml-2 text-xs items-end font-normal text-gray-400">
+                      (2pts)
+                    </span>
+                 
                 </p>
-                {isMultiple && (
-                  <span className="text-xs text-gray-400 shrink-0 mt-0.5">Plusieurs réponses</span>
-                )}
               </div>
               <div className="space-y-2">
                 {question.options.map((option, oIdx) => {
-                    const optionText = getOptionText(option);
-                    const isSelected = isMultiple
-                        ? Array.isArray(selected) && selected.includes(oIdx)
-                        : selected === oIdx;
+                  const optionText = getOptionText(option);
+                  const isSelected = selected.includes(oIdx);
 
-                    return (
-                        <button
-                        key={getOptionKey(option, oIdx)}
-                        onClick={() =>
-                            isMultiple
-                            ? handleToggleMultiple(qIdx, oIdx)
-                            : handleSelectSingle(qIdx, oIdx)
-                        }
-                        disabled={!!result}
-                        className={`w-full text-left px-4 py-3 rounded-xl border text-sm font-medium transition-all flex items-center gap-3 ${
-                            isSelected
-                            ? 'border-orange-500 bg-orange-50 text-orange-900'
-                            : 'border-gray-200 hover:border-orange-200 hover:bg-orange-50/40 text-gray-700'
-                        } ${result ? 'cursor-default opacity-90' : 'cursor-pointer'}`}
-                        >
-                        <span
-                            className={`w-4 h-4 shrink-0 flex items-center justify-center border-2 ${
-                            isMultiple ? 'rounded-md' : 'rounded-full'
-                            } ${isSelected ? 'border-orange-500' : 'border-gray-300'}`}
-                        >
-                            {isSelected && (
-                            <span
-                                className={`bg-orange-500 ${
-                                isMultiple ? 'w-2 h-2 rounded-sm' : 'w-2 h-2 rounded-full'
-                                }`}
-                            />
-                            )}
-                        </span>
-                        {optionText}
-                        </button>
-                    );
-                    })}
+                  return (
+                    <button
+                      key={getOptionKey(option, oIdx)}
+                      onClick={() => handleToggleOption(qIdx, oIdx)}
+                      disabled={!!result}
+                      className={`w-full text-left px-4 py-3 rounded-xl border text-sm font-medium transition-all flex items-center gap-3 ${
+                        isSelected
+                          ? 'border-orange-500 bg-orange-50 text-orange-900'
+                          : 'border-gray-200 hover:border-orange-200 hover:bg-orange-50/40 text-gray-700'
+                      } ${result ? 'cursor-default opacity-90' : 'cursor-pointer'}`}
+                    >
+                      <div
+                        className={`w-5 h-5 shrink-0 flex items-center justify-center rounded-md border-2 transition-all ${
+                          isSelected 
+                            ? 'border-orange-500 bg-orange-500' 
+                            : 'border-gray-300 bg-white'
+                        }`}
+                      >
+                        {isSelected && (
+                          <Check className="w-3.5 h-3.5 text-white" />
+                        )}
+                      </div>
+                      {optionText}
+                    </button>
+                  );
+                })}
               </div>
+              {/* Indicateur de sélection */}
+              {selected.length > 0 && (
+                <div className="mt-3 text-xs text-gray-400">
+                  {selected.length} option{selected.length > 1 ? 's' : ''} sélectionnée{selected.length > 1 ? 's' : ''}
+                </div>
+              )}
             </div>
           );
         })}
@@ -253,7 +255,7 @@ const QuizPage = () => {
           </button>
           {!allAnswered && (
             <p className="text-xs text-gray-400 text-center mt-2">
-              Répondez à toutes les questions pour valider.
+              Sélectionnez au moins une option pour chaque question avant de valider.
             </p>
           )}
         </div>
