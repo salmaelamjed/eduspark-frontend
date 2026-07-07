@@ -101,6 +101,7 @@ export interface CodeBlock extends BaseBlock {
 }
 
 export interface QuizQuestion {
+  id?:string;
   question_text: string;
   type: "single" | "multiple";
   options: string[];
