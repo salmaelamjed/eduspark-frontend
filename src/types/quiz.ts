@@ -6,6 +6,7 @@ export interface SubmitQuizAnswer {
 
 export interface SubmitQuizPayload {
   answers: SubmitQuizAnswer[];
+  started_at: string;
 }
 
 // ----- Réponse du serveur -----
@@ -20,7 +21,8 @@ export interface QuizAttemptSummary {
   passing_score_percent: number;
   attempt_number: number;
   max_attempts: number | null;
-  completed_at: string; // "YYYY-MM-DD HH:mm:ss"
+  duration_seconds: number;
+  completed_at: string; 
 }
 
 export interface QuizQuestionResult {

@@ -31,7 +31,6 @@ const Page = () => {
     setSelectedLessonId(lessonId);
   }, []);
 
-  // Numérotation globale des quiz dans le cours (1, 2, 3...)
   const quizNumberMap = useMemo(() => buildQuizNumberMap(course), [course]);
 
 

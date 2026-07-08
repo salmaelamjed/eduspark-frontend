@@ -201,16 +201,12 @@ const BlockRenderer = ({ block, courseSlug,quizNumber }: BlockRendererProps) => 
   const questionsCount = questions.length;
   const passingScore = quizData.settings?.passing_score_percent;
 
-  const title = block.content || "Quiz de vérification";
+  const title = block.title || "Quiz de vérification";
   const description = questionsCount > 0
     ? `Évaluez vos connaissances avec ${questionsCount} question${questionsCount > 1 ? 's' : ''} sur cette leçon.`
     : "Testez vos connaissances sur cette leçon.";
 
-  const duration = block.duration_seconds
-    ? `${Math.ceil(block.duration_seconds / 60)} min`
-    : questionsCount > 0
-      ? `~${Math.max(1, Math.ceil(questionsCount * 0.75))} min`
-      : null;
+ 
 
    const quizUrl = `/cours/${courseSlug}/quiz?quiz=${quizNumber ?? block.id}`;
 
@@ -234,12 +230,6 @@ const BlockRenderer = ({ block, courseSlug,quizNumber }: BlockRendererProps) => 
               <span className="flex items-center gap-1 text-xs text-gray-500">
                 <HelpCircle className="w-3.5 h-3.5" />
                 {questionsCount} question{questionsCount > 1 ? 's' : ''}
-              </span>
-            )}
-            {duration && (
-              <span className="flex items-center gap-1 text-xs text-gray-500">
-                <Clock className="w-3.5 h-3.5" />
-                {duration}
               </span>
             )}
             {typeof passingScore === 'number' && (

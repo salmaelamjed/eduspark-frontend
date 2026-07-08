@@ -1,13 +1,14 @@
 'use client';
 
 import { useParams, useSearchParams } from 'next/navigation';
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { useCourseDetailBySlug } from '@/hooks/courses/use-course';
 import { useSubmitQuiz } from '@/hooks/quiz/use-submit-quiz';
 import { findQuizByNumber } from '@/lib/quiz-numbering';
 import type { QuizQuestionResult } from '@/types/quiz';
-import { XCircle, ArrowLeft, Trophy, Loader2, Check } from 'lucide-react';
+import { XCircle, ArrowLeft, Trophy, Loader2, Check, Clock } from 'lucide-react';
 import Link from 'next/link';
+import { formatDuration } from '@/lib/format-duration';
 
 type OptionLike = string | { id?: string; text: string };
 
@@ -21,11 +22,14 @@ function getOptionId(option: OptionLike, index: number): string {
   return typeof option === 'string' ? String(index) : (option.id ?? String(index));
 }
 
+
+
 interface QuizResult {
   score_percent: number;
   passed: boolean;
   correct_count: number;
   total: number;
+  duration_seconds: number;
 }
 
 type AnswerValue = number[];
@@ -43,11 +47,33 @@ const QuizPage = () => {
   const [result, setResult] = useState<QuizResult | null>(null);
   const [questionResults, setQuestionResults] = useState<QuizQuestionResult[] | null>(null);
   const [submitError, setSubmitError] = useState<string | null>(null);
+  const [elapsedSeconds, setElapsedSeconds] = useState(0);
+
+  // Heure de début du quiz — capturée une seule fois au montage
+  const startedAtRef = useRef<string | null>(null);
 
   const quizLocation = useMemo(
     () => findQuizByNumber(course, quizNumber),
     [course, quizNumber]
   );
+
+  // Démarre le chrono dès que le quiz est disponible
+  useEffect(() => {
+    if (quizLocation && !startedAtRef.current) {
+      startedAtRef.current = new Date().toISOString();
+    }
+  }, [quizLocation]);
+
+  // Timer live : incrémente chaque seconde tant que le quiz n'est pas soumis
+  useEffect(() => {
+    if (!quizLocation || result) return;
+
+    const interval = setInterval(() => {
+      setElapsedSeconds((prev) => prev + 1);
+    }, 1000);
+
+    return () => clearInterval(interval);
+  }, [quizLocation, result]);
 
   const questions = quizLocation?.block.quiz_data?.questions ?? [];
   const passingScore = quizLocation?.block.quiz_data?.settings?.passing_score_percent;
@@ -69,6 +95,7 @@ const QuizPage = () => {
         passed: data.attempt.is_passed,
         correct_count: data.attempt.correct_answers,
         total: data.attempt.total_questions,
+        duration_seconds: data.attempt.duration_seconds,
       });
       setQuestionResults(data.results);
     },
@@ -109,7 +136,10 @@ const QuizPage = () => {
         courseId: course.id,
         lessonId: quizLocation.lessonId,
         blockId: quizLocation.block.id,
-        payload: { answers: payloadAnswers },
+        payload: {
+          answers: payloadAnswers,
+          started_at: startedAtRef.current ?? new Date().toISOString(),
+        },
       });
     } catch {
       // déjà géré via onError
@@ -121,6 +151,8 @@ const QuizPage = () => {
     setResult(null);
     setQuestionResults(null);
     setSubmitError(null);
+    setElapsedSeconds(0);
+    startedAtRef.current = new Date().toISOString(); // relance le chrono
   };
 
   if (courseLoading) {
@@ -147,8 +179,10 @@ const QuizPage = () => {
     );
   }
 
+  
+
   return (
-    <div className="max-w-2xl mx-auto px-4 py-10">
+    <div className="max-w-xl mx-auto px-4 py-10">
       <div className="mb-8">
         <Link
           href={`/courses/${courseSlug}`}
@@ -164,6 +198,13 @@ const QuizPage = () => {
           {typeof passingScore === 'number' && (
             <span className="text-xs text-gray-500">
               Seuil de réussite : {passingScore}%
+            </span>
+          )}
+          {/* Chrono live, affiché uniquement tant que le quiz n'est pas soumis */}
+          {!result && (
+            <span className="ml-auto inline-flex items-center gap-1 text-xs font-medium text-gray-500 bg-gray-100 px-2 py-0.5 rounded-full">
+              <Clock className="w-3 h-3" />
+              {formatDuration(elapsedSeconds)}
             </span>
           )}
         </div>
@@ -194,6 +235,10 @@ const QuizPage = () => {
             </p>
             <p className="text-sm text-gray-600">
               {result.correct_count}/{result.total} bonnes réponses ({result.score_percent}%)
+              <span className="inline-flex items-center gap-1 ml-2 text-gray-400">
+                <Clock className="w-3 h-3" />
+                {formatDuration(result.duration_seconds)}
+              </span>
             </p>
           </div>
           {!result.passed && (
@@ -240,8 +285,6 @@ const QuizPage = () => {
                   const optionId = getOptionId(option, oIdx);
                   const isSelected = selected.includes(oIdx);
 
-                  // Est-ce que cette option fait partie des bonnes réponses ?
-                  // (nécessite que le backend renvoie correct_options)
                   const isCorrectOption =
                     isCorrected && qResult.correct_options?.includes(optionId) === true;
 
@@ -250,19 +293,15 @@ const QuizPage = () => {
 
                   if (isCorrected) {
                     if (isSelected && isCorrectOption) {
-                      // Cochée + bonne réponse → vert
                       optionClass = 'border-emerald-500 bg-emerald-50 text-emerald-900';
                       boxClass = 'border-emerald-500 bg-emerald-500';
                     } else if (isSelected && !isCorrectOption) {
-                      // Cochée + mauvaise réponse → rouge
                       optionClass = 'border-rose-500 bg-rose-50 text-rose-900';
                       boxClass = 'border-rose-500 bg-rose-500';
                     } else if (!isSelected && isCorrectOption) {
-                      // Pas cochée mais c'était la bonne réponse → vert (même si l'utilisateur s'est trompé)
                       optionClass = 'border-emerald-400 bg-emerald-50/60 text-emerald-800';
                       boxClass = 'border-emerald-400 bg-white';
                     } else {
-                      // Ni cochée ni correcte → neutre
                       optionClass = 'border-gray-200 text-gray-400';
                       boxClass = 'border-gray-300 bg-white';
                     }
@@ -303,7 +342,6 @@ const QuizPage = () => {
                 </div>
               )}
 
-              {/* Explication après correction — toujours en vert, même si la question est incorrecte */}
               {isCorrected && qResult.explanation && (
                 <div className="mt-3 p-3 rounded-lg text-xs border bg-emerald-50 border-emerald-100 text-emerald-800">
                   <span className="font-semibold">Explication : </span>
