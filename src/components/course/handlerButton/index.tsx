@@ -102,7 +102,7 @@ const ButtonHandler = () => {
               // Itération et validation de chaque question présente dans le bloc de quiz
               for (const q of questions) {
                 // 1. L'énoncé de la question ne doit pas être vide
-                if (!q.question?.trim()) {
+                if (!q.question_text?.trim()) {
                   return false;
                 }
                 // 2. Il doit y avoir au moins 2 options de réponses proposées
@@ -166,7 +166,7 @@ const ButtonHandler = () => {
 
   if (currentStep === 2) {
     return (
-      <div className="min-h-20 flex flex-col items-end justify-end gap-3">
+      <div className=" flex flex-col items-end justify-end gap-3">
         <div className="flex gap-3">
           <Button
             type="button"
@@ -206,9 +206,16 @@ const ButtonHandler = () => {
         disabled={!canPublish || loading}
         className="px-10 py-6 bg-orange-500 hover:bg-orange-600 hover:cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
       >
-        {loading ? <Loader2 className="animate-spin" /> : "Publier le cours"}
-      </Button>
-    </div>
+        {loading ? (
+          <span className="flex items-center gap-2">
+            <Loader2 className="animate-spin h-4 w-4" />
+            Publication en cours...
+          </span>
+        ) : (
+          "Publier le cours"
+        )}      
+        </Button>
+            </div>
   );
 };
 

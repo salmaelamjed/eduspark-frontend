@@ -5,18 +5,18 @@ import ButtonHandler from "@/components/course/handlerButton"
 
 const Page = () => {
   return (
-     <div className="h-screen ">
-      <div className="">
+     <div className=" h-screen overflow-hidden ">
         <CreateCourseFormProvider>
             {/* <WorkflowStepper/> */}
-          <div className="flex flex-col ">
-            <CreationCourseFormStep/>
+          <div className="flex flex-col h-full ">
+            <div className="flex-1 min-h-0 overflow-hidden">
+            <CreationCourseFormStep />
+          </div>
             
             <ButtonHandler/>
           </div>
         </CreateCourseFormProvider>
       </div>
-   </div>
   )
 }
 

@@ -184,7 +184,7 @@ const isRecord = (value: unknown): value is Record<string, unknown> =>
         quiz_data: {
           questions: [
             {
-              question: "Votre première question ?",
+              question_text: "Votre première question ?",
               type: "single",
               options: ["Option A", "Option B"],
               correct_answers: [0],
@@ -377,7 +377,7 @@ const simulateFileUpload = async (
   };
 
 return (
-    <div className="flex flex-col h-screen from-gray-50 w-full  ">
+    <div className="flex flex-col  from-gray-50 w-full mt-0 pt-0 ">
   <header className=" bg-white/90 backdrop-blur-md  border-b">
     <div className="px-4 py-4 flex items-center justify-between">
       <div>

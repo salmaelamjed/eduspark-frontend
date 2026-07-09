@@ -1,4 +1,4 @@
-import { LayoutDashboard, Users, Settings, UserPlus,  PenBox, MessageCircleIcon, Bell } from 'lucide-react';
+import { LayoutDashboard, Users, Settings, UserPlus,  PenBox, MessageCircleIcon, Bell, Plug, Puzzle, Workflow, Network, CloudLightning, Webhook, Sliders, Link } from 'lucide-react';
 import { BookOpen, FileText } from 'lucide-react';
 
 export const adminNavItems = [
@@ -20,6 +20,7 @@ export const teacherNavItems = [
   { title: 'Messages', href: '/dashboard/messages', icon: <MessageCircleIcon /> },
   { title: 'Notifications', href: '/dashboard/notifications', icon: <Bell /> },
   { title: 'Rapports', href: '/dashboard/reports', icon: <FileText /> },
+  { title: 'Integrations', href: '/dashboard/integrations', icon: <Link /> },
   { title: 'Paramètres', href: '/dashboard/settings', icon: <Settings /> },
 
   // Ajoute plus pour teacher (ex. notes, devoirs)

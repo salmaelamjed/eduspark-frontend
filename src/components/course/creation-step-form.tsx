@@ -81,16 +81,15 @@ const CreationCourseFormStep = () => {
 
   switch(currentStep){
     case 1:
-      return(
-        <CourseInfo
-          register={register}
-          errors={errors}
-        />
-      );
+  return (
+    <div className="h-full min-h-0 overflow-y-auto">
+      <CourseInfo register={register} errors={errors} />
+    </div>
+  );
     
     case 2:
       return (
-        <div className="flex flex-1 mt-6 h-screen border-t">
+        <div className="flex flex-1 h-full min-h-0 border-t overflow-hidden">
           <ModuleSidebar
             modules={modules}
             selectedModuleId={selectedModuleId}
@@ -120,12 +119,12 @@ const CreationCourseFormStep = () => {
         </div>
       );
 
-    case 3:
-      return (
-        <PublishView
-      course={course}
-    />
-      );
+   case 3:
+  return (
+    <div className="h-full min-h-0 overflow-y-auto">
+      <PublishView course={course} />
+    </div>
+  );
 
     default:
       return (

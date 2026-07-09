@@ -62,7 +62,7 @@ export function ModuleSidebar({
 }: ModuleSidebarProps) {
   return (
     <TooltipProvider>
-      <aside className="w-72 bg-card border-r border-border flex flex-col min-h-[70vh]">
+<aside className="w-72 h-full bg-card border-r border-border flex flex-col">
         {/* Header */}
         <div className="p-4 border-b border-border">
           <div className="flex items-center justify-between mb-3">
