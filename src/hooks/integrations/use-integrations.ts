@@ -1,4 +1,3 @@
-// hooks/integrations/use-integrations.ts
 "use client";
 
 import { useState, useCallback, useEffect, useRef } from "react";
@@ -14,6 +13,7 @@ interface UseConnectToStripeReturn {
   accountStatus: StripeAccountStatus | null;
   checkAccountStatus: () => Promise<void>;
   isAccountConnected: boolean;
+  isOnboardingComplete: boolean;
   isInitializing: boolean;
 }
 
@@ -24,7 +24,6 @@ interface StripeAccountStatus {
   account_id?: string;
 }
 
-// ✅ Clé pour le localStorage
 const STRIPE_STORAGE_KEY = "eduspark_stripe_account";
 
 export function useConnectToStripe(): UseConnectToStripeReturn {
@@ -33,7 +32,6 @@ export function useConnectToStripe(): UseConnectToStripeReturn {
   const [isInitializing, setIsInitializing] = useState<boolean>(true);
   const [accountStatus, setAccountStatus] =
     useState<StripeAccountStatus | null>(() => {
-      // ✅ Initialiser avec les données du localStorage
       if (typeof window !== "undefined") {
         const stored = localStorage.getItem(STRIPE_STORAGE_KEY);
         if (stored) {
@@ -49,8 +47,6 @@ export function useConnectToStripe(): UseConnectToStripeReturn {
 
   const { token } = useAuth();
   const isFirstRender = useRef(true);
-
-  // ✅ Sauvegarder dans localStorage à chaque changement
   useEffect(() => {
     if (accountStatus) {
       localStorage.setItem(STRIPE_STORAGE_KEY, JSON.stringify(accountStatus));
@@ -58,16 +54,6 @@ export function useConnectToStripe(): UseConnectToStripeReturn {
       localStorage.removeItem(STRIPE_STORAGE_KEY);
     }
   }, [accountStatus]);
-
-  // ✅ Vérifier le statut du compte avec un flag pour éviter les appels multiples
-  useEffect(() => {
-    if (token && isFirstRender.current) {
-      isFirstRender.current = false;
-      checkAccountStatus();
-    } else if (!token) {
-      setIsInitializing(false);
-    }
-  }, [token]);
 
   const checkAccountStatus = useCallback(async () => {
     if (!token) {
@@ -96,7 +82,20 @@ export function useConnectToStripe(): UseConnectToStripeReturn {
     }
   }, [token]);
 
-  const handleConnect = useCallback(async (token?: string) => {
+   useEffect(() => {
+     if (token && isFirstRender.current) {
+       isFirstRender.current = false;
+       checkAccountStatus();
+     } else if (!token) {
+       setIsInitializing(false);
+     }
+   }, [token, checkAccountStatus]);
+
+  const handleConnect = useCallback(async () => {
+    if (!token) {
+      toast.error("Vous devez être connecté pour continuer.");
+      return;
+    }
     setIsLoading(true);
     setError(null);
 
@@ -104,7 +103,6 @@ export function useConnectToStripe(): UseConnectToStripeReturn {
       const response = await integrationsApi.connect(token);
 
       if (response.success && response.onboarding_url) {
-        // ✅ Sauvegarder immédiatement dans localStorage
         const newStatus = {
           has_account: true,
           onboarding_completed: false,
@@ -115,14 +113,19 @@ export function useConnectToStripe(): UseConnectToStripeReturn {
         setAccountStatus(newStatus);
         localStorage.setItem(STRIPE_STORAGE_KEY, JSON.stringify(newStatus));
 
-        // ✅ Afficher un toast de confirmation
-        toast.success("Redirection vers Stripe...", {
-          description:
-            "Vous allez être redirigé vers la page d'onboarding Stripe.",
-          duration: 3000,
-        });
-
-        // ✅ Petit délai pour permettre au toast de s'afficher
+        if(response.message){
+          toast.success("succes", {
+            description: `${response.message}`,
+            duration:3000
+          });
+        }else{
+          toast.success("Redirection vers Stripe...", {
+            description:
+              "Vous allez être redirigé vers la page d'onboarding Stripe.",
+            duration: 3000,
+          });
+        }
+        
         setTimeout(() => {
           window.location.href = response.onboarding_url;
         }, 1000);
@@ -139,10 +142,10 @@ export function useConnectToStripe(): UseConnectToStripeReturn {
     } finally {
       setIsLoading(false);
     }
-  }, []);
+  }, [token]);
 
-  // ✅ SIMPLIFIÉ : Le compte est connecté si account_id existe
   const isAccountConnected = accountStatus?.has_account === true;
+  const isOnboardingComplete = accountStatus?.onboarding_completed === true;
 
   return {
     handleConnect,
@@ -151,6 +154,7 @@ export function useConnectToStripe(): UseConnectToStripeReturn {
     accountStatus,
     checkAccountStatus,
     isAccountConnected,
+    isOnboardingComplete,
     isInitializing,
   };
 }
