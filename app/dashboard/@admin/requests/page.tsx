@@ -22,13 +22,6 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select';
-import {
   Sheet,
   SheetContent,
   SheetHeader,
@@ -37,15 +30,24 @@ import {
   SheetFooter,
 } from '@/components/ui/sheet';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
-import { Eye, Loader2, Trash2 } from 'lucide-react';
+import { Eye, Trash2 } from 'lucide-react';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useTeacherRequestsManagement } from '@/hooks/teacher-requests/use-teacher-requests';
 import type { TeacherRequestDetail } from '@/types/request';
 import type { User } from '@/types/user';
 import type { Domain } from '@/types/domain';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
+import { Check, ChevronDown, X, Loader2 } from 'lucide-react';
 type TeacherRequestRow = TeacherRequestDetail & { user: User; domain: Domain };
 
 import Link from 'next/link';
+import { format } from 'date-fns';
+import { fr } from 'date-fns/locale';
 
 function getStatusBadge(status: string) {
   const variants: Record<string, string> = {
@@ -146,36 +148,49 @@ export default function TeacherRequestsPage() {
                       {req.domain?.name || '—'}
                     </TableCell>
 
-                    <TableCell className="h-16 px-4 text-center">
-                      {updating ? (
-                        <div className="flex items-center justify-center gap-2 text-muted-foreground">
-                          <Loader2 className="h-4 w-4 animate-spin" />
-                          <span className="text-sm">Mise à jour...</span>
-                        </div>
-                      ) : req.status === 'pending' ? (
-                        <Select
-                          value={req.status}
-                          onValueChange={(value) =>
-                            handleStatusChange(req.id, value as 'pending' | 'approved' | 'rejected')
-                          }
-                          disabled={isAnyUpdatePending}
-                        >
-                          <SelectTrigger className="h-8 rounded-full bg-amber-500/15 text-amber-700 dark:bg-amber-500/10 dark:text-amber-400 border-0 font-medium justify-center gap-1 [&>svg]:h-3.5 [&>svg]:w-3.5">
-                            <SelectValue placeholder="En attente" />
-                          </SelectTrigger>
-                          <SelectContent>
-                            <SelectItem value="pending">En attente</SelectItem>
-                            <SelectItem value="approved">Approuver</SelectItem>
-                            <SelectItem value="rejected">Rejeter</SelectItem>
-                          </SelectContent>
-                        </Select>
-                      ) : (
-                        getStatusBadge(req.status)
-                      )}
-                    </TableCell>
+                   <TableCell className="h-16 px-4  text-center">
+                    {updating ? (
+                      <span className="inline-flex items-center gap-1.5 h-8 px-3 rounded-full bg-muted text-muted-foreground text-sm font-medium animate-pulse">
+                        <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                        Mise à jour
+                      </span>
+                    ) : req.status === 'pending' ? (
+                      <DropdownMenu>
+                        <DropdownMenuTrigger asChild>
+                          <button
+                            disabled={isAnyUpdatePending}
+                            className="inline-flex items-center gap-1 h-8 px-3 rounded-full bg-amber-500/15 text-amber-700 dark:bg-amber-500/10 dark:text-amber-400 text-sm font-medium hover:bg-amber-500/25 dark:hover:bg-amber-500/20 transition-colors disabled:opacity-50 disabled:pointer-events-none focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-500/40"
+                          >
+                            En attente
+                            <ChevronDown className="h-3.5 w-3.5" />
+                          </button>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent align="center" className="w-40">
+                          <DropdownMenuItem
+                            onClick={() => handleStatusChange(req.id, 'approved')}
+                            className="text-emerald-700 dark:text-emerald-400 focus:text-emerald-700 focus:bg-emerald-500/10"
+                          >
+                            <Check className="h-4 w-4 mr-2" />
+                            Approuver
+                          </DropdownMenuItem>
+                          <DropdownMenuItem
+                            onClick={() => handleStatusChange(req.id, 'rejected')}
+                            className="text-rose-700 dark:text-rose-400 focus:text-rose-700 focus:bg-rose-500/10"
+                          >
+                            <X className="h-4 w-4 mr-2" />
+                            Rejeter
+                          </DropdownMenuItem>
+                        </DropdownMenuContent>
+                      </DropdownMenu>
+                    ) : (
+                      getStatusBadge(req.status)
+                    )}
+                  </TableCell>
 
                     <TableCell className="h-16 px-4 text-muted-foreground font-mono">
-                      {new Date(req.created_at).toLocaleDateString('fr-FR')}
+                      {req.created_at 
+                      ? format(new Date(req.created_at), 'dd-MM-yyyy', { locale: fr })
+                      : '—'}
                     </TableCell>
 
                     <TableCell className="h-16 px-4">
@@ -309,7 +324,7 @@ export default function TeacherRequestsPage() {
                   <p className="text-sm font-medium text-muted-foreground">Statut</p>
                   <div className="mt-1">
                     {selectedRequest.status === 'pending' ? (
-                      <Badge variant="outline" className="border-0 bg-amber-500/15 text-amber-700 dark:bg-amber-500/10 dark:text-amber-400 text-base px-4 py-1">
+                      <Badge variant="outline" className="border-0  bg-amber-500/15 text-amber-700 dark:bg-amber-500/10 dark:text-amber-400 text-base px-4 py-1">
                         En attente
                       </Badge>
                     ) : (

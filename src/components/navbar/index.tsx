@@ -37,7 +37,7 @@ export default function Navbar() {
       <DropdownMenuTrigger asChild>
         <button className="focus:outline-none">
           <Avatar className="h-12 w-12 cursor-pointer border-2 border-orange-100 hover:border-orange-300 transition-all">
-            <AvatarImage src={user.avatarUrl} alt={user.name || 'Profil'} />
+            <AvatarImage src={user.profile_picture ?? undefined} alt={user.name || 'Profil'} />
             <AvatarFallback className="bg-orange-100 text-orange-800 font-medium">
               {getInitials()}
             </AvatarFallback>
@@ -135,13 +135,11 @@ export default function Navbar() {
               </Link>
             </div>
 
-            {/* Auth section */}
             <div className="hidden md:flex items-center gap-8">{authContent}</div>
           </div>
         </div>
       </nav>
 
-      {/* Logout confirmation modal – always rendered, visibility controlled */}
       <ConfirmSignOutModal open={showLogoutModal} onOpenChange={setShowLogoutModal} />
     </>
   );

@@ -1,6 +1,6 @@
 'use client';
 
-import { useRouter } from 'next/navigation';
+import { useRouter, usePathname } from 'next/navigation';
 import { toast } from 'sonner';
 import { useAuth } from '@/context/auth-context';
 import {
@@ -13,7 +13,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
-import { useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { Loader2, LogOut } from 'lucide-react';
 
 interface ConfirmSignOutModalProps {
@@ -25,21 +25,45 @@ export default function ConfirmSignOutModal({ open, onOpenChange }: ConfirmSignO
   const { logout } = useAuth();
   const [isLoggingOut, setIsLoggingOut] = useState(false);
   const router = useRouter();
+  const pathname = usePathname();
+
+  const awaitingRedirectRef = useRef(false);
+
+useEffect(() => {
+  if (!awaitingRedirectRef.current || pathname !== '/') return;
+
+  awaitingRedirectRef.current = false;
+
+  // On synchronise l'UI locale avec un changement d'état externe (la route,
+  // pilotée par le router, hors du contrôle de ce composant) : c'est le cas
+  // d'usage explicitement prévu par la règle react-hooks/set-state-in-effect
+  // ("calling setState in a callback function when external state changes").
+  /* eslint-disable react-hooks/set-state-in-effect */
+  setIsLoggingOut(false);
+  onOpenChange(false);
+}, [pathname, onOpenChange]);
 
   const handleSignOut = async () => {
     if (isLoggingOut) return;
-
     setIsLoggingOut(true);
 
     try {
       await logout();
+      toast.success('Déconnexion réussie');
 
-      onOpenChange(false);
-     toast.success('Déconnexion réussie');
-      router.push('/');
-
+      if (pathname === '/') {
+        // Déjà sur la home : rien à attendre côté navigation.
+        setIsLoggingOut(false);
+        onOpenChange(false);
+      } else {
+        awaitingRedirectRef.current = true;
+        router.push('/');
+        // Ne PAS fermer le modal ici : il reste affiché (spinner) jusqu'à
+        // ce que le useEffect ci-dessus détecte l'arrivée sur "/".
+      }
     } catch (error) {
       console.error('Erreur lors du logout:', error);
+      awaitingRedirectRef.current = false;
       setIsLoggingOut(false);
     }
   };
@@ -62,18 +86,18 @@ export default function ConfirmSignOutModal({ open, onOpenChange }: ConfirmSignO
             Êtes-vous sûr de vouloir vous déconnecter ? Vous devrez vous reconnecter pour accéder à votre compte.
           </AlertDialogDescription>
         </AlertDialogHeader>
-        
+
         <AlertDialogFooter>
-          <AlertDialogCancel 
+          <AlertDialogCancel
             disabled={isLoggingOut}
             className="mt-2 sm:mt-0 hover:cursor-pointer"
           >
             Annuler
           </AlertDialogCancel>
-          
+
           <AlertDialogAction
             onClick={(e) => {
-              e.preventDefault(); 
+              e.preventDefault();
               handleSignOut();
             }}
             disabled={isLoggingOut}
@@ -85,7 +109,7 @@ export default function ConfirmSignOutModal({ open, onOpenChange }: ConfirmSignO
                 <span>Déconnexion...</span>
               </>
             ) : (
-              <div className=' hover:cursor-pointer flex items-center gap-2' >
+              <div className="hover:cursor-pointer flex items-center gap-2">
                 <LogOut className="h-4 w-4" />
                 <span>Se déconnecter</span>
               </div>
