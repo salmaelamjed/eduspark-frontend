@@ -17,7 +17,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
 import { useUpdateDomain } from "@/hooks/domains/use-domain";
 import { toast } from "sonner";
-import { DomainResponse } from "@/types/domain";
+import { Domain } from "@/types/domain";
 import { useAuth } from "@/context/auth-context"; 
 import Image from "next/image";
 
@@ -30,7 +30,7 @@ const formSchema = z.object({
 type FormValues = z.infer<typeof formSchema>;
 
 interface DomainEditSheetProps {
-  domain: DomainResponse;
+  domain: Domain;
   open: boolean;
   onOpenChange: (open: boolean) => void;
 }
@@ -103,7 +103,7 @@ export default function DomainEditSheet({
               <Label>Image actuelle</Label>
               <div className="mt-2 relative h-32 w-32 rounded-md overflow-hidden border">
                 <Image
-                  src={`http://localhost:8000/storage/${domain.image}`}
+                  src={domain.image}
                   alt="Image actuelle"
                   fill
                   className="object-cover"

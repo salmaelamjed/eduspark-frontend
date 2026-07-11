@@ -103,6 +103,8 @@ export function useConnectToStripe(): UseConnectToStripeReturn {
       const response = await integrationsApi.connect(token);
 
       if (response.success && response.onboarding_url) {
+        const onboardingUrl = response.onboarding_url; 
+
         const newStatus = {
           has_account: true,
           onboarding_completed: false,
@@ -127,7 +129,7 @@ export function useConnectToStripe(): UseConnectToStripeReturn {
         }
         
         setTimeout(() => {
-          window.location.href = response.onboarding_url;
+          window.location.href = onboardingUrl;
         }, 1000);
       } else {
         throw new Error(

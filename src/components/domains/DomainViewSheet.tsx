@@ -8,12 +8,11 @@ import {
   SheetDescription,
 } from "@/components/ui/sheet";
 import Image from "next/image";
-import { DomainResponse } from "@/types/domain";
-import { format } from "date-fns";
-import { fr } from "date-fns/locale";
+import { Domain } from "@/types/domain";
+import { formatDate } from "@/lib/format-duration";
 
 interface DomainViewSheetProps {
-  domain: DomainResponse;
+  domain: Domain;
   open: boolean;
   onOpenChange: (open: boolean) => void;
 }
@@ -37,7 +36,7 @@ export default function DomainViewSheet({
               <h3 className="text-sm font-medium mb-2">Image</h3>
               <div className="relative h-48 w-full rounded-lg overflow-hidden border">
                 <Image
-                  src={`http://localhost:8000/storage/${domain.image}`}
+                  src={domain.image}
                   alt={domain.name}
                   fill
                   className="object-cover"
@@ -61,14 +60,14 @@ export default function DomainViewSheet({
             <div>
               <h3 className="text-sm font-medium text-muted-foreground">Créé le</h3>
               <p className="mt-1">
-                {format(new Date(domain.created_at), "dd MMMM yyyy 'à' HH:mm", { locale: fr })}
+              {formatDate(domain.created_at)}
               </p>
             </div>
 
             <div>
               <h3 className="text-sm font-medium text-muted-foreground">Mis à jour le</h3>
               <p className="mt-1">
-                {format(new Date(domain.updated_at), "dd MMMM yyyy 'à' HH:mm", { locale: fr })}
+                {formatDate(domain.updated_at )}
               </p>
             </div>
           </div>

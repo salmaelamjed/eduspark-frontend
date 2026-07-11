@@ -37,7 +37,7 @@ export function useSubmitQuiz(options?: UseSubmitQuizOptions) {
           lessonId,
           blockId,
           payload,
-          token,
+          token ?? undefined,
         );
 
         setData(result);

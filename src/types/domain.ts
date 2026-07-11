@@ -4,6 +4,9 @@ export interface Domain {
   slug: string;
   description?: string;
   image?: string;
+  created_at?: string;
+  updated_at?: string;
+  status?: string;
 }
 
 export interface DomainResponse {
@@ -12,8 +15,8 @@ export interface DomainResponse {
   slug: string;
   description?: string;
   image?: string;
-  created_at: Date;
-  updated_at: Date;
+  created_at: string;
+  updated_at: string;
 }
 
 export interface DomainRequestPayload {
@@ -25,7 +28,7 @@ export interface DomainRequestPayload {
 export interface CreateDomainResponse {
   status?: number;
   message: string;
-  domain: any;
+  domain: DomainResponse;
   image_url?: string;
 }
 export interface DomainsResponsePaginated {

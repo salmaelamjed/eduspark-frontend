@@ -1,7 +1,6 @@
 
 'use client';
 import { useState, useEffect, useCallback } from 'react';
-
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { toast } from 'sonner';
@@ -13,6 +12,7 @@ import {
 } from '@/schema/request.schema';
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { PaginatedTeacherRequests, UpdateTeacherRequestPayload } from '@/types/request';
+import { ApiError } from '@/lib/api';
 
 const QUERY_KEY = "teacher-requests";
 interface UseTeacherRequestsOptions {
@@ -20,7 +20,15 @@ interface UseTeacherRequestsOptions {
   enabled?: boolean;
 }
 
-
+function getErrorMessage(error: unknown, fallback: string): string {
+  if (error instanceof ApiError) {
+    return error.data?.message || error.message || fallback;
+  }
+  if (error instanceof Error) {
+    return error.message || fallback;
+  }
+  return fallback;
+}
 export const useCreateTeacherRequest = () => {
   const { token } = useAuth();
 
@@ -44,14 +52,11 @@ export const useCreateTeacherRequest = () => {
       });
       form.reset();        
     },
-    onError: (error: any) => {
-      const msg =
-        error?.response?.data?.message ||
-        error?.message ||
-        'Erreur lors de l’envoi. Réessayez.';
-      toast.error('Échec de l’envoi', { description: msg });
+    onError: (error: unknown) => {
+      const msg = getErrorMessage(error, "Erreur lors de l'envoi. Réessayez.");
+      toast.error("Échec de l'envoi", { description: msg });
       console.error(error);
-      form.reset();  
+      form.reset();
     },
   });
 
@@ -96,9 +101,42 @@ export function useUpdateTeacherRequest() {
       data: UpdateTeacherRequestPayload;
       token: string;
     }) => requestsApi.update(id, data, token),
-    onSuccess: (_, variables) => {
+
+    onMutate: async ({ id, data }) => {
+      // Annule les requêtes en cours pour ne pas qu'elles écrasent notre update optimiste
+      await queryClient.cancelQueries({ queryKey: [QUERY_KEY] });
+
+      // Sauvegarde l'état actuel pour pouvoir revenir en arrière en cas d'erreur
+      const previousQueries = queryClient.getQueriesData<PaginatedTeacherRequests>({
+        queryKey: [QUERY_KEY],
+      });
+
+      // Met à jour immédiatement le cache avec le nouveau statut (avant la réponse serveur)
+      queryClient.setQueriesData<PaginatedTeacherRequests>(
+        { queryKey: [QUERY_KEY] },
+        (old) => {
+          if (!old) return old;
+          return {
+            ...old,
+            data: old.data.map((req) =>
+              req.id === id ? { ...req, status: data.status ?? req.status } : req
+            ),
+          };
+        }
+      );
+
+      return { previousQueries };
+    },
+
+    onError: (_err, _variables, context) => {
+      // Rollback : on remet les données précédentes si la requête échoue
+      context?.previousQueries?.forEach(([queryKey, data]) => {
+        queryClient.setQueryData(queryKey, data);
+      });
+    },
+
+    onSettled: () => {
       queryClient.invalidateQueries({ queryKey: [QUERY_KEY] });
-      queryClient.invalidateQueries({ queryKey: [QUERY_KEY, variables.id] });
     },
   });
 }

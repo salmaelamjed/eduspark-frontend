@@ -4,8 +4,22 @@ import axios, {
   AxiosResponse,
   AxiosError,
   InternalAxiosRequestConfig,
+  AxiosProgressEvent,
 } from "axios";
 
+export class ApiError extends Error {
+  readonly status: number;
+  readonly data?: ApiErrorResponse;
+  readonly errors?: Record<string, string[]>;
+
+  constructor(message: string, status: number, data?: ApiErrorResponse) {
+    super(message);
+    this.name = "ApiError";
+    this.status = status;
+    this.data = data;
+    this.errors = data?.errors;
+  }
+}
 // Types
 interface ApiErrorResponse {
   message: string;
@@ -92,15 +106,10 @@ class Api {
         break;
     }
 
-    // Format error message
     const errorMessage =
       data?.message || error.message || "An unexpected error occurred";
-    const customError = new Error(errorMessage) as any;
-    customError.status = status;
-    customError.data = data;
-    customError.errors = data?.errors;
 
-    throw customError;
+    throw new ApiError(errorMessage, status, data);
   };
 
   private handleUnauthorized(): void {
@@ -211,7 +220,7 @@ class Api {
     endpoint: string,
     file: File | FormData,
     token?: string,
-    onUploadProgress?: (progressEvent: any) => void,
+    onUploadProgress?: (progressEvent: AxiosProgressEvent) => void,
   ): Promise<T> {
     let formData: FormData;
 

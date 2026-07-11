@@ -6,6 +6,7 @@ import type { Domain, DomainResponse, UpdateDomainPaylaod } from '@/types/domain
 import { useCallback, useEffect, useState } from 'react';
 import { useAuth } from '@/context/auth-context';
 import { toast } from 'sonner';
+import { getErrorMessage } from '@/components/ErrorMessage';
 
 
 
@@ -21,10 +22,10 @@ interface UseGetDomainsReturn {
  */
 export const useGetDomains = (): UseGetDomainsReturn => {
   const [loading, setLoading] = useState<boolean>(true);
-  const [domains, setDomains] = useState<Domain[] | null>(null);
+  const [domains, setDomains] = useState<Domain[] >([]);
   const [error, setError] = useState<string | null>(null);
 
-  const fetchDomains = async () => {
+  const fetchDomains = useCallback(async () => {
     setLoading(true);
     setError(null);
 
@@ -34,23 +35,24 @@ export const useGetDomains = (): UseGetDomainsReturn => {
           setDomains(response);
          }
       
-    } catch (err: any) {
-      console.error("Erreur lors de la récupération des domaines :", err);
-      setError(
-        err.response?.data?.message ||
-          err.message ||
-          "Une erreur est survenue lors du chargement des domaines",
-      );
-      setDomains(null);
+    } catch (err: unknown) {
+       console.error("Erreur lors de la récupération des domaines :", err);
+       setError(
+         getErrorMessage(
+           err,
+           "Une erreur est survenue lors du chargement des domaines",
+         ),
+       );
+       setDomains([]);
     } finally {
       setLoading(false);
     }
-  };
+  },[]);
 
   // Appel automatique au montage du composant
   useEffect(() => {
     fetchDomains();
-  }, []); 
+  }, [fetchDomains]); 
 
   return {
     domains,

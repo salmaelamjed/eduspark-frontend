@@ -10,10 +10,10 @@ import {
 } from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
 import { Trash2, Eye, PenBox } from "lucide-react";
-import { formatDistanceToNow } from "date-fns";
+import { format } from "date-fns";
 import { fr } from "date-fns/locale";
 import Image from "next/image";
-import { DomainResponse } from "@/types/domain";
+import { Domain } from "@/types/domain";
 import { useState } from "react";
 import { useAuth } from "@/context/auth-context";
 import { toast } from "sonner";
@@ -23,27 +23,26 @@ import { useDeleteDomain } from "@/hooks/domains/use-domain";
 import DomainViewSheet from "./DomainViewSheet";
 import DomainEditSheet from "./DomainEditSheet";
 
-
-
 interface DomainsTableProps {
-  domains: DomainResponse[];
+  domains: Domain[];
   loading: boolean;
 }
 
 export function DomainsTable({ domains, loading }: DomainsTableProps) {
   const { token } = useAuth();
-  const deleteMutation = useDeleteDomain(); 
+  const deleteMutation = useDeleteDomain();
 
-  const [selectedDomain, setSelectedDomain] = useState<DomainResponse | null>(null);
+  // Fix: Initialize with null or undefined instead of empty array
+  const [selectedDomain, setSelectedDomain] = useState<Domain | null>(null);
   const [viewOpen, setViewOpen] = useState(false);
   const [editOpen, setEditOpen] = useState(false);
 
-  const handleView = (domain: DomainResponse) => {
+  const handleView = (domain: Domain) => {
     setSelectedDomain(domain);
     setViewOpen(true);
   };
 
-  const handleEdit = (domain: DomainResponse) => {
+  const handleEdit = (domain: Domain) => {
     setSelectedDomain(domain);
     setEditOpen(true);
   };
@@ -106,16 +105,15 @@ export function DomainsTable({ domains, loading }: DomainsTableProps) {
           <TableBody>
             {domains.map((domain) => (
               <TableRow key={domain.id}>
-
                 <TableCell>
                   {domain.image ? (
                     <Image
-                      src={`http://localhost:8000/storage/${domain.image}`}
+                      src={domain.image}
                       alt={domain.name || "Image du domaine"}
                       width={50}
                       height={50}
                       className="object-cover rounded"
-                      unoptimized
+                      
                     />
                   ) : (
                     <div className="h-12.5 w-12.5 bg-gray-200 rounded flex items-center justify-center text-xs text-gray-500">
@@ -136,10 +134,9 @@ export function DomainsTable({ domains, loading }: DomainsTableProps) {
                     : "—"}
                 </TableCell>
                 <TableCell className="text-muted-foreground">
-                  {formatDistanceToNow(new Date(domain.created_at), {
-                    addSuffix: true,
-                    locale: fr,
-                  })}
+                  {domain.created_at 
+                    ? format(new Date(domain.created_at), 'dd-MM-yyyy', { locale: fr })
+                    : '—'}
                 </TableCell>
 
                 <TableCell className="text-right space-x-1">
@@ -177,7 +174,7 @@ export function DomainsTable({ domains, loading }: DomainsTableProps) {
         </Table>
       </div>
 
-      {/* Sheets */}
+      {/* Sheets - Only render when selectedDomain is not null */}
       {selectedDomain && (
         <>
           <DomainViewSheet

@@ -39,18 +39,19 @@ export const useSignUpForm=()=>{
               localStorage.setItem("pending_verification_email", values.email);
               toast.success("Success", {
                 description: response.message,
+                duration:500
               });
               router.push(`/verify-email`);
               router.refresh();
+               return;
             }
-            
+            setLoading(false);
            } catch (error) {
             console.log("Probleme lors de l'inscription:",error);
             toast.error("Error", {
               description:
                 "Une erreur est survenue lors de l'inscription.Veuillez ressayer plus tard.",
             });
-           }finally{
             setLoading(false);
            }
      });

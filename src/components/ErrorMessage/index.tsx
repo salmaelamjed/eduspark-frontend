@@ -1,4 +1,3 @@
-'use cient'
 
 export function getErrorMessage(error: unknown, fallback: string): string {
   if (

@@ -2,9 +2,16 @@
 
 import { Button } from "@/components/ui/button";
 import { InputOTP, InputOTPGroup, InputOTPSlot } from "@/components/ui/input-otp";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+} from "@/components/ui/dialog";
 import Image from "next/image";
 import Link from "next/link";
-import { ArrowRight, Loader2, MailCheck } from "lucide-react";
+import { ArrowRight, Loader2, MailCheck, CheckCircle2, XCircle } from "lucide-react";
 import { UserVerifyEmail } from "@/hooks/sign-up/use-verify-email";
 import { Controller } from "react-hook-form";
 
@@ -15,19 +22,24 @@ const VerifyOTP = () => {
     onResendCode,
     loading,
     resendLoading,
+    cooldown,
+    resendModalOpen,
+    resendStatus,
+    resendMessage,
+    closeResendModal,
   } = UserVerifyEmail();
+
   const {
     control,
     formState: { errors },
-    watch
+    watch,
   } = methods;
   const otpValue = watch("code") ?? "";
   const currentEmail = localStorage.getItem("pending_verification_email") || "";
 
-
   return (
     <div className="min-h-screen flex">
-      {/* Left side - Branding (identique aux autres pages) */}
+      {/* Left side - Branding */}
       <div className="hidden lg:flex lg:w-1/2 bg-primary/10 items-center justify-center p-12">
         <div className="max-w-md">
           <div className="flex items-center gap-2 mb-8">
@@ -58,7 +70,7 @@ const VerifyOTP = () => {
               Code de vérification
             </h1>
             <p className="text-muted-foreground">
-              On a envoyé un code à <span className="font-medium text-foreground">{currentEmail }</span>
+              On a envoyé un code à <span className="font-medium text-foreground">{currentEmail}</span>
             </p>
           </div>
 
@@ -121,15 +133,14 @@ const VerifyOTP = () => {
 
           <div className="mt-6 text-center text-sm text-muted-foreground space-y-2">
             <p>
-              Tu  {"n'as"} pas reçu le code ?{" "}
+              Tu {"n'as"} pas reçu le code ?{" "}
               <button
+                type="button"
                 onClick={onResendCode}
-                disabled={resendLoading}
-                className="text-orange-500 hover:underline font-medium border-none cursor-pointer p-0"
+                disabled={resendLoading || cooldown > 0}
+                className="text-orange-500 hover:underline font-medium border-none cursor-pointer p-0 disabled:opacity-50 disabled:cursor-not-allowed disabled:no-underline"
               >
-                
-                    Renvoyer le code
-              
+                {cooldown > 0 ? `Renvoyer dans ${cooldown}s` : "Renvoyer le code"}
               </button>
             </p>
 
@@ -142,6 +153,31 @@ const VerifyOTP = () => {
           </div>
         </div>
       </div>
+
+      {/* Modal de statut du renvoi de code */}
+      <Dialog open={resendModalOpen} onOpenChange={closeResendModal}>
+        <DialogContent className="sm:max-w-sm text-center">
+          <DialogHeader className="items-center">
+            <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-full bg-orange-100">
+              {resendStatus === "loading" && (
+                <Loader2 className="h-7 w-7 text-orange-500 animate-spin" />
+              )}
+              {resendStatus === "success" && (
+                <CheckCircle2 className="h-7 w-7 text-green-500" />
+              )}
+              {resendStatus === "error" && (
+                <XCircle className="h-7 w-7 text-red-500" />
+              )}
+            </div>
+            <DialogTitle>
+              {resendStatus === "loading" && "Envoi en cours"}
+              {resendStatus === "success" && "Code envoyé"}
+              {resendStatus === "error" && "Échec de l'envoi"}
+            </DialogTitle>
+            <DialogDescription>{resendMessage}</DialogDescription>
+          </DialogHeader>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };

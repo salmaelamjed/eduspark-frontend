@@ -1,3 +1,5 @@
+import { format } from "date-fns";
+import { fr } from "date-fns/locale";
 export function formatDuration(totalSeconds: number): string {
   const hours = Math.floor(totalSeconds / 3600);
   const minutes = Math.floor((totalSeconds % 3600) / 60);
@@ -12,3 +14,14 @@ export function formatDuration(totalSeconds: number): string {
 
   return `${minutes}:${paddedSeconds}`;
 }
+
+export const formatDate = (dateString: string | undefined) => {
+  if (!dateString) return "Non disponible";
+  try {
+    return format(new Date(dateString), "dd MMMM yyyy 'à' HH:mm", {
+      locale: fr,
+    });
+  } catch (error) {
+    return "Date invalide";
+  }
+};

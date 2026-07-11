@@ -27,6 +27,7 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
+import { getErrorMessage } from "../ErrorMessage";
 
 const formSchema = z.object({
   name: z.string().min(1, "Le nom est obligatoire").max(100),
@@ -125,9 +126,9 @@ export default function CreateDomainForm({ onSuccess }: CreateDomainFormProps) {
       // Appeler le callback de succès si fourni
       onSuccess?.();
       
-    } catch (err: any) {
-      console.error("Erreur:", err);
-      toast.error(err?.message || "Une erreur est survenue");
+    } catch (err: unknown) {
+      console.error("Erreur  :", err);
+      toast.error(getErrorMessage(err, "Une erreur est survenue "));
     } finally {
       setLoading(false);
     }
@@ -145,7 +146,7 @@ export default function CreateDomainForm({ onSuccess }: CreateDomainFormProps) {
   };
 
   const clearImage = () => {
-    form.setValue("image", null as any);
+    form.setValue("image", null as unknown);
     setPreview(null);
   };
 
