@@ -32,9 +32,9 @@ const CourseDetails = () => {
   }
   const handleEnroll = () => {
     if (course.is_free) {
-      router.push(`/courses/${courseSlug}/read`);
+      router.push(`/cours/${courseSlug}/read`);
     } else {
-      router.push(`/courses/${courseSlug}/subscribe`);
+      router.push(`/cours/${courseSlug}/checkout`);
     }
   };
 

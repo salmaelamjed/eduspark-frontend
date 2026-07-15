@@ -1,6 +1,6 @@
 'use client';
 
-import { useParams } from 'next/navigation';
+import { useParams, useRouter } from 'next/navigation';
 import { useEffect, useState, useCallback, useMemo } from 'react';
 import { useCourseDetailBySlug } from '@/hooks/courses/use-course';
 import { ModuleReadSidebar } from '@/components/read-sidebar';
@@ -11,13 +11,17 @@ import { Separator } from '@/components/ui/separator';
 import BotWindow from '@/components/chatbot/window';
 import Loading from './loading';
 import { buildQuizNumberMap } from '@/lib/quiz-numbering';
+import { useCourseAccess } from '@/hooks/courses/use-course-access';
 
 const Page = () => {
   const params = useParams();
     const courseId = params.courseSlug  as string;
-
+      const router = useRouter();
+    
 
   const {course, loading, error } = useCourseDetailBySlug(courseId);
+  const { access, loading: accessLoading } = useCourseAccess(course?.id ?? null);
+
   const [selectedModuleId, setSelectedModuleId] = useState<number | null>(null);
   const [selectedLessonId, setSelectedLessonId] = useState<number | null>(null);
   const [expandedModules, setExpandedModules] = useState<Record<number, boolean>>({});
@@ -33,7 +37,11 @@ const Page = () => {
 
   const quizNumberMap = useMemo(() => buildQuizNumberMap(course), [course]);
 
-
+useEffect(() => {
+  if (!accessLoading && course && !course.is_free && access && !access.has_access) {
+    router.replace(`/cours/${courseId}/checkout`);
+  }
+}, [accessLoading, access, course, courseId, router]);
   useEffect(() => {
     if (loading || !course) return;
   }, [course, loading, selectedLessonId]);

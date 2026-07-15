@@ -11,7 +11,7 @@ import { DomainsSection } from "@/components/domain-section";
   AccordionItem,
   AccordionTrigger,
 } from "@/components/ui/accordion"
-import { Briefcase, Percent } from "lucide-react";
+import { Briefcase, Percent, Sparkles } from "lucide-react";
 
 export default function HomePage(){
    const faqs = [
@@ -42,22 +42,79 @@ export default function HomePage(){
     <main>
       <Navbar/>
      
-     <section className="p-10 flex flex-col md:flex-row justify-between items-center bg-background">
-  <div className="max-w-xl">
-    <h1 className="text-orange-500 font-extrabold text-5xl leading-tight">
-      Apprends. Progresse. <br />
-      <span className="text-foreground">Libère ton potentiel.</span>
-    </h1>
+     <section className="p-8 flex flex-col md:flex-row justify-between items-center bg-background">
+  <div className="w-full lg:w-[60%] flex flex-col gap-7">
 
-    <p className="text-gray-500 text-xl mt-6">
-      Une plateforme unique pour explorer <span className="font-semibold text-orange-500">la programmation, le design, le business, les langues et bien plus encore</span>. 
-      Découvre des parcours variés, des outils modernes et un mindset qui t’accompagne vers la réussite.
-    </p>
+          {/* Pill badge */}
+          <div className="fade-up d1 inline-flex items-center gap-2 self-start px-4 py-2 rounded-full bg-orange-50 border border-orange-200 text-orange-600 text-sm font-semibold">
+            <Sparkles className="w-4 h-4" />
+            La plateforme des ambitieux
+          </div>
 
-    <Button className="mt-10 text-white font-bold bg-orange-500 py-5 px-10 text-lg rounded-lg shadow-md hover:bg-orange-400 transition-all">
-      Commencer ton aventure
-    </Button>
-  </div>
+          {/* Headline */}
+          <h1 className="fade-up d2 font-black leading-[1.08] tracking-tight" style={{ fontFamily: "'Inter', sans-serif" }}>
+            <span
+              className="block text-gray-900"
+              style={{ fontSize: "clamp(2.4rem, 5vw, 4rem)" }}
+            >
+              Apprends.{" "}
+              <span
+                className="inline-block"
+                style={{
+                  background: "linear-gradient(90deg, #f97316, #fb923c)",
+                  WebkitBackgroundClip: "text",
+                  WebkitTextFillColor: "transparent",
+                }}
+              >
+                Progresse.
+              </span>
+            </span>
+            <span
+              className="block text-gray-900 mt-1"
+              style={{ fontSize: "clamp(2.6rem, 5vw, 4rem)" }}
+            >
+              Libère ton{" "}
+              <span
+                className="relative inline-block"
+                style={{
+                  background: "linear-gradient(90deg, #ea580c, #f97316)",
+                  WebkitBackgroundClip: "text",
+                  WebkitTextFillColor: "transparent",
+                }}
+              >
+                potentiel.
+                {/* Underline accent */}
+                <svg
+                  className="absolute -bottom-2 left-0 w-full"
+                  height="6"
+                  viewBox="0 0 200 6"
+                  preserveAspectRatio="none"
+                >
+                  <path
+                    d="M0 5 Q50 0 100 5 Q150 10 200 5"
+                    stroke="#f97316"
+                    strokeWidth="2.5"
+                    fill="none"
+                    strokeLinecap="round"
+                  />
+                </svg>
+              </span>
+            </span>
+          </h1>
+
+          {/* Description */}
+          <p className="fade-up d3 text-gray-500 text-lg leading-relaxed max-w-lg">
+            Une plateforme unique pour explorer{" "}
+            <strong className="font-semibold text-gray-800">
+              la programmation, le design, le business, les langues et bien plus encore.
+            </strong>{" "}
+            Des parcours guidés, des outils modernes et un mindset qui {"t'accompagne"} vers la réussite.
+          </p>
+
+      
+
+      
+        </div>
 
   <div className="mt-10 md:mt-0 md:ml-12">
     <Image 

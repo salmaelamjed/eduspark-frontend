@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { GraduationCap, ArrowLeft, Home, Search } from "lucide-react";
+import {ArrowLeft, Home, Search } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
 export default function NotFound() {
@@ -17,21 +17,6 @@ export default function NotFound() {
 
       <div className="mx-auto max-w-md">
         
-        {/* Logo Section */}
-        <div className="mb-8 flex justify-center">
-          <Link 
-            href="/" 
-            className="flex items-center gap-2.5 group focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-orange-500 rounded-lg p-1"
-          >
-            <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-orange-500 text-white transition-transform group-hover:scale-105">
-              <GraduationCap className="h-5 w-5" />
-            </span>
-            <span className="text-xl font-bold tracking-tight text-foreground">
-              Edu<span className="text-orange-500">Spark</span>
-            </span>
-          </Link>
-        </div>
-
         {/* Big 404 Status */}
         <span className="inline-flex select-none rounded-full bg-orange-500/10 px-4 py-1.5 text-sm font-semibold tracking-wide text-orange-600 dark:text-orange-400">
           Erreur 404

@@ -6,7 +6,7 @@ import { PanelLeftClose, PanelLeft, GraduationCap, LogOut } from "lucide-react";
 import Link from 'next/link';
 import { cn } from "@/lib/utils";
 import { usePathname } from "next/navigation";
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import ConfirmSignOutModal from '@/components/confirm-signout-modal'; 
 
 
@@ -20,10 +20,29 @@ interface SidebarProps {
   navItems: NavItem[];
 }
 
+// Ne retourne QUE le href de l'item le plus spécifique qui matche le pathname
+// (ex: pour /dashboard/courses, "Courses" (/dashboard/courses) gagne sur
+// "Dashboard" (/dashboard), même si les deux sont techniquement des préfixes).
+function getActiveHref(pathname: string, hrefs: string[]): string | null {
+  const matches = hrefs.filter(
+    (href) => pathname === href || pathname.startsWith(`${href}/`)
+  );
+  if (matches.length === 0) return null;
+  // Le plus long préfixe = le plus spécifique
+  return matches.reduce((longest, current) =>
+    current.length > longest.length ? current : longest
+  );
+}
+
 export function Sidebar({ navItems }: SidebarProps) {
   const { isMinimized, toggleMinimize } = useSidebar();
   const [showLogoutModal, setShowLogoutModal] = useState(false);
   const pathname = usePathname();
+
+  const activeHref = useMemo(
+    () => getActiveHref(pathname, navItems.map((item) => item.href)),
+    [pathname, navItems]
+  );
 
   return (
     <aside
@@ -34,7 +53,7 @@ export function Sidebar({ navItems }: SidebarProps) {
         "transition-all duration-300 ease-in-out",
         "flex flex-col",
         "shadow-sm",
-        isMinimized ? "w-18" : "w-65"
+        isMinimized ? "w-18" : "w-60"
       )}
     >
       {/* Header with Logo */}
@@ -54,7 +73,6 @@ export function Sidebar({ navItems }: SidebarProps) {
               "shadow-md"
             )}
           >
-            {/* Tu peux remettre Sparkles ou ton logo ici */}
             <span className="text-lg font-bold "><GraduationCap className='w-10 h-10'/></span>
           </div>
           {!isMinimized && (
@@ -74,7 +92,7 @@ export function Sidebar({ navItems }: SidebarProps) {
       <nav className="flex-1 overflow-y-auto py-4 px-3">
         <div className="space-y-1">
           {navItems.map((item) => {
-            const isActive = pathname === item.href;
+            const isActive = item.href === activeHref;
 
             return (
               <Tooltip
@@ -90,12 +108,12 @@ export function Sidebar({ navItems }: SidebarProps) {
                       "font-medium",
                       isMinimized ? "justify-center p-3" : "px-4 py-3",
                       isActive
-                        ? "bg-orange-400 text-orange-400 shadow-sm"
+                        ? "bg-orange-500 text-white shadow-sm"
                         : "text-sidebar-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"
                     )}
                   >
                     {isActive && !isMinimized && (
-                      <span className="absolute left-0 top-1/2 -translate-y-1/2 w-1 h-6 bg-primary-foreground rounded-full" />
+                      <span className="absolute left-0 top-1/2 -translate-y-1/2 w-1 h-6 bg-white rounded-full" />
                     )}
 
                     {/* Icon */}
@@ -104,8 +122,8 @@ export function Sidebar({ navItems }: SidebarProps) {
                         "shrink-0 w-5 h-5 transition-transform duration-200",
                         "group-hover:scale-110",
                         isActive
-                          ? "text-primary-foreground"
-                          : "text-muted-foreground group-hover:text-orange-400"
+                          ? "text-white"
+                          : "text-muted-foreground group-hover:text-orange-500"
                       )}
                     >
                       {item.icon}
@@ -115,8 +133,8 @@ export function Sidebar({ navItems }: SidebarProps) {
                     {!isMinimized && (
                       <span className={cn("text-md font-medium truncate ",
                         isActive
-                          ? "text-primary-foreground"
-                          : "text-muted-foreground group-hover:text-orange-400"
+                          ? "text-white"
+                          : "text-muted-foreground group-hover:text-orange-500"
                       )}>
                         {item.title}
                       </span>
@@ -153,7 +171,7 @@ export function Sidebar({ navItems }: SidebarProps) {
           "w-10 h-10 mx-auto my-3",
           "rounded-xl",
           "text-red-600 hover:text-red-700",
-          "hover:bg-red-50/70",
+          "hover:bg-red-50/70 hover:cursor-pointer",
           "transition-colors duration-200",
           "focus:outline-none focus:ring-2 focus:ring-red-400 focus:ring-offset-2"
         )}
