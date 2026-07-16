@@ -4,7 +4,7 @@ import { useParams, useRouter } from 'next/navigation';
 import { useEffect, useState, useCallback, useMemo } from 'react';
 import { useCourseDetailBySlug } from '@/hooks/courses/use-course';
 import { ModuleReadSidebar } from '@/components/read-sidebar';
-import { FileText } from 'lucide-react';
+import { FileText, Loader2, Lock } from 'lucide-react';
 import LessonContent from '@/components/lesson/lesson-content';
 import { ScrollArea } from "@/components/ui/scroll-area"
 import { Separator } from '@/components/ui/separator';
@@ -37,11 +37,20 @@ const Page = () => {
 
   const quizNumberMap = useMemo(() => buildQuizNumberMap(course), [course]);
 
-useEffect(() => {
-  if (!accessLoading && course && !course.is_free && access && !access.has_access) {
-    router.replace(`/cours/${courseId}/checkout`);
-  }
-}, [accessLoading, access, course, courseId, router]);
+  const isChecking =
+  loading || (!!course && !course.is_free && (accessLoading || access === null));
+
+const isBlocked =
+  !isChecking && !!course && !course.is_free && !!access && !access.has_access;
+ useEffect(() => {
+    if (isBlocked) {
+      router.replace(
+        `/cours/${courseId}/checkout?message=you_have_to_buy_this_course`,
+      );
+    }
+  }, [isBlocked, courseId, router]);
+
+  
   useEffect(() => {
     if (loading || !course) return;
   }, [course, loading, selectedLessonId]);
@@ -61,6 +70,24 @@ useEffect(() => {
       const selectedId = String(selectedLessonId);
       return lessonId === selectedId;
     }) ?? null;
+
+      if (isChecking) {
+    return (
+      <div className="flex min-h-[60vh] flex-col items-center justify-center gap-3 text-muted-foreground">
+        <Loader2 className="h-6 w-6 animate-spin text-orange-500" />
+        <p className="text-sm font-medium">Vérification de votre accès…</p>
+      </div>
+    );
+  }
+
+   if (isBlocked) {
+    return (
+      <div className="flex min-h-[60vh] flex-col items-center justify-center gap-3 text-muted-foreground">
+        <Lock className="h-8 w-8 text-orange-500" />
+        <p className="text-sm font-medium">Redirection en cours…</p>
+      </div>
+    );
+  }
 
   return (
     <div className="flex h-screen overflow-hidden bg-white">
