@@ -112,21 +112,21 @@ const CourseDetails = () => {
   }
 
   const handleEnroll = () => {
-  if (course.is_free || access?.has_access) {
-    router.push(`/cours/${courseId}/read`); 
-  } else {
-    router.push(`/cours/${courseId}/checkout`); 
-  }
-};
+    if (course.is_free || access?.has_access) {
+      router.push(`/cours/${courseId}/read`); 
+    } else {
+      router.push(`/cours/${courseId}/checkout`); 
+    }
+  };
 
   return (
-    <div className="w-full mx-auto px-4 sm:px-6 lg:px-8 py-6">
+    <div className="w-full max-w-full mx-auto px-4 sm:px-6 lg:px-8 py-6 overflow-x-hidden">
 
-      <div className="flex flex-col lg:flex-row gap-6 items-stretch h-[78vh] mb-10">
+      <div className="flex flex-col lg:flex-row gap-6 items-stretch mb-10 min-w-0">
         
         {/* Colonne Gauche : Image de couverture */}
         <div className="w-full lg:w-95 xl:w-105 shrink-0 flex">
-          <div className="relative w-full lg:h-full rounded-3xl overflow-hidden shadow-md border border-gray-100 bg-gray-50 flex-1">
+          <div className="relative w-full h-[40vh] lg:h-auto rounded-3xl overflow-hidden shadow-md border border-gray-100 bg-gray-50 flex-1">
             {course.thumbnail ? (
               <Image
                 src={course.thumbnail}
@@ -153,16 +153,16 @@ const CourseDetails = () => {
         </div>
 
         {/* Colonne Droite : Contenu de la fiche technique */}
-        <div className="flex-1 w-full rounded-3xl sm:p-8 border border-gray-100 flex flex-col justify-between">
+        <div className="flex-1 w-full min-w-0 rounded-3xl p-5 sm:p-8 border border-gray-100 bg-white flex flex-col gap-6">
           
-          <div>
+          <div className="min-w-0">
             {/* Titre Principal */}
-            <h1 className="text-2xl sm:text-3xl font-extrabold text-gray-950 leading-tight tracking-tight line-clamp-2">
+            <h1 className="text-2xl sm:text-3xl font-extrabold text-gray-950 leading-tight tracking-tight line-clamp-2 wrap-break-words">
               {course.title}
             </h1>
 
             {/* Section Description */}
-            <div className="mt-6">
+            <div className="mt-6 min-w-0">
               <div className="flex items-center gap-2">
                 <Quote className="w-4 h-4 text-orange-500 shrink-0" />
                 <h2 className="text-sm font-bold text-gray-900 uppercase tracking-wider">Description</h2>
@@ -173,13 +173,14 @@ const CourseDetails = () => {
                 <span className="h-1 w-1.5 rounded-full bg-orange-300" />
               </div>
               
-              <div className="bg-gray-50 border border-gray-100 rounded-2xl p-4 text-xs sm:text-sm text-gray-600 leading-relaxed max-h-25 overflow-y-auto scrollbar-thin">
+              {/* Box sans scroll, sans débordement horizontal, même sur texte sans espaces */}
+              <div className="w-full min-w-0 bg-gray-50 border border-gray-100 rounded-2xl p-4 text-xs sm:text-sm text-gray-600 leading-relaxed break-all overflow-hidden">
                 {course.description || "Aucune description fournie pour ce cours."}
               </div>
             </div>
 
             {/* Section Informations Complémentaires */}
-            <div className="mt-6">
+            <div className="mt-6 w-full min-w-0">
               <div className="flex items-center gap-2">
                 <Quote className="w-4 h-4 text-orange-500 shrink-0" />
                 <h2 className="text-sm font-bold text-gray-900 uppercase tracking-wider">Informations clés</h2>
@@ -191,75 +192,76 @@ const CourseDetails = () => {
               </div>
 
               {/* Grille d'informations */}
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-y-3 gap-x-6 text-xs sm:text-sm">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-y-4 gap-x-6 text-xs sm:text-sm w-full min-w-0">
                 
                 {/* Domaine */}
-                <div className="flex items-center gap-2.5 py-0.5">
+                <div className="flex items-center gap-2.5 py-0.5 min-w-0">
                   <div className="p-1.5 rounded-lg bg-orange-50 text-orange-500 shrink-0">
                     <Globe className="w-3.5 h-3.5" />
                   </div>
-                  <div>
+                  <div className="min-w-0">
                     <p className="text-[10px] text-gray-400 font-medium leading-none mb-0.5">Domaine</p>
-                    <p className="text-gray-900 font-semibold leading-tight">{course.domain?.name || 'Général'}</p>
+                    <p className="text-gray-900 font-semibold leading-tight truncate">{course.domain?.name || 'Général'}</p>
                   </div>
                 </div>
 
                 {/* Formateur */}
-                <div className="flex items-center gap-2.5 py-0.5">
+                <div className="flex items-center gap-2.5 py-0.5 min-w-0">
                   <div className="p-1.5 rounded-lg bg-orange-50 text-orange-500 shrink-0">
                     <UserCircle className="w-3.5 h-3.5" />
                   </div>
-                  <div>
+                  <div className="min-w-0">
                     <p className="text-[10px] text-gray-400 font-medium leading-none mb-0.5">Présenté par</p>
-                    <p className="text-gray-900 font-semibold leading-tight">{course.teacher?.name || 'Anonyme'}</p>
+                    <p className="text-gray-900 font-semibold leading-tight truncate">{course.teacher?.name || 'Anonyme'}</p>
                   </div>
                 </div>
 
                 {/* Langue */}
-                <div className="flex items-center gap-2.5 py-0.5">
+                <div className="flex items-center gap-2.5 py-0.5 min-w-0">
                   <div className="p-1.5 rounded-lg bg-orange-50 text-orange-500 shrink-0">
                     <Languages className="w-3.5 h-3.5" />
                   </div>
-                  <div>
+                  <div className="min-w-0">
                     <p className="text-[10px] text-gray-400 font-medium leading-none mb-0.5">Langue</p>
-                    <p className="text-gray-900 font-semibold uppercase leading-tight">{course.language || 'FR'}</p>
+                    <p className="text-gray-900 font-semibold uppercase leading-tight truncate">{course.language || 'FR'}</p>
                   </div>
                 </div>
 
                 {/* Niveau */}
-                <div className="flex items-center gap-2.5 py-0.5">
+                <div className="flex items-center gap-2.5 py-0.5 min-w-0">
                   <div className="p-1.5 rounded-lg bg-orange-50 text-orange-500 shrink-0">
                     <BarChart2 className="w-3.5 h-3.5" />
                   </div>
-                  <div>
+                  <div className="min-w-0">
                     <p className="text-[10px] text-gray-400 font-medium leading-none mb-0.5">Niveau requis</p>
-                    <p className="text-gray-900 font-semibold capitalize leading-tight">{course.level || 'Tous niveaux'}</p>
+                    <p className="text-gray-900 font-semibold capitalize leading-tight truncate">{course.level || 'Tous niveaux'}</p>
                   </div>
                 </div>
               </div>
             </div>
           </div>
 
-          <div>
-            <Separator className="my-4 bg-gray-100" />
-
-            {/* Bouton d'action principal */}
-            <div className="pt-1">
-              <Button 
-              onClick={handleEnroll} disabled={accessLoading} 
-              className='bg-orange-500 hover:bg-orange-400 hover:cursor-pointer'
-              >
+          {/* Section Bouton */}
+          <div className="mt-2">
+            <Separator className="mb-5 bg-gray-100" />
+            <Button 
+              onClick={handleEnroll} 
+              disabled={accessLoading} 
+              className='w-full sm:w-auto min-w-50 flex items-center justify-center gap-2 bg-orange-500 hover:bg-orange-600 text-white font-bold px-6 py-4 rounded-xl transition-all cursor-pointer shadow-sm'
+            >
+              <span>
                 {course.is_free || access?.has_access
                   ? "Continuer le cours"
                   : "S'inscrire au cours"}
-                <ArrowRight className="w-4 h-4 sm:w-5 sm:h-5" />
-              </Button>
-            </div>
+              </span>
+              <ArrowRight className="w-4 h-4" />
+            </Button>
           </div>
 
         </div>
       </div>
 
+      {/* Section Recommandations */}
       <div className="mt-12">
         <div className="flex items-center gap-2">
           <h2 className="text-lg font-bold text-gray-900 uppercase tracking-wider">Découvrez {"d'autres"} cours</h2>

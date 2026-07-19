@@ -125,9 +125,12 @@ const isBlocked =
         </div>
       </main>
       <Separator orientation="vertical" />
-      <aside className="shrink-0 w-90">
-        <BotWindow/>
-      </aside>
+     <aside className="shrink-0 w-[380px] border-l h-full overflow-hidden">
+  <BotWindow 
+    courseId={course.id} 
+    lessonId={selectedLessonId || undefined} 
+  />
+</aside>
     </div>
   );
 };

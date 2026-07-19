@@ -10,8 +10,8 @@ function MainContent({ children }: { children: React.ReactNode }) {
     <main
       className={`
         flex-1 transition-all duration-300
-        ${isMinimized ? 'ml-20' : 'ml-64'}
-        p-4 md:p-6 lg:p-8
+        ${isMinimized ? 'ml-18' : 'ml-60'}
+        px-4 
       `}
     >
       {children}

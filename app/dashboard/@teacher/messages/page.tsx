@@ -1,18 +1,21 @@
 'use client'
 
+import { Separator } from "@/components/ui/separator"
+import ConversationMenu from '@/components/messages/index'
+import Messenger from "@/components/messages/messenger"
+import InfoBar from "@/components/infobar"
 const Messages = () => {
   return (
-    <div>
-      <div className="flex justify-between items-center mb-8">
-        <div>
-          <h1 className="text-3xl font-bold">Gestion des Messages</h1>
-          <p className="text-muted-foreground mt-1">
-            Gérez et suivez tous vos messages
-          </p>
+    <div className="w-full h-full flex">
+    <ConversationMenu  />
+ 
+     <Separator orientation="vertical" />
+     <div className="w-full flex flex-col">
+        <div className="px-5">
+          <InfoBar />
         </div>
+        <Messenger />
       </div>
-
-      {/* Contenu des messages à ajouter ici */}
     </div>
   )
 }

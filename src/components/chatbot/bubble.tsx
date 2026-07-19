@@ -1,95 +1,98 @@
-import { cn, extractUUIDfromString, getMonthName } from '../../lib/utils'
-import React from 'react'
-import {
-Avatar,
-AvatarFallback,
-AvatarImage
-} from '../ui/avatar'
-import { User } from 'lucide-react'
-import Image from 'next/image'
-import Link from 'next/link'
-type Props={
-    message : {
-        role: 'assistant' | 'user'
-        content : string 
-        link?: string 
-    }
-    createdAt?: Date
-}
-const Bubble = ({message, createdAt}:Props) => {
+// components/chatbot/bubble.tsx
+import { cn } from '@/lib/utils';
+import React from 'react';
+import { Avatar, AvatarFallback, AvatarImage } from '../ui/avatar';
+import { User, Bot } from 'lucide-react';
+import { format } from 'date-fns';
+import { fr } from 'date-fns/locale';
 
-    const d = new Date()
-     const image = message.content ? extractUUIDfromString(message.content) : null;
+type Props = {
+  message: {
+    id: number;
+    sender_type: 'student' | 'teacher' | 'ai' | 'system';
+    sender_name?: string | null;
+    content: string;
+    created_at: string;
+  };
+};
+
+const Bubble = ({ message }: Props) => {
+  const isAI = message.sender_type === 'ai';
+  const isTeacher = message.sender_type === 'teacher';
+  const isStudent = message.sender_type === 'student';
+  const isSystem = message.sender_type === 'system';
+
+  const date = new Date(message.created_at);
+  const formattedTime = format(date, 'HH:mm');
+
+  if (isSystem) {
+    return (
+      <div className="flex justify-center my-2">
+        <span className="text-xs text-gray-400 bg-gray-100 rounded-full px-3 py-1">
+          {message.content}
+        </span>
+      </div>
+    );
+  }
+
   return (
-     <div className={cn(
-        'flex gap-2 items-end',
-        message.role == 'assistant' ? 'self-start' : 'self-end flex-row-reverse'
-     )}>
-       {message.role == 'assistant' ? (
-        <Avatar className='w-5 h-5'>
-            <AvatarImage
-            src='https://github.com/shadcn.png'
-            alt='@shadcn'
-            />
-            <AvatarFallback>CN</AvatarFallback>
+    <div
+      className={cn(
+        'flex gap-2 items-end mb-4',
+        isStudent ? 'justify-end' : 'justify-start'
+      )}
+    >
+      {!isStudent && (
+        <Avatar className="w-8 h-8 shrink-0">
+          <AvatarImage
+            src={isTeacher ? '/teacher-avatar.png' : '/bot-avatar.png'}
+            alt={message.sender_name || 'Assistant'}
+          />
+          <AvatarFallback className="bg-orange-100">
+            {isTeacher ? (
+              <User className="w-4 h-4 text-orange-500" />
+            ) : (
+              <Bot className="w-4 h-4 text-blue-500" />
+            )}
+          </AvatarFallback>
         </Avatar>
-       ):(
-        <Avatar
-        className='h-5 w-5'>
-            <AvatarFallback>
-                <User/>
-            </AvatarFallback>
+      )}
+
+      <div
+        className={cn(
+          'flex flex-col max-w-[70%]',
+          isStudent ? 'items-end' : 'items-start'
+        )}
+      >
+        {message.sender_name && (
+          <span className="text-xs text-gray-400 mb-1 px-2">
+            {message.sender_name}
+          </span>
+        )}
+        <div
+          className={cn(
+            'rounded-2xl px-4 py-2 text-sm',
+            isStudent
+              ? 'bg-orange-500 text-white rounded-br-md'
+              : 'bg-gray-100 text-gray-800 rounded-bl-md'
+          )}
+        >
+          <p className="whitespace-pre-wrap break-words">{message.content}</p>
+        </div>
+        <span className="text-[10px] text-gray-400 mt-1 px-2">
+          {formattedTime}
+        </span>
+      </div>
+
+      {isStudent && (
+        <Avatar className="w-8 h-8 shrink-0">
+          <AvatarFallback className="bg-orange-500 text-white">
+            <User className="w-4 h-4" />
+          </AvatarFallback>
         </Avatar>
-       )}
-       <div className={cn(
-        'flex flex-col gap-3 min-w-50 max-w-75 p-4 rounded-t-md',
-        message.role =='assistant'
-        ? 'bg-muted rounded-r-md'
-        : 'bg-purple text-white rounded-l-md' 
-       )}>
-        {createdAt ?(
-            <div className="flex gap-2 text-xs text-gray-600">
-                <p>
-                    {createdAt.getDate()} {getMonthName(createdAt.getMonth())}
-                </p>
-                <p>
-                    {createdAt.getHours()}:{createdAt.getMinutes()}
-                    {createdAt.getHours() > 12 ? 'PM' : 'AM'}
-                </p>
-            </div>
-        ):(
-          <p className="text-xs">
-            {`${d.getHours()}:${d.getMinutes()} ${
-                d.getHours() > 12 ? "PM" : 'AM'
-            }`}
-          </p>
+      )}
+    </div>
+  );
+};
 
-        )}
-        {image ? (
-            <div className="relative aspect-square">
-                <Image
-            src={`https://5u0kesvn9y.ucarecd.net/${image[0]}/`}
-            fill
-            alt='image'
-            />
-            </div>
-        ):(
-            <p className="text-sm">
-                {message.content ? message.content.replace('(complete)', '') : ''}
-                {message.link && (
-                    <Link
-                    className='underline font-bold pl-2'
-                     href={message.link}
-                     target='_blank'
-                    >
-                        Your Link
-                    </Link>
-                )}
-            </p>
-        )}
-       </div>
-     </div>
-  )
-}
-
-export default Bubble
+export default Bubble;

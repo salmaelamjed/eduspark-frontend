@@ -1,0 +1,50 @@
+export type ChatMode = "ai" | "human";
+export type ChatRoomStatus = "active" | "closed";
+export type SenderType = "student" | "teacher" | "ai" | "system";
+
+export interface ChatRoomCourse {
+  id: number;
+  title: string;
+  slug: string;
+}
+
+export interface ChatRoomLesson {
+  id: number;
+  title: string;
+}
+
+export interface ChatRoomParticipant {
+  id: number;
+  name: string;
+}
+
+export interface ChatRoom {
+  id: number;
+  mode: ChatMode;
+  status: ChatRoomStatus;
+  course: ChatRoomCourse;
+  lesson: ChatRoomLesson | null;
+  student: ChatRoomParticipant;
+  teacher?: ChatRoomParticipant;
+  last_message_at: string | null;
+  created_at: string;
+}
+
+export interface ChatMessage {
+  id: number;
+  chat_room_id: number;
+  sender_type: SenderType;
+  sender_id: number | null;
+  sender_name: string | null;
+  content: string;
+  created_at: string;
+}
+
+export interface SendMessageResult {
+  user_message: ChatMessage;
+  ai_message: ChatMessage | null;
+}
+
+export interface ApiEnvelope<T> {
+  data: T;
+}
