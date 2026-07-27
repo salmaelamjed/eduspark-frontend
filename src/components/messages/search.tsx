@@ -1,77 +1,54 @@
 'use client';
 
-import React, { useState } from 'react'
+import React from 'react';
+import { Search, Inbox, X } from 'lucide-react';
+import { Input } from '../ui/input';
 
-import { FieldValues, UseFormReturn } from 'react-hook-form'
-import { Search,Inbox, X } from 'lucide-react'
-import { Input } from "../ui/input"
-
-type Domain = {
-  name: string 
-  id: string 
-  icon: string 
-}
+type TabType = 'all' | 'unread';
 
 type Props = {
-  form: UseFormReturn<FieldValues>
-  domains?: Domain[] | undefined
-  onTabChange?: (tab: string) => void
-  onSearch?: (query: string) => void
-  unreadCount?: number
-  favoritesCount?: number
-  groupsCount?: number
-}
+  value: string;
+  onSearchChange: (query: string) => void;
+  activeTab: TabType;
+  onTabChange: (tab: TabType) => void;
+  unreadCount?: number;
+};
 
-type TabType = 'all' | 'unread' | 'favorites' 
-
-const ConversationSearch = ({ 
-
+const ConversationSearch = ({
+  value,
+  onSearchChange,
+  activeTab,
   onTabChange,
-  onSearch,
-  unreadCount = 22,
-
+  unreadCount = 0,
 }: Props) => {
-  const [activeTab, setActiveTab] = useState<TabType>('all')
-  const [searchQuery, setSearchQuery] = useState('')
-  const [isSearchFocused, setIsSearchFocused] = useState(false)
-
-  const handleTabChange = (tab: TabType) => {
-    setActiveTab(tab)
-    if (onTabChange) onTabChange(tab)
-  }
-
-  const handleSearch = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const query = e.target.value
-    setSearchQuery(query)
-    if (onSearch) onSearch(query)
-  }
-
-  const clearSearch = () => {
-    setSearchQuery('')
-    if (onSearch) onSearch('')
-  }
+  const [isSearchFocused, setIsSearchFocused] = React.useState(false);
 
   return (
     <div className="flex flex-col gap-3 py-3 px-1">
-      {/* Search Bar */}
+      {/* Search Bar — entièrement contrôlé par le parent, pas d'état local dupliqué */}
       <div className="relative">
-        <div className={`
+        <div
+          className={`
           relative flex items-center rounded-full transition-all duration-200
-          ${isSearchFocused 
-            ? 'bg-white border-2 border-orange-500 shadow-none' 
-            : 'bg-gray-100 border-2 border-transparent'
+          ${
+            isSearchFocused
+              ? 'bg-white border-2 border-orange-500 shadow-none'
+              : 'bg-gray-100 border-2 border-transparent'
           }
-        `}>
-          <Search className={`
+        `}
+        >
+          <Search
+            className={`
             absolute left-3.5 w-4 h-4 transition-colors duration-200
             ${isSearchFocused ? 'text-orange-500' : 'text-gray-400'}
-          `} />
-          
+          `}
+          />
+
           <Input
             type="text"
-            placeholder="Rechercher ou démarrer une discussion"
-            value={searchQuery}
-            onChange={handleSearch}
+            placeholder="Rechercher un étudiant..."
+            value={value}
+            onChange={(e) => onSearchChange(e.target.value)}
             onFocus={() => setIsSearchFocused(true)}
             onBlur={() => setIsSearchFocused(false)}
             className="
@@ -81,10 +58,11 @@ const ConversationSearch = ({
               rounded-full
             "
           />
-          
-          {searchQuery && (
+
+          {value && (
             <button
-              onClick={clearSearch}
+              type="button"
+              onClick={() => onSearchChange('')}
               className="absolute right-2 p-1.5 rounded-full hover:bg-gray-200 transition-colors"
             >
               <X className="w-3.5 h-3.5 text-gray-400" />
@@ -93,11 +71,11 @@ const ConversationSearch = ({
         </div>
       </div>
 
-      {/* Tabs - Exact WhatsApp Style with Orange Underline */}
+      {/* Tabs */}
       <div className="flex items-center border-b border-gray-200">
-        {/* All */}
         <button
-          onClick={() => handleTabChange('all')}
+          type="button"
+          onClick={() => onTabChange('all')}
           className={`
             relative flex-1 py-2.5 text-xs font-medium transition-all duration-200
             ${activeTab === 'all' ? 'text-orange-500' : 'text-gray-500 hover:text-gray-700'}
@@ -112,9 +90,9 @@ const ConversationSearch = ({
           )}
         </button>
 
-        {/* Unread */}
         <button
-          onClick={() => handleTabChange('unread')}
+          type="button"
+          onClick={() => onTabChange('unread')}
           className={`
             relative flex-1 py-2.5 text-xs font-medium transition-all duration-200
             ${activeTab === 'unread' ? 'text-orange-500' : 'text-gray-500 hover:text-gray-700'}
@@ -131,10 +109,8 @@ const ConversationSearch = ({
           )}
         </button>
       </div>
-
-
     </div>
-  )
-}
+  );
+};
 
-export default ConversationSearch
+export default ConversationSearch;

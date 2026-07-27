@@ -2,6 +2,10 @@ export type ChatMode = "ai" | "human";
 export type ChatRoomStatus = "active" | "closed";
 export type SenderType = "student" | "teacher" | "ai" | "system";
 
+export interface ChatRoomLastMessage {
+  content: string;
+  sender_type: SenderType;
+}
 export interface ChatRoomCourse {
   id: number;
   title: string;
@@ -27,6 +31,8 @@ export interface ChatRoom {
   student: ChatRoomParticipant;
   teacher?: ChatRoomParticipant;
   last_message_at: string | null;
+  last_message?: ChatRoomLastMessage | null;
+  unread_count: number;
   created_at: string;
 }
 

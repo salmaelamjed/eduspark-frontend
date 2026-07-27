@@ -4,7 +4,6 @@ import React from 'react';
 import { Avatar, AvatarFallback, AvatarImage } from '../ui/avatar';
 import { User, Bot } from 'lucide-react';
 import { format } from 'date-fns';
-import { fr } from 'date-fns/locale';
 
 type Props = {
   message: {
@@ -17,7 +16,6 @@ type Props = {
 };
 
 const Bubble = ({ message }: Props) => {
-  const isAI = message.sender_type === 'ai';
   const isTeacher = message.sender_type === 'teacher';
   const isStudent = message.sender_type === 'student';
   const isSystem = message.sender_type === 'system';
@@ -38,7 +36,7 @@ const Bubble = ({ message }: Props) => {
   return (
     <div
       className={cn(
-        'flex gap-2 items-end mb-4',
+        'flex gap-2 items-end ',
         isStudent ? 'justify-end' : 'justify-start'
       )}
     >
@@ -58,31 +56,29 @@ const Bubble = ({ message }: Props) => {
         </Avatar>
       )}
 
+     
+            <div
+      className={cn(
+        'flex items-end max-w-[70%] gap-1.5',
+        isStudent ? 'flex-row-reverse' : 'flex-row'
+      )}
+    >
       <div
         className={cn(
-          'flex flex-col max-w-[70%]',
-          isStudent ? 'items-end' : 'items-start'
+          'rounded-2xl px-4 py-2 text-sm',
+          isStudent
+            ? 'bg-orange-500 text-white rounded-br-md'
+            : 'bg-gray-100 text-gray-800 rounded-bl-md'
         )}
       >
-        {message.sender_name && (
-          <span className="text-xs text-gray-400 mb-1 px-2">
-            {message.sender_name}
-          </span>
-        )}
-        <div
-          className={cn(
-            'rounded-2xl px-4 py-2 text-sm',
-            isStudent
-              ? 'bg-orange-500 text-white rounded-br-md'
-              : 'bg-gray-100 text-gray-800 rounded-bl-md'
-          )}
-        >
-          <p className="whitespace-pre-wrap break-words">{message.content}</p>
-        </div>
-        <span className="text-[10px] text-gray-400 mt-1 px-2">
-          {formattedTime}
-        </span>
+        <p className="whitespace-pre-wrap wrap-break-words">{message.content}</p>
       </div>
+
+      <span className="text-[10px] text-gray-400 shrink-0 pb-0.5">
+        {formattedTime}
+      </span>
+    </div>
+        
 
       {isStudent && (
         <Avatar className="w-8 h-8 shrink-0">

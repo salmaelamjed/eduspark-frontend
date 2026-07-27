@@ -57,4 +57,7 @@ export const chatApi = {
       {},
       token,
     ),
+
+  markAsRead: (roomId: number, token: string) =>
+    apiClient.post<ApiEnvelope<ChatRoom>>(`${BASE}/${roomId}/read`, {}, token),
 };

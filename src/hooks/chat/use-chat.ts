@@ -16,6 +16,7 @@ interface UseChatReturn {
   isLoading: boolean;
   isSending: boolean;
   error: string | null;
+  unreadSnapshot: number;
   sendMessage: (content: string) => Promise<void>;
   switchToHuman: () => Promise<void>;
   switchToAi: () => Promise<void>;
@@ -33,9 +34,9 @@ export function useChat({
   const [isLoading, setIsLoading] = useState(true);
   const [isSending, setIsSending] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [unreadSnapshot, setUnreadSnapshot] = useState(0);
 
   const pollTimerRef = useRef<ReturnType<typeof setInterval> | null>(null);
-  // Retient le lessonId déjà synchronisé côté serveur, pour éviter les appels redondants
   const syncedLessonIdRef = useRef<number | undefined>(undefined);
 
   const clearPolling = useCallback(() => {
@@ -45,17 +46,26 @@ export function useChat({
     }
   }, []);
 
+  const markRead = useCallback(
+    (id: number) => {
+      if (!token) return;
+      chatApi.markAsRead(id, token).catch(() => {});
+    },
+    [token],
+  );
+
   const refreshMessages = useCallback(
     async (roomId: number) => {
       if (!token) return;
       try {
         const res = await chatApi.getMessages(roomId, token);
         setMessages(res.data);
+        markRead(roomId);
       } catch {
         // erreur de polling silencieuse : on retentera au prochain tick
       }
     },
-    [token],
+    [token, markRead],
   );
 
   const startHumanPolling = useCallback(
@@ -68,7 +78,6 @@ export function useChat({
     [clearPolling, refreshMessages, humanPollingInterval],
   );
 
-  // --- Montage initial : crée/récupère la room, charge l'historique une seule fois ---
   useEffect(() => {
     if (!token) {
       setIsLoading(false);
@@ -90,11 +99,13 @@ export function useChat({
         setRoom(createdRoom);
         syncedLessonIdRef.current = lessonId;
 
+        setUnreadSnapshot(createdRoom.unread_count ?? 0);
+
         const historyRes = await chatApi.getMessages(createdRoom.id, token!);
         if (cancelled) return;
 
         setMessages(historyRes.data);
-
+        markRead(createdRoom.id);
         if (createdRoom.mode === "human") {
           startHumanPolling(createdRoom.id);
         }
@@ -116,11 +127,9 @@ export function useChat({
       cancelled = true;
       clearPolling();
     };
-    // Volontairement SANS lessonId ici : un changement de leçon ne doit pas relancer tout le cycle d'init.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [courseId, token]);
 
-  // --- Changement de leçon : met à jour lesson_id sur la room existante, en silence ---
   useEffect(() => {
     if (!room || !token) return;
     if (lessonId === syncedLessonIdRef.current) return; // déjà synchronisé, rien à faire
@@ -132,8 +141,6 @@ export function useChat({
         const roomRes = await chatApi.createRoom(courseId, token!, lessonId);
         if (cancelled) return;
 
-        // Met à jour la room (lesson liée) SANS toucher messages/isLoading :
-        // la conversation reste visuellement continue.
         setRoom(roomRes.data);
         syncedLessonIdRef.current = lessonId;
       } catch {
@@ -227,6 +234,7 @@ export function useChat({
     isLoading,
     isSending,
     error,
+    unreadSnapshot,
     sendMessage,
     switchToHuman,
     switchToAi,
