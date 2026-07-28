@@ -25,6 +25,11 @@ const nextConfig: NextConfig = {
         port: "8000",
         pathname: "/storage/**",
       },
+      {
+        protocol: "https",
+        hostname: "eduspark-7x40dl5m.b4a.run",
+        pathname: "/storage/**",
+      },
     ],
   },
   async rewrites() {
