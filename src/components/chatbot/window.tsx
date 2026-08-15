@@ -139,7 +139,7 @@ const BotWindow = forwardRef<HTMLDivElement, BotWindowProps>(
               </div>
             ))}
 
-            {isSending && <Responding />}
+           {isSending && mode === 'ai' && <Responding />}
             <div ref={messagesEndRef} />
           </div>
         </ScrollArea>
@@ -172,14 +172,10 @@ const BotWindow = forwardRef<HTMLDivElement, BotWindowProps>(
             <Button
               type="submit"
               size="icon"
-              disabled={!inputValue.trim() || isSending}
+              disabled={!inputValue.trim()}
               className="shrink-0 bg-orange-500 hover:bg-orange-600 rounded-xl h-10 w-10"
             >
-              {isSending ? (
-                <Loader2 className="w-4 h-4 animate-spin" />
-              ) : (
-                <Send className="w-4 h-4" />
-              )}
+              <Send className="w-4 h-4" />
             </Button>
           </div>
         </form>

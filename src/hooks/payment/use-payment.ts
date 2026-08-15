@@ -8,6 +8,7 @@ type PaymentStep =
   | "creating_intent"
   | "ready"
   | "confirming"
+  | "already_processed"
   | "polling"
   | "succeeded"
   | "error";
@@ -56,6 +57,15 @@ export function usePayment(): UsePaymentResult {
       try {
         const response = await paymentsApi.createIntent(courseId, token);
 
+        if (response.already_processed) {
+          setPurchaseId(response.purchase_id);
+          setStep("already_processed");
+          // Optionally start polling immediately
+          if (response.purchase_id) {
+            waitForEnrollment();
+          }
+          return;
+        }
         if (
           !response.success ||
           !response.client_secret ||

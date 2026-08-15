@@ -1,9 +1,16 @@
 export type UserRole = "student" | "teacher" | "admin";
-
+export type ExpertiseLevel =
+  | "beginner"
+  | "intermediate"
+  | "advanced"
+  | "expert";
 export interface SocialLinks {
   linkedin?: string;
+  github?: string;
   twitter?: string;
   website?: string;
+  youtube?: string;
+  instagram?: string;
   [key: string]: string | undefined;
 }
 
@@ -33,4 +40,31 @@ export interface User {
 
   created_at?: string;
   updated_at?: string;
+}
+export interface UserProfile {
+  id: number;
+  name: string;
+  email: string | null;
+  role: UserRole;
+  is_active: boolean;
+  country: string | null;
+  headline: string | null;
+  bio: string | null;
+  expertise_level: ExpertiseLevel | null;
+  date_of_birth: string | null; // "YYYY-MM-DD",
+  social_links: SocialLinks | null;
+  profile_picture_url: string | null;
+  email_verified: boolean;
+  member_since: string;
+  courses_count?: number; // présent seulement si role === "teacher"
+}
+
+export interface ApiResponse<T> {
+  message: string;
+  data?: T;
+}
+
+export interface ApiValidationError {
+  message: string;
+  errors: Record<string, string[]>;
 }

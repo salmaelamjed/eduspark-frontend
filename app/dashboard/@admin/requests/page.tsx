@@ -48,6 +48,7 @@ type TeacherRequestRow = TeacherRequestDetail & { user: User; domain: Domain };
 import Link from 'next/link';
 import { format } from 'date-fns';
 import { fr } from 'date-fns/locale';
+import {  RequestEmptyDemo } from '@/components/empty/no-demande';
 
 function getStatusBadge(status: string) {
   const variants: Record<string, string> = {
@@ -106,9 +107,9 @@ export default function TeacherRequestsPage() {
           ))}
         </div>
       ) : requests.length === 0 ? (
-        <div className="flex items-center justify-center h-64 text-muted-foreground border rounded-lg bg-muted/30">
-          Aucune demande trouvée.
-        </div>
+        <div className="flex flex-col items-center justify-center h-64 text-center">
+       <RequestEmptyDemo/>
+       </div>
       ) : (
         <div className="rounded-lg border">
           <Table>

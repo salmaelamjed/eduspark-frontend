@@ -1,6 +1,7 @@
 export interface CreatePaymentIntentResponse {
   success: boolean;
   client_secret?: string;
+  already_processed?: boolean;
   purchase_id?: number;
   message?: string;
 }

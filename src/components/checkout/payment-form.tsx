@@ -49,7 +49,6 @@ const submittingRef = useRef(false);
       }
       return;
     }
-
     setLocalError("Le paiement est en cours de traitement. Veuillez patienter.");
     setSubmitting(false);
   };

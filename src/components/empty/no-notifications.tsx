@@ -1,16 +1,14 @@
-import { Bell, RefreshCcwIcon } from "lucide-react"
+import { Bell } from "lucide-react"
 
-import { Button } from "@/components/ui/button"
 import {
   Empty,
-  EmptyContent,
   EmptyDescription,
   EmptyHeader,
   EmptyMedia,
   EmptyTitle,
 } from "@/components/ui/empty"
 
-export function EmptyMuted() {
+export function EmptyNotifications() {
   return (
     <Empty className="from-muted/50 to-background h-full bg-linear-to-b from-30%">
       <EmptyHeader>
@@ -22,12 +20,7 @@ export function EmptyMuted() {
           You&apos;re all caught up. New notifications will appear here.
         </EmptyDescription>
       </EmptyHeader>
-      <EmptyContent>
-        <Button variant="outline" size="sm">
-          <RefreshCcwIcon />
-          Refresh
-        </Button>
-      </EmptyContent>
+     
     </Empty>
   )
 }

@@ -1,8 +1,7 @@
-// components/chatbot/bubble.tsx
 import { cn } from '@/lib/utils';
 import React from 'react';
 import { Avatar, AvatarFallback, AvatarImage } from '../ui/avatar';
-import { User, Bot } from 'lucide-react';
+import { User, Bot, Clock, Check, AlertCircle } from 'lucide-react';
 import { format } from 'date-fns';
 
 type Props = {
@@ -12,10 +11,12 @@ type Props = {
     sender_name?: string | null;
     content: string;
     created_at: string;
+    status?: 'pending' | 'sent' | 'failed';
   };
+  onRetry?: (id: number) => void;
 };
 
-const Bubble = ({ message }: Props) => {
+const Bubble = ({ message, onRetry }: Props) => {
   const isTeacher = message.sender_type === 'teacher';
   const isStudent = message.sender_type === 'student';
   const isSystem = message.sender_type === 'system';
@@ -56,29 +57,51 @@ const Bubble = ({ message }: Props) => {
         </Avatar>
       )}
 
-     
-            <div
-      className={cn(
-        'flex items-end max-w-[70%] gap-1.5',
-        isStudent ? 'flex-row-reverse' : 'flex-row'
-      )}
-    >
+
       <div
         className={cn(
-          'rounded-2xl px-4 py-2 text-sm',
-          isStudent
-            ? 'bg-orange-500 text-white rounded-br-md'
-            : 'bg-gray-100 text-gray-800 rounded-bl-md'
+          'flex items-end max-w-[70%] gap-1.5',
+          isStudent ? 'flex-row-reverse' : 'flex-row'
         )}
       >
-        <p className="whitespace-pre-wrap wrap-break-words">{message.content}</p>
+        <div
+          className={cn(
+            'rounded-2xl px-4 py-2 text-sm',
+            isStudent
+              ? 'bg-orange-500 text-white rounded-br-md'
+              : 'bg-gray-100 text-gray-800 rounded-bl-md',
+            message.status === 'failed' && 'opacity-60'
+          )}
+        >
+          <p className="whitespace-pre-wrap wrap-break-words">{message.content}</p>
+        </div>
+
+        <div className="flex items-center gap-1 shrink-0 pb-0.5">
+          <span className="text-[10px] text-gray-400">
+            {formattedTime}
+          </span>
+
+          {isStudent && message.status === 'pending' && (
+            <Clock className="w-3 h-3 text-gray-400" />
+          )}
+
+          {isStudent && message.status === 'sent' && (
+            <Check className="w-3 h-3 text-gray-400" />
+          )}
+
+          {isStudent && message.status === 'failed' && (
+            <button
+              type="button"
+              onClick={() => onRetry?.(message.id)}
+              className="flex items-center gap-0.5 text-red-500"
+              title="Réessayer l'envoi"
+            >
+              <AlertCircle className="w-3 h-3" />
+            </button>
+          )}
+        </div>
       </div>
 
-      <span className="text-[10px] text-gray-400 shrink-0 pb-0.5">
-        {formattedTime}
-      </span>
-    </div>
-        
 
       {isStudent && (
         <Avatar className="w-8 h-8 shrink-0">

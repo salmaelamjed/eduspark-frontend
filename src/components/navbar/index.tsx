@@ -21,7 +21,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import {
   Sheet,
   SheetContent,
@@ -32,6 +32,8 @@ import {
 import Image from "next/image";
 import { useAuth } from "@/context/auth-context";
 import ConfirmSignOutModal from "../confirm-signout-modal";
+import { CommandPalette } from "../search/command-palette";
+import { useProfile } from "@/hooks/profile/use-profile";
 
 const navLinks = [
   { label: "Cours", href: "/courses" },
@@ -49,6 +51,7 @@ function getInitials(name?: string) {
 
 export default function Navbar() {
     const { user, isAuthenticated, loading } = useAuth();
+    const {profile}=useProfile()
 
   const [notifCount] = useState(1);
   const [mobileOpen, setMobileOpen] = useState(false);
@@ -95,13 +98,17 @@ export default function Navbar() {
               {link.label}
             </Link>
           ))}
+
+          <CommandPalette/>
         </nav>
+        
 
         {/* Auth zone */}
         <div className="flex items-center gap-2 sm:gap-4">
           {loading ? (
             <div className="h-9 w-24 animate-pulse rounded-lg bg-muted" />
-          ) : isAuthenticated && user ? (
+          ) : 
+          isAuthenticated && user ? (
             <>
               {/* Notifications */}
               <button
@@ -122,11 +129,12 @@ export default function Navbar() {
               {/* User Dropdown */}
               <DropdownMenu>
                 <DropdownMenuTrigger className="flex items-center gap-2 rounded-full p-1   transition-all hover:border-border hover:bg-muted/30 outline-none focus-visible:ring-2 focus-visible:ring-brand">
-                  <Avatar className="h-10 w-10  border-2 border-orange-500">
-                    <AvatarFallback className="bg-orange-50 text-xs font-semibold text-orange-800">
-                      {getInitials(user.name)}
-                    </AvatarFallback>
-                  </Avatar>
+                  <Avatar className="h-9 w-9 border border-orange-500/20">
+                  {/* <AvatarImage src={profile?.profile_picture_url} alt={profile?.name} /> */}
+                  <AvatarFallback className="bg-orange-50 text-xs font-semibold text-orange-800">
+                    {user.name ? getInitials(user.name) : <User className="h-4 w-4" />}
+                  </AvatarFallback>
+                </Avatar>
                   <span className="hidden text-sm font-medium text-foreground max-w-30 truncate lg:inline">
                     {user.name.split(" ")[0]}
                   </span>
@@ -142,7 +150,9 @@ export default function Navbar() {
                   </DropdownMenuLabel>
                   <DropdownMenuSeparator className="my-1" />
                   <DropdownMenuItem className="cursor-pointer rounded-md py-2">
-                    <User className="mr-2 h-4 w-4 text-muted-foreground" /> Profil
+                    <Link href={'/profile'} className=" flex flex-row gap-2 items-center">
+                       <User className="mr-2 h-6 w-6 text-muted-foreground" /> <span>Profil</span>
+                    </Link>
                   </DropdownMenuItem>
                   <DropdownMenuItem className="cursor-pointer rounded-md py-2">
                     <BookOpen className="mr-2 h-4 w-4 text-muted-foreground" /> Mes cours

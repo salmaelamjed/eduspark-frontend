@@ -22,12 +22,14 @@ export default function RootLayout({
     <html lang="en" suppressHydrationWarning={true}>
       <body className={jakarta.className}>
         <Loader> 
+          
           <AuthProvider>
             <Providers>
               {children}
             </Providers>
           </AuthProvider>
           <Toaster richColors />
+        
         </Loader>
       </body>
     </html>

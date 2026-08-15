@@ -44,6 +44,7 @@ export interface ChatMessage {
   sender_name: string | null;
   content: string;
   created_at: string;
+  status?: "pending" | "sent" | "failed";
 }
 
 export interface SendMessageResult {

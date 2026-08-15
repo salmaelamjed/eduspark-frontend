@@ -10,6 +10,7 @@ export interface PaginatedCourses {
     slug:string , 
     level:string ,
     language: string , 
+    description?:string,
     price: number,
     is_free:boolean,
     status:string,

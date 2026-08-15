@@ -18,6 +18,7 @@ interface UseChatReturn {
   error: string | null;
   unreadSnapshot: number;
   sendMessage: (content: string) => Promise<void>;
+  retryMessage: (tempId: number) => Promise<void>;
   switchToHuman: () => Promise<void>;
   switchToAi: () => Promise<void>;
 }
@@ -160,20 +161,27 @@ export function useChat({
     async (content: string) => {
       if (!room || !token || !content.trim()) return;
 
-      setIsSending(true);
       setError(null);
 
+      const tempId = -Date.now();
       const tempUserMessage: ChatMessage = {
-        id: Date.now(),
+        id: tempId,
         chat_room_id: room.id,
         sender_type: "student",
         sender_id: room.student.id,
         sender_name: room.student.name,
         content: content.trim(),
         created_at: new Date().toISOString(),
+        status: "pending",
       };
 
-      setMessages((prev) => [...prev, tempUserMessage]);
+       setMessages((prev) => [...prev, tempUserMessage]);
+
+       setIsSending(true);
+
+       const shouldResumePolling =
+         room.mode === "human" && pollTimerRef.current !== null;
+       clearPolling();
 
       try {
         const res = await chatApi.sendMessage(room.id, content.trim(), token);
@@ -183,20 +191,39 @@ export function useChat({
           const withoutTemp = prev.filter(
             (msg) => msg.id !== tempUserMessage.id,
           );
-          const newMessages = [result.user_message];
+          const newMessages: ChatMessage[] = [
+            { ...result.user_message, status: "sent" },
+          ];
           if (result.ai_message) newMessages.push(result.ai_message);
           return [...withoutTemp, ...newMessages];
         });
       } catch {
-        setMessages((prev) =>
-          prev.filter((msg) => msg.id !== tempUserMessage.id),
-        );
+        // On NE retire PAS le message : on le marque "failed" (icône rouge, comme WhatsApp)
+      setMessages((prev) =>
+        prev.map((msg) =>
+          msg.id === tempId ? { ...msg, status: "failed" } : msg,
+        ),
+      );
+      setError("Le message n'a pas pu être envoyé. Réessaie.");
         setError("Le message n'a pas pu être envoyé. Réessaie.");
       } finally {
-        setIsSending(false);
+         setIsSending(false);
+         if (shouldResumePolling) {
+           startHumanPolling(room.id);
+         }
       }
     },
-    [room, token],
+    [room, token, , clearPolling, startHumanPolling],
+  );
+
+  const retryMessage = useCallback(
+    async (tempId: number) => {
+      const failed = messages.find((m) => m.id === tempId);
+      if (!failed) return;
+      setMessages((prev) => prev.filter((m) => m.id !== tempId));
+      await sendMessage(failed.content);
+    },
+    [messages, sendMessage],
   );
 
   const switchToHuman = useCallback(async () => {
@@ -238,5 +265,6 @@ export function useChat({
     sendMessage,
     switchToHuman,
     switchToAi,
+    retryMessage,
   };
 }

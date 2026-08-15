@@ -1,8 +1,6 @@
 'use client'
 import { CourseListFilters } from "@/api/courses";
 import { UseGetCourses } from "@/hooks/courses/use-course";
-import Image from "next/image";
-import Link from "next/link";
 import { useState } from "react";
 import LoadingCourses from "./loading";
 import { Input } from "@/components/ui/input";
@@ -10,6 +8,7 @@ import { Select, SelectContent, SelectGroup, SelectItem, SelectLabel, SelectTrig
 import EmptyComponent from "@/components/empty/Empty";
 import { Book, Filter, FolderOpen } from "lucide-react";
 import { useGetDomains } from "@/hooks/domains/use-domain"
+import CoursCard from "@/components/course/course-card";
 
 type FilterValue = string | number | boolean | undefined;
 type FilterKey = keyof CourseListFilters;
@@ -253,72 +252,20 @@ const Page = () => {
           {/* Grille des cours */}
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
             {courses.data.map((course) => (
-              <div key={course.id} className="group relative overflow-hidden border rounded-lg hover:shadow-xs">
+              <div key={course.id}>
                 {/* Thumbnail */}
-                <div className="relative aspect-video overflow-hidden bg-gray-100">
-                  {course.thumbnail ? (
-                    <Image
-                      src={course.thumbnail}
-                      alt={course.title}
-                      fill
-                      className="object-cover transition-transform duration-500 group-hover:scale-110"
-                      sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 25vw"
-                    />
-                  ) : (
-                    <div className="flex h-full w-full items-center justify-center">
-                      <Book className="h-12 w-12 text-gray-400" />
-                    </div>
-                  )}
-
-                  {/* Price/Label badge */}
-                  <div className="absolute left-0 top-0">
-                    <div 
-                      className="bg-orange-500 px-5 py-1.5 text-xs font-bold text-white"
-                      style={{
-                        clipPath: "polygon(0 0, 100% 0, 85% 100%, 0 100%)",
-                        paddingRight: course.is_free ? "4rem" : "2.5rem",
-                      }}
-                    >
-                      {course.is_free ? 'Gratuit' : `${course.price} €`}
-                    </div>
-                  </div>
-                    
-                  {/* Overlay on hover */}
-                  <div className="absolute inset-0 bg-black/50 opacity-0 transition-opacity duration-300 group-hover:opacity-100 flex items-center justify-center">
-                    <Link 
-                      href={`/courses/${course.slug}`} 
-                      className="rounded-md bg-orange-500 hover:bg-orange-400 px-4 py-2 text-sm font-semibold text-white transition-colors"
-                    >
-                      Voir le cours
-                    </Link>
-                  </div>
-                </div>
-
-                {/* Info */}
-                <div className="p-4">
-                  <h3 className="mb-2 line-clamp-2 text-sm font-bold leading-tight text-gray-900">
-                    {course.title}
-                  </h3>
-                  <p className="mb-3 text-xs text-gray-600">{course.teacher}</p>
-                  <div className="flex flex-wrap items-center gap-1.5">
-                    <span className="rounded bg-gray-100 px-2 py-0.5 text-[11px] font-medium text-gray-700">
-                      {course.level === "beginner"
-                        ? "Débutant"
-                        : course.level === "intermediate"
-                        ? "Intermédiaire"
-                        : "Avancé"}
-                    </span>
-                    <span className="rounded bg-gray-100 px-2 py-0.5 text-[11px] font-medium text-gray-700">
-                      {course.language.toUpperCase()}
-                    </span>
-                    <Link 
-                      href={`/domains/${course.domain_slug}`} 
-                      className="rounded bg-gray-100 px-2 py-0.5 text-[11px] font-medium text-gray-700 hover:bg-gray-200 transition-colors"
-                    >
-                      {course.domain}
-                    </Link>
-                  </div>
-                </div>
+                <CoursCard
+                title={course.title}
+                price={course.price}
+                description={course.description}
+                is_free={course.is_free}
+                image={course.thumbnail}
+                level={course.level}
+                slug={course.slug}
+                language={course.language}
+                domain_slug={course.domain_slug}
+                domain={course.domain}
+                />
               </div>
             ))}
           </div>

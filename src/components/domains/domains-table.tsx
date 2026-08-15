@@ -8,8 +8,15 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu"
 import { Button } from "@/components/ui/button";
-import { Trash2, Eye, PenBox } from "lucide-react";
+import { Trash2, Eye, PenBox, MoreHorizontalIcon} from "lucide-react";
 import { format } from "date-fns";
 import { fr } from "date-fns/locale";
 import Image from "next/image";
@@ -91,22 +98,26 @@ export function DomainsTable({ domains, loading }: DomainsTableProps) {
 
   return (
     <>
-      <div className="rounded-md border">
+    <div className="mx-auto flex w-full flex-col">
         <Table>
           <TableHeader>
             <TableRow>
               <TableHead>Image</TableHead>
               <TableHead>Nom du domaine</TableHead>
               <TableHead>Description</TableHead>
+              {/* <TableHead>Statut</TableHead>
+              <TableHead>Nombre des pressonnes enrollerd</TableHead> */}
               <TableHead>Date de création</TableHead>
-              <TableHead className="text-right mr-3">Actions</TableHead>
+            <TableHead className="w-10" />
             </TableRow>
           </TableHeader>
           <TableBody>
             {domains.map((domain) => (
               <TableRow key={domain.id}>
                 <TableCell>
-                  {domain.image ? (
+                <div className="flex items-center gap-3">
+                   <div className="bg-muted flex size-9 shrink-0 items-center justify-center rounded-sm">
+                    {domain.image ? (
                     <Image
                       src={domain.image}
                       alt={domain.name || "Image du domaine"}
@@ -119,7 +130,11 @@ export function DomainsTable({ domains, loading }: DomainsTableProps) {
                     <div className="h-12.5 w-12.5 bg-gray-200 rounded flex items-center justify-center text-xs text-gray-500">
                       Pas {"d'image"}
                     </div>
-                  )}
+                  )}                  </div>
+                  <div className="flex flex-col">
+                  
+                  </div>
+                  </div>
                 </TableCell>
 
                 <TableCell className="font-semibold">{domain.name}</TableCell>
@@ -139,34 +154,38 @@ export function DomainsTable({ domains, loading }: DomainsTableProps) {
                     : '—'}
                 </TableCell>
 
-                <TableCell className="text-right space-x-1">
-                  <Button
-                    variant="ghost"
-                    className="h-8 w-8 p-0"
-                    onClick={() => handleEdit(domain)}
-                    title="Modifier"
-                  >
-                    <PenBox className="h-4 w-4" />
-                  </Button>
-
-                  <Button
-                    variant="ghost"
-                    className="h-8 w-8 p-0"
-                    onClick={() => handleView(domain)}
-                    title="Voir les détails"
-                  >
-                    <Eye className="h-4 w-4" />
-                  </Button>
-
-                  <Button
-                    variant="ghost"
-                    className="h-8 w-8 p-0 text-red-600 hover:text-red-700 hover:bg-red-50"
-                    onClick={() => handleDelete(domain.id)}
-                    disabled={deleteMutation.isPending}
-                    title="Supprimer"
-                  >
-                    <Trash2 className="h-4 w-4" />
-                  </Button>
+               <TableCell className="text-right">
+                  <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        className="size-8"
+                      >
+                        <MoreHorizontalIcon className="h-4 w-4" />
+                        <span className="sr-only">Ouvrir le menu</span>
+                      </Button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent align="end" className="w-40">
+                      <DropdownMenuItem onClick={() => handleView(domain)}>
+                        <Eye className="mr-2 h-4 w-4" />
+                        Voir les détails
+                      </DropdownMenuItem>
+                      <DropdownMenuItem onClick={() => handleEdit(domain)}>
+                        <PenBox className="mr-2 h-4 w-4" />
+                        Modifier
+                      </DropdownMenuItem>
+                      <DropdownMenuSeparator />
+                      <DropdownMenuItem
+                        variant="destructive"
+                        onClick={() => handleDelete(domain.id)}
+                        disabled={deleteMutation.isPending}
+                      >
+                        <Trash2 className="mr-2 h-4 w-4" />
+                        {deleteMutation.isPending ? "Suppression..." : "Supprimer"}
+                      </DropdownMenuItem>
+                    </DropdownMenuContent>
+                  </DropdownMenu>
                 </TableCell>
               </TableRow>
             ))}
