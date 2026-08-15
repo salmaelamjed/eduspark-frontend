@@ -13,6 +13,9 @@ interface AuthContextType {
     success: boolean;
     message?: string;
     user?: User;
+    email?: string;
+    needs_verification?: boolean;
+    account_deactivated?: boolean;
   }>;
   register: (credentials: RegisterCredentials) => Promise<{
     success: boolean;
@@ -20,6 +23,7 @@ interface AuthContextType {
     email?: string;
   }>;
   logout: () => Promise<void>;
+  clearSession: () => void;
   isAuthenticated: boolean;
 }
 
@@ -29,6 +33,9 @@ interface ApiError {
   response?: {
     data?: {
       message?: string;
+      email?: string;
+      needs_verification?: boolean;
+      account_deactivated?: boolean;
     };
   };
   message?: string;
@@ -43,6 +50,17 @@ function extractErrorMessage(error: unknown, fallback: string): string {
     return error.response?.data?.message ?? error.message ?? fallback;
   }
   return fallback;
+}
+
+function extractErrorMeta(error: unknown) {
+  if (isApiError(error)) {
+    return {
+      email: error.response?.data?.email,
+      needs_verification: error.response?.data?.needs_verification,
+      account_deactivated: error.response?.data?.account_deactivated,
+    };
+  }
+  return {};
 }
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
@@ -74,7 +92,15 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 }, []);
 
   const login = async (credentials: LoginCredentials
-  ) : Promise<{ success: boolean; message?: string; user?: User }> => {
+  ) : Promise<{ 
+    success: boolean;
+   message?: string; 
+   user?: User
+   email?: string;
+  needs_verification?: boolean;
+  account_deactivated?: boolean; 
+  
+  }> => {
   try {
     const response = await authApi.login(credentials);
 
@@ -84,20 +110,13 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     setToken(newToken);
     setUser(newUser);
 
-    // localStorage
     localStorage.setItem('auth_token', newToken);
     localStorage.setItem('auth_user', JSON.stringify(newUser));
 
-      // Cookies
-      const userStr = encodeURIComponent(JSON.stringify(newUser));
+     const userStr = encodeURIComponent(JSON.stringify(newUser));
+    document.cookie = `auth_token=${newToken}; path=/; SameSite=Strict; Max-Age=${60 * 60 * 24 * 7}; Secure`;
+    document.cookie = `auth_user=${userStr}; path=/; SameSite=Strict; Max-Age=${60 * 60 * 24 * 7}; Secure`;
 
-    document.cookie = `auth_token=${newToken}; path=/; SameSite=Strict; Max-Age=${
-        60 * 60 * 24 * 7
-      }; Secure`;
-
-      document.cookie = `auth_user=${userStr}; path=/; SameSite=Strict; Max-Age=${
-        60 * 60 * 24 * 7
-      }; Secure`;
 
     return {
       success: response.success,
@@ -110,13 +129,17 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         error,
         'Email ou mot de passe incorrect. Veuillez réessayer.'
       );
-    return {
-      success: false,
-      message: errorMessage,
-      user: undefined,
-    };
+      const meta = extractErrorMeta(error);
+        return {
+          success: false,
+          message: errorMessage,
+          user: undefined,
+          ...meta,
+        };
   }
 };
+
+
 
   const register = async (credentials: RegisterCredentials
 ) : Promise<{ success: boolean; message?: string; email?: string }> => {
@@ -176,27 +199,28 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 // };
 
 const deleteAllAuthCookies = () => {
-    const cookies = ['auth_token', 'auth_user'];
-
-    cookies.forEach((name) => {
-      document.cookie = `${name}=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT; SameSite=Strict${
-        window.location.protocol === 'https:' ? '; Secure' : ''
-      }`;
-    });
-  };
-
-const logout = async () => {
- try {
-      if (token) await authApi.logout(token);
-    } catch (error) {
-      console.error(error);
-    }
-
+  const cookies = ['auth_token', 'auth_user'];
+  cookies.forEach((name) => {
+    document.cookie = `${name}=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT; SameSite=Strict${
+      window.location.protocol === 'https:' ? '; Secure' : ''
+    }`;
+  });
+};
+const clearSession = () => {
   deleteAllAuthCookies();
-  localStorage.clear();
-
+  localStorage.removeItem('auth_token');
+  localStorage.removeItem('auth_user');
   setToken(null);
   setUser(null);
+};
+
+const logout = async () => {
+  try {
+    if (token) await authApi.logout(token);
+  } catch (error) {
+    console.error(error);
+  }
+  clearSession(); 
 };
   return (
     <AuthContext.Provider
@@ -208,6 +232,7 @@ const logout = async () => {
         register,
         logout,
         isAuthenticated: !!user && !!token,
+        clearSession
       }}
     >
       {children}
