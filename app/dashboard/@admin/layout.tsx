@@ -11,7 +11,7 @@ function MainContent({ children }: { children: React.ReactNode }) {
       className={`
         flex-1 transition-all duration-300
         ${isMinimized ? 'ml-20' : 'ml-64'}
-        p-4 md:p-6 lg:p-8
+        p-2 md:p-4 lg:p-4
       `}
     >
       {children}

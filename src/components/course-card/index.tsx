@@ -4,7 +4,6 @@ import Image from 'next/image';
 import Link from 'next/link';
 import { BookOpen } from 'lucide-react';
 
-// Définition d'une interface stricte pour les données du cours
 export interface CourseCardProps {
   course: {
     id: string | number;

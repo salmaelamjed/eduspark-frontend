@@ -13,6 +13,7 @@ import { HeroSection } from "@/components/landing-page/hero-block";
 import WhyEduSparkSection from "@/components/landing-page/why-us";
 import { HowItWorksSection } from "@/components/landing-page/how-it-works";
 import { BecomeTeacherHeroSection } from "@/components/landing-page/BecomeTeacherSection";
+import { BestCoursesSection } from "@/components/landing-page/best-courses";
 
 export default function HomePage(){
    const faqs = [
@@ -45,21 +46,20 @@ export default function HomePage(){
       <Navbar/>
       <HeroSection/>
       <WhyEduSparkSection/>
-      <DomainsSection/> 
+      <DomainsSection/>
+      <BestCoursesSection/> 
       <HowItWorksSection/>
-
-
      <BecomeTeacherHeroSection/>
     
   
 
     
-    <section className="py-16 px-4 bg-background">
+    {/* <section className="py-16 px-4 bg-background">
         <h2 className="text-3xl md:text-4xl font-bold text-center text-foreground mb-4">
             Des paroles {"d'éloge"} des autres à propos
                  de notre présence
          </h2>
-    </section>
+    </section> */}
 
     <section className="py-20 px-4 bg-secondary/30">
   <div className="max-w-4xl mx-auto">

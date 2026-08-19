@@ -1,12 +1,24 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
-    typescript: {
+  typescript: {
     ignoreBuildErrors: true,
   },
 
   images: {
     remotePatterns: [
+      {
+        protocol: process.env.NEXT_PUBLIC_API_URL?.startsWith("https")
+          ? "https"
+          : "http",
+        hostname: new URL(
+          process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000",
+        ).hostname,
+        port: new URL(
+          process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000",
+        ).port,
+        pathname: "/storage/**",
+      },
       {
         protocol: "https",
         hostname: "images.unsplash.com",

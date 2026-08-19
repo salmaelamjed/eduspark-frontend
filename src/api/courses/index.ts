@@ -1,5 +1,5 @@
 import { apiClient } from "@/lib/client";
-import {  CourseRequestPayload, CourseResponsePayload } from "@/types/course";
+import {  BestCoursesResponse, CourseRequestPayload, CourseResponsePayload } from "@/types/course";
 
 
 export interface PaginatedCourses {
@@ -117,7 +117,14 @@ export const coursesApi = {
 
   getOne: (id: string | number) =>
     apiClient.get<CourseDetail>(`/courses/${id}`),
+
   getBySlug: (slug: string) => apiClient.get<CourseDetail>(`/courses/${slug}`),
+  /**
+   * Meilleurs cours de la plateforme (public, pour la landing page),
+   * classés par nombre d'inscriptions.
+   */
+  getBestCourses: () =>
+    apiClient.get<BestCoursesResponse>(`/courses/best`),
 
   create: (data: CourseRequestPayload | FormData, token: string) =>
     apiClient.post<CourseResponsePayload>("/courses", data, token),

@@ -1,133 +1,97 @@
-"use client";
-
-import { Button } from "@/components/ui/button";
 import {
-  ChevronLeft,
-  ChevronRight,
-  ChevronsLeft,
-  ChevronsRight,
-} from "lucide-react";
+  Pagination,
+  PaginationContent,
+  PaginationEllipsis,
+  PaginationItem,
+  PaginationLink,
+  PaginationNext,
+  PaginationPrevious,
+} from "@/components/ui/pagination"
+import { cn } from "@/lib/utils"
 
-interface PaginationProps {
-  currentPage: number;
-  lastPage: number;
-  total: number;
-  perPage: number;
-  onNextPage: () => void;
-  onPrevPage: () => void;
-  onPageChange: (page: number) => void;
+interface DataPaginationProps {
+  currentPage: number
+  lastPage: number
+  onPageChange: (page: number) => void
+  className?: string
 }
 
-export function Pagination({
+export function PaginationControl({
   currentPage,
   lastPage,
-  total,
-  perPage,
-  onNextPage,
-  onPrevPage,
   onPageChange,
-}: PaginationProps) {
+  className,
+}: DataPaginationProps) {
+  if (lastPage <= 1) return null
+
   const getPageNumbers = () => {
-    const pages = [];
-    const maxVisible = 5;
+    const pages: (number | "ellipsis")[] = []
+    const maxVisible = 5
 
     if (lastPage <= maxVisible) {
       for (let i = 1; i <= lastPage; i++) {
-        pages.push(i);
+        pages.push(i)
       }
     } else {
-      if (currentPage <= 3) {
-        for (let i = 1; i <= 4; i++) pages.push(i);
-        pages.push("...");
-        pages.push(lastPage);
-      } else if (currentPage >= lastPage - 2) {
-        pages.push(1);
-        pages.push("...");
-        for (let i = lastPage - 3; i <= lastPage; i++) pages.push(i);
-      } else {
-        pages.push(1);
-        pages.push("...");
-        for (let i = currentPage - 1; i <= currentPage + 1; i++) pages.push(i);
-        pages.push("...");
-        pages.push(lastPage);
+      pages.push(1)
+      if (currentPage > 3) pages.push("ellipsis")
+
+      const start = Math.max(2, currentPage - 1)
+      const end = Math.min(lastPage - 1, currentPage + 1)
+
+      for (let i = start; i <= end; i++) {
+        if (!pages.includes(i)) pages.push(i)
       }
+
+      if (currentPage < lastPage - 2) pages.push("ellipsis")
+      pages.push(lastPage)
     }
 
-    return pages;
-  };
-
-  const startItem = (currentPage - 1) * perPage + 1;
-  const endItem = Math.min(currentPage * perPage, total);
+    return pages
+  }
 
   return (
-    <div className="flex items-center justify-between px-2 py-4">
-      <div className="text-sm text-muted-foreground">
-        Affichage de <span className="font-medium">{startItem}</span> à{" "}
-        <span className="font-medium">{endItem}</span> sur{" "}
-        <span className="font-medium">{total}</span> résultats
-      </div>
+    <Pagination className={cn("mt-6", className)}>
+      <PaginationContent>
+        <PaginationItem>
+          <PaginationPrevious
+            onClick={() => onPageChange(currentPage - 1)}
+            className={cn(
+              "cursor-pointer",
+              currentPage === 1 && "pointer-events-none opacity-50"
+            )}
+          />
+        </PaginationItem>
 
-      <div className="flex items-center space-x-2">
-        <Button
-          variant="outline"
-          size="icon"
-          onClick={() => onPageChange(1)}
-          disabled={currentPage === 1}
-        >
-          <ChevronsLeft className="h-4 w-4" />
-        </Button>
-
-        <Button
-          variant="outline"
-          size="icon"
-          onClick={onPrevPage}
-          disabled={currentPage === 1}
-        >
-          <ChevronLeft className="h-4 w-4" />
-        </Button>
-
-        <div className="flex items-center gap-1">
-          {getPageNumbers().map((page, index) =>
-            page === "..." ? (
-              <span key={`ellipsis-${index}`} className="px-2">
-                ...
-              </span>
+        {getPageNumbers().map((page, index) => (
+          <PaginationItem key={index}>
+            {page === "ellipsis" ? (
+              <PaginationEllipsis />
             ) : (
-              <Button
-                key={page}
-                variant={currentPage === page ? "default" : "outline"}
-                size="icon"
-                onClick={() => onPageChange(page as number)}
-                className={
-                  currentPage === page
-                    ? "bg-orange-500 hover:bg-orange-600"
-                    : ""
-                }
+              <PaginationLink
+                onClick={() => onPageChange(page)}
+                isActive={page === currentPage}
+                className={cn(
+                  "cursor-pointer",
+                  page === currentPage && "bg-orange-500 text-white hover:bg-orange-600 hover:text-white"
+                )}
               >
                 {page}
-              </Button>
-            ),
-          )}
-        </div>
+              </PaginationLink>
+            )}
+          </PaginationItem>
+        ))}
 
-        <Button
-          variant="outline"
-          size="icon"
-          onClick={onNextPage}
-          disabled={currentPage === lastPage}
-        >
-          <ChevronRight className="h-4 w-4" />
-        </Button>
-
-        <Button
-          variant="outline"
-          size="icon"
-          onClick={() => onPageChange(lastPage)}
-          disabled={currentPage === lastPage}
-        >
-          <ChevronsRight className="h-4 w-4" />
-        </Button>
-      </div>
-    </div>
-  );
+        <PaginationItem>
+          <PaginationNext
+            onClick={() => onPageChange(currentPage + 1)}
+            className={cn(
+              "cursor-pointer",
+              currentPage === lastPage && "pointer-events-none opacity-50"
+            )}
+          />
+        </PaginationItem>
+      </PaginationContent>
+    </Pagination>
+  )
 }

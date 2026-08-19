@@ -32,10 +32,10 @@ import DomainEditSheet from "./DomainEditSheet";
 
 interface DomainsTableProps {
   domains: Domain[];
-  loading: boolean;
+ 
 }
 
-export function DomainsTable({ domains, loading }: DomainsTableProps) {
+export function DomainsTable({ domains }: DomainsTableProps) {
   const { token } = useAuth();
   const deleteMutation = useDeleteDomain();
 
@@ -77,13 +77,7 @@ export function DomainsTable({ domains, loading }: DomainsTableProps) {
     );
   };
 
-  if (loading) {
-    return (
-      <div className="flex items-center justify-center h-64">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-orange-500" />
-      </div>
-    );
-  }
+
 
   if (domains.length === 0) {
     return (

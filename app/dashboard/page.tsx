@@ -9,13 +9,13 @@ export default function NotFound() {
   const router = useRouter();
 
   return (
-    <div className="relative flex min-h-dvh flex-col items-center justify-center bg-background px-4 text-center overflow-hidden">
+    <div className="relative flex min-h-dvh flex-col items-center justify-center bg-background  text-center overflow-hidden">
       
       {/* Subtle background geometric gradients for depth */}
       <div className="absolute top-1/4 left-1/2 -z-10 h-72 w-72 -translate-x-1/2 rounded-full bg-orange-500/10 blur-[120px] sm:h-96 sm:w-96" />
       <div className="absolute bottom-1/4 left-1/3 -z-10 h-64 w-64 rounded-full bg-muted blur-[100px]" />
 
-      <div className="mx-auto max-w-md">
+      <div className="max-w-md">
         
         {/* Logo Section */}
         <div className="mb-8 flex justify-center">

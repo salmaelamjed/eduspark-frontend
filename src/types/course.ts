@@ -2,10 +2,10 @@ import { Module } from "./module";
 
 // Forme possible de `settings` selon le type de bloc — union au lieu de `any`
 type BlockSettingsPayload =
-  | { level: "h1" | "h2" | "h3" | "h4" | "h5" | "h6" }        // heading
-  | { style: "ordered" | "unordered" }                          // list
-  | { type: "info" | "success" | "warning" | "danger" }         // callout
-  | { style: "solid" | "dashed" | "dotted" };                   // divider
+  | { level: "h1" | "h2" | "h3" | "h4" | "h5" | "h6" } // heading
+  | { style: "ordered" | "unordered" } // list
+  | { type: "info" | "success" | "warning" | "danger" } // callout
+  | { style: "solid" | "dashed" | "dotted" }; // divider
 
 export interface Course {
   id: number;
@@ -15,7 +15,7 @@ export interface Course {
   level?: string;
   language?: string;
   is_free?: boolean;
-  price:number;
+  price: number;
   modules: Module[];
   status: "draft" | "published";
   createdAt: Date;
@@ -87,8 +87,7 @@ export interface CourseRequestPayload {
   ];
 }
 
-
-export  interface CourseResponsePayload {
+export interface CourseResponsePayload {
   message: string;
   course: {
     id: number;
@@ -102,6 +101,35 @@ export  interface CourseResponsePayload {
     thumbnail: string | null;
     status: string;
     domain_id: number;
-    created_at:Date;
+    created_at: Date;
   };
+}
+
+// types/Course.types.ts
+export interface BestCourseDomain {
+  id: number;
+  name: string;
+  slug: string;
+}
+
+export interface BestCourse {
+  id: number;
+  title: string;
+  slug: string;
+  thumbnail: string | null;
+  price: number;
+  is_free: boolean;
+  level: "beginner" | "intermediate" | "advanced";
+  language?: string;
+  domain: BestCourseDomain | null;
+  teacher: string | null;
+  enrollments: number;
+}
+
+export interface BestCoursesResponse {
+  data: BestCourse[];
+}
+
+export interface GetBestCoursesParams {
+  limit?: number;
 }

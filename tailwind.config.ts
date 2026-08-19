@@ -1,17 +1,15 @@
 // tailwind.config.ts
 import type { Config } from "tailwindcss";
+import tailwindcssAnimate from "tailwindcss-animate";
 
 const config: Config = {
   content: [
     "./src/pages/**/*.{js,ts,jsx,tsx,mdx}",
     "./src/components/**/*.{js,ts,jsx,tsx,mdx}",
     "./src/app/**/*.{js,ts,jsx,tsx,mdx}",
-    // Ajoutez d'autres chemins si vos composants sont ailleurs
   ],
-  // Dans v4, on définit souvent le thème directement ici
   theme: {
     extend: {
-      // 1. DÉFINISSEZ VOS COULEURS PERSONNALISÉES ICI
       colors: {
         orange: "#FF6B00",
         secondary: "#FFA040",
@@ -22,7 +20,6 @@ const config: Config = {
         ghost: "#CDCDCD",
         ironside: "#636363",
       },
-      // 2. Vous pouvez garder vos animations si besoin
       animation: {
         "open-sidebar": "open-sidebar 0.2s ease-out forwards",
         "close-sidebar": "close-sidebar 0.2s ease-out forwards",
@@ -30,6 +27,7 @@ const config: Config = {
       },
     },
   },
-  plugins: [],
+  plugins: [tailwindcssAnimate],
 };
+
 export default config;

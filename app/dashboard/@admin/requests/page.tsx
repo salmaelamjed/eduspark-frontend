@@ -30,8 +30,7 @@ import {
   SheetFooter,
 } from '@/components/ui/sheet';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
-import { Eye, Trash2 } from 'lucide-react';
-import { Skeleton } from '@/components/ui/skeleton';
+import { Eye, Trash2, Linkedin, FolderGit2, MessageSquareText, ExternalLink } from 'lucide-react';
 import { useTeacherRequestsManagement } from '@/hooks/teacher-requests/use-teacher-requests';
 import type { TeacherRequestDetail } from '@/types/request';
 import type { User } from '@/types/user';
@@ -43,28 +42,109 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import { Check, ChevronDown, X, Loader2 } from 'lucide-react';
+import { cn } from '@/lib/utils';
 type TeacherRequestRow = TeacherRequestDetail & { user: User; domain: Domain };
 
 import Link from 'next/link';
 import { format } from 'date-fns';
 import { fr } from 'date-fns/locale';
-import {  RequestEmptyDemo } from '@/components/empty/no-demande';
+import { RequestEmptyDemo } from '@/components/empty/no-demande';
 
-function getStatusBadge(status: string) {
-  const variants: Record<string, string> = {
-    approved: 'bg-emerald-500/15 text-emerald-700 dark:bg-emerald-500/10 dark:text-emerald-400',
-    rejected: 'bg-rose-500/15 text-rose-700 dark:bg-rose-500/10 dark:text-rose-400',
-  };
+// --- Status styling -----------------------------------------------------
 
+const statusStyles: Record<string, string> = {
+  approved: 'bg-emerald-500/10 text-emerald-700 dark:text-emerald-400',
+  rejected: 'bg-rose-500/10 text-rose-700 dark:text-rose-400',
+};
+
+const statusDot: Record<string, string> = {
+  approved: 'bg-emerald-500',
+  rejected: 'bg-rose-500',
+};
+
+const statusLabel: Record<string, string> = {
+  approved: 'Approuvée',
+  rejected: 'Rejetée',
+};
+
+function StatusBadge({ status }: { status: string }) {
   return (
     <Badge
       variant="outline"
-      className={`border-0 capitalize ${variants[status] || 'bg-gray-500/15 text-gray-700'}`}
+      className={cn(
+        'gap-1.5 rounded-full border-0 px-2.5 py-1 text-xs font-medium capitalize',
+        statusStyles[status] ?? 'bg-muted text-muted-foreground'
+      )}
     >
-      {status === 'approved' ? 'Approuvée' : 'Rejetée'}
+      <span className={cn('size-1.5 rounded-full', statusDot[status] ?? 'bg-muted-foreground')} />
+      {statusLabel[status] ?? status}
     </Badge>
   );
 }
+
+// --- Skeleton matching the real row structure ---------------------------
+
+function RequestsTableSkeleton({ rows = 8 }: { rows?: number }) {
+  return (
+    <div className="rounded-xl border">
+      <Table>
+        <TableHeader>
+          <TableRow className="border-b hover:bg-transparent">
+            <TableHead className="h-12 px-4 font-medium">Utilisateur</TableHead>
+            <TableHead className="h-12 px-4 font-medium">Email</TableHead>
+            <TableHead className="h-12 px-4 font-medium">Domaine</TableHead>
+            <TableHead className="h-12 px-4 text-center font-medium">Statut</TableHead>
+            <TableHead className="h-12 px-4 font-medium">Date</TableHead>
+            <TableHead className="h-12 w-32 px-4 text-center font-medium">Actions</TableHead>
+          </TableRow>
+        </TableHeader>
+        <TableBody>
+          {Array.from({ length: rows }).map((_, i) => (
+            <TableRow key={i} className="hover:bg-transparent">
+              <TableCell className="h-16 px-4">
+                <div className="flex items-center gap-3">
+                  <div className="size-9 shrink-0 animate-pulse rounded-full bg-muted" />
+                  <div className="h-3.5 w-28 animate-pulse rounded bg-muted" />
+                </div>
+              </TableCell>
+              <TableCell className="h-16 px-4">
+                <div className="h-3.5 w-36 animate-pulse rounded bg-muted" />
+              </TableCell>
+              <TableCell className="h-16 px-4">
+                <div className="h-5 w-24 animate-pulse rounded-full bg-muted" />
+              </TableCell>
+              <TableCell className="h-16 px-4">
+                <div className="mx-auto h-6 w-20 animate-pulse rounded-full bg-muted" />
+              </TableCell>
+              <TableCell className="h-16 px-4">
+                <div className="h-3.5 w-20 animate-pulse rounded bg-muted" />
+              </TableCell>
+              <TableCell className="h-16 px-4">
+                <div className="mx-auto flex w-16 gap-1.5">
+                  <div className="size-8 animate-pulse rounded-md bg-muted" />
+                  <div className="size-8 animate-pulse rounded-md bg-muted" />
+                </div>
+              </TableCell>
+            </TableRow>
+          ))}
+        </TableBody>
+      </Table>
+    </div>
+  );
+}
+
+// --- Detail sheet section helper -----------------------------------------
+
+function DetailField({ label, value }: { label: string; value: React.ReactNode }) {
+  return (
+    <div>
+      <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">{label}</p>
+      <div className="mt-1.5 text-sm">{value}</div>
+    </div>
+  );
+}
+
+// --- Component -------------------------------------------------------
 
 export default function TeacherRequestsPage() {
   const {
@@ -80,47 +160,49 @@ export default function TeacherRequestsPage() {
     isAnyUpdatePending,
   } = useTeacherRequestsManagement();
 
- const [selectedRequest, setSelectedRequest] = useState<TeacherRequestRow | null>(null);
- const openDetails = (req: TeacherRequestRow) => setSelectedRequest(req);
+  const [selectedRequest, setSelectedRequest] = useState<TeacherRequestRow | null>(null);
+  const openDetails = (req: TeacherRequestRow) => setSelectedRequest(req);
   const closeDetails = () => setSelectedRequest(null);
 
   const getInitials = (name?: string) =>
-    name
-      ? name.split(' ').map((n) => n[0]).join('').toUpperCase()
-      : '??';
+    name ? name.split(' ').map((n) => n[0]).join('').toUpperCase().slice(0, 2) : '??';
 
   return (
     <div className="container mx-auto">
-      <div className="flex justify-between items-center mb-8">
+      {/* --- Header --- */}
+      <div className="mb-8 flex items-center justify-between">
         <div>
-          <h1 className="text-3xl font-bold">Gestion des demandes</h1>
-          <p className="text-muted-foreground mt-1">
-            Gérez et suivez vos demandes
+          <h1 className="text-3xl font-bold tracking-tight">Gestion des demandes</h1>
+          <p className="mt-1 text-muted-foreground">
+            Gérez et suivez les demandes pour devenir enseignant
           </p>
         </div>
+
+        {!isPageLoading && pagination && pagination.total > 0 && (
+          <div className="text-sm text-muted-foreground">
+            <span className="font-medium text-foreground">{pagination.total}</span>{' '}
+            demande{pagination.total > 1 ? 's' : ''} au total
+          </div>
+        )}
       </div>
 
       {isPageLoading ? (
-        <div className="space-y-4">
-          {Array.from({ length: 8 }).map((_, i) => (
-            <Skeleton key={i} className="h-12 w-full" />
-          ))}
-        </div>
+        <RequestsTableSkeleton />
       ) : requests.length === 0 ? (
-        <div className="flex flex-col items-center justify-center h-64 text-center">
-       <RequestEmptyDemo/>
-       </div>
+        <div className="flex h-64 flex-col items-center justify-center text-center">
+          <RequestEmptyDemo />
+        </div>
       ) : (
-        <div className="rounded-lg border">
+        <div className="overflow-hidden rounded-xl border">
           <Table>
             <TableHeader>
-              <TableRow className="border-b hover:bg-transparent">
+              <TableRow className="border-b bg-muted/40 hover:bg-muted/40">
                 <TableHead className="h-12 px-4 font-medium">Utilisateur</TableHead>
                 <TableHead className="h-12 px-4 font-medium">Email</TableHead>
                 <TableHead className="h-12 px-4 font-medium">Domaine</TableHead>
-                <TableHead className="h-12 px-4 font-medium text-center">Statut</TableHead>
+                <TableHead className="h-12 px-4 text-center font-medium">Statut</TableHead>
                 <TableHead className="h-12 px-4 font-medium">Date</TableHead>
-                <TableHead className="h-12 w-32 px-4 font-medium text-center">Actions</TableHead>
+                <TableHead className="h-12 w-32 px-4 text-center font-medium">Actions</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -128,16 +210,20 @@ export default function TeacherRequestsPage() {
                 const updating = isRequestUpdating(req.id);
 
                 return (
-                  <TableRow key={req.id} className="hover:bg-muted/50">
+                  <TableRow
+                    key={req.id}
+                    className="cursor-pointer border-b last:border-0 transition-colors hover:bg-muted/40"
+                    onClick={() => openDetails(req)}
+                  >
                     <TableCell className="h-16 px-4">
                       <div className="flex items-center gap-3">
-                        <Avatar className="h-9 w-9">
+                        <Avatar className="size-9 border">
                           <AvatarImage src={req.user?.profile_picture ?? undefined} alt={req.user?.name} />
-                          <AvatarFallback className="bg-orange-100 text-orange-700 font-medium">
+                          <AvatarFallback className="bg-orange-100 text-xs font-semibold text-orange-700">
                             {getInitials(req.user?.name)}
                           </AvatarFallback>
                         </Avatar>
-                        <p className="font-medium">{req.user?.name || '—'}</p>
+                        <p className="font-medium leading-none">{req.user?.name || '—'}</p>
                       </div>
                     </TableCell>
 
@@ -146,77 +232,78 @@ export default function TeacherRequestsPage() {
                     </TableCell>
 
                     <TableCell className="h-16 px-4">
-                      {req.domain?.name || '—'}
+                      <Badge variant="secondary" className="rounded-full font-normal">
+                        {req.domain?.name || '—'}
+                      </Badge>
                     </TableCell>
 
-                   <TableCell className="h-16 px-4  text-center">
-                    {updating ? (
-                      <span className="inline-flex items-center gap-1.5 h-8 px-3 rounded-full bg-muted text-muted-foreground text-sm font-medium animate-pulse">
-                        <Loader2 className="h-3.5 w-3.5 animate-spin" />
-                        Mise à jour
-                      </span>
-                    ) : req.status === 'pending' ? (
-                      <DropdownMenu>
-                        <DropdownMenuTrigger asChild>
-                          <button
-                            disabled={isAnyUpdatePending}
-                            className="inline-flex items-center gap-1 h-8 px-3 rounded-full bg-amber-500/15 text-amber-700 dark:bg-amber-500/10 dark:text-amber-400 text-sm font-medium hover:bg-amber-500/25 dark:hover:bg-amber-500/20 transition-colors disabled:opacity-50 disabled:pointer-events-none focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-500/40"
-                          >
-                            En attente
-                            <ChevronDown className="h-3.5 w-3.5" />
-                          </button>
-                        </DropdownMenuTrigger>
-                        <DropdownMenuContent align="center" className="w-40">
-                          <DropdownMenuItem
-                            onClick={() => handleStatusChange(req.id, 'approved')}
-                            className="text-emerald-700 dark:text-emerald-400 focus:text-emerald-700 focus:bg-emerald-500/10"
-                          >
-                            <Check className="h-4 w-4 mr-2" />
-                            Approuver
-                          </DropdownMenuItem>
-                          <DropdownMenuItem
-                            onClick={() => handleStatusChange(req.id, 'rejected')}
-                            className="text-rose-700 dark:text-rose-400 focus:text-rose-700 focus:bg-rose-500/10"
-                          >
-                            <X className="h-4 w-4 mr-2" />
-                            Rejeter
-                          </DropdownMenuItem>
-                        </DropdownMenuContent>
-                      </DropdownMenu>
-                    ) : (
-                      getStatusBadge(req.status)
-                    )}
-                  </TableCell>
-
-                    <TableCell className="h-16 px-4 text-muted-foreground font-mono">
-                      {req.created_at 
-                      ? format(new Date(req.created_at), 'dd-MM-yyyy', { locale: fr })
-                      : '—'}
+                    <TableCell className="h-16 px-4 text-center" onClick={(e) => e.stopPropagation()}>
+                      {updating ? (
+                        <span className="inline-flex h-8 items-center gap-1.5 rounded-full bg-muted px-3 text-sm font-medium text-muted-foreground">
+                          <Loader2 className="size-3.5 animate-spin" />
+                          Mise à jour
+                        </span>
+                      ) : req.status === 'pending' ? (
+                        <DropdownMenu>
+                          <DropdownMenuTrigger asChild>
+                            <button
+                              disabled={isAnyUpdatePending}
+                              className="inline-flex h-8 items-center gap-1 rounded-full bg-amber-500/10 px-3 text-sm font-medium text-amber-700 transition-colors hover:bg-amber-500/20 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-500/40 disabled:pointer-events-none disabled:opacity-50 dark:text-amber-400"
+                            >
+                              <span className="size-1.5 rounded-full bg-amber-500" />
+                              En attente
+                              <ChevronDown className="size-3.5" />
+                            </button>
+                          </DropdownMenuTrigger>
+                          <DropdownMenuContent align="center" className="w-40 animate-in fade-in-0 zoom-in-95">
+                            <DropdownMenuItem
+                              onClick={() => handleStatusChange(req.id, 'approved')}
+                              className="cursor-pointer gap-2 text-emerald-700 focus:bg-emerald-500/10 focus:text-emerald-700 dark:text-emerald-400"
+                            >
+                              <Check className="size-4" />
+                              Approuver
+                            </DropdownMenuItem>
+                            <DropdownMenuItem
+                              onClick={() => handleStatusChange(req.id, 'rejected')}
+                              className="cursor-pointer gap-2 text-rose-700 focus:bg-rose-500/10 focus:text-rose-700 dark:text-rose-400"
+                            >
+                              <X className="size-4" />
+                              Rejeter
+                            </DropdownMenuItem>
+                          </DropdownMenuContent>
+                        </DropdownMenu>
+                      ) : (
+                        <StatusBadge status={req.status} />
+                      )}
                     </TableCell>
 
-                    <TableCell className="h-16 px-4">
+                    <TableCell className="h-16 px-4 font-mono text-sm text-muted-foreground">
+                      {req.created_at ? format(new Date(req.created_at), 'dd MMM yyyy', { locale: fr }) : '—'}
+                    </TableCell>
+
+                    <TableCell className="h-16 px-4" onClick={(e) => e.stopPropagation()}>
                       <TooltipProvider>
-                        <div className="flex items-center justify-center gap-1">
+                        <div className="flex items-center justify-center gap-1.5">
                           <Tooltip>
                             <TooltipTrigger asChild>
                               <Button
-                                variant="outline"
+                                variant="ghost"
                                 size="icon"
-                                className="h-8 w-8"
+                                className="size-8 rounded-full hover:bg-muted"
                                 onClick={() => openDetails(req)}
                               >
                                 <Eye className="size-4" />
                               </Button>
                             </TooltipTrigger>
-                            <TooltipContent>Voir détails</TooltipContent>
+                            <TooltipContent>Voir les détails</TooltipContent>
                           </Tooltip>
 
                           <Tooltip>
                             <TooltipTrigger asChild>
                               <Button
-                                variant="outline"
+                                variant="ghost"
                                 size="icon"
-                                className="text-destructive hover:bg-destructive hover:text-white h-8 w-8"
+                                className="size-8 rounded-full text-destructive hover:bg-destructive/10 hover:text-destructive"
                                 onClick={() => handleDelete(req.id)}
                                 disabled={isAnyUpdatePending}
                               >
@@ -237,7 +324,7 @@ export default function TeacherRequestsPage() {
       )}
 
       {hasPagination && (
-        <div className="mt-8 py-6 flex justify-center border-t">
+        <div className="mt-8 flex justify-center border-t py-6">
           <Pagination>
             <PaginationContent>
               <PaginationItem>
@@ -273,6 +360,11 @@ export default function TeacherRequestsPage() {
                           e.preventDefault();
                           setCurrentPage(pageNum);
                         }}
+                        className={
+                          pageNum === currentPage
+                            ? 'bg-orange-500 text-white hover:bg-orange-600 hover:text-white'
+                            : ''
+                        }
                       >
                         {pageNum}
                       </PaginationLink>
@@ -295,117 +387,132 @@ export default function TeacherRequestsPage() {
         </div>
       )}
 
+      {/* --- Detail sheet --- */}
       <Sheet open={!!selectedRequest} onOpenChange={closeDetails}>
-        <SheetContent className="sm:max-w-lg md:max-w-xl overflow-y-auto">
-          <SheetHeader className="mb-6">
-            <SheetTitle className="text-2xl">
-              Demande #{selectedRequest?.id || '...'}
-            </SheetTitle>
-            <SheetDescription>
-              Informations complètes de la demande soumise
-            </SheetDescription>
-          </SheetHeader>
-
+        <SheetContent className="overflow-y-auto sm:max-w-lg md:max-w-xl">
           {selectedRequest ? (
-            <div className="space-y-6">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <div>
-                  <p className="text-sm font-medium text-muted-foreground">Utilisateur</p>
-                  <p className="mt-1 font-medium">
-                    {selectedRequest.user?.name || selectedRequest.user?.email || '—'}
+            <>
+              <SheetHeader className="mb-6 space-y-4">
+                <div className="flex items-center gap-3">
+                  <Avatar className="size-12 border">
+                    <AvatarImage
+                      src={selectedRequest.user?.profile_picture ?? undefined}
+                      alt={selectedRequest.user?.name}
+                    />
+                    <AvatarFallback className="bg-orange-100 font-semibold text-orange-700">
+                      {getInitials(selectedRequest.user?.name)}
+                    </AvatarFallback>
+                  </Avatar>
+                  <div>
+                    <SheetTitle className="text-xl leading-tight">
+                      {selectedRequest.user?.name || selectedRequest.user?.email || '—'}
+                    </SheetTitle>
+                    <SheetDescription className="mt-0.5">
+                      Demande #{selectedRequest.id} · {selectedRequest.domain?.name}
+                    </SheetDescription>
+                  </div>
+                </div>
+
+                {selectedRequest.status === 'pending' ? (
+                  <Badge
+                    variant="outline"
+                    className="w-fit gap-1.5 rounded-full border-0 bg-amber-500/10 px-3 py-1 text-sm font-medium text-amber-700 dark:text-amber-400"
+                  >
+                    <span className="size-1.5 rounded-full bg-amber-500" />
+                    En attente de traitement
+                  </Badge>
+                ) : (
+                  <StatusBadge status={selectedRequest.status} />
+                )}
+              </SheetHeader>
+
+              <div className="space-y-6">
+                {/* Info principale */}
+                <div className="grid grid-cols-2 gap-4 rounded-lg border bg-muted/30 p-4">
+                  <DetailField label="Email" value={selectedRequest.user?.email || '—'} />
+                  <DetailField
+                    label="Soumise le"
+                    value={new Date(selectedRequest.created_at).toLocaleString('fr-FR', {
+                      dateStyle: 'medium',
+                      timeStyle: 'short',
+                    })}
+                  />
+                </div>
+
+                {/* Liens */}
+                <div className="space-y-3">
+                  <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
+                    Liens & références
                   </p>
-                </div>
 
-                <div>
-                  <p className="text-sm font-medium text-muted-foreground">Domaine</p>
-                  <p className="mt-1 font-medium">{selectedRequest.domain?.name || '—'}</p>
-                </div>
-
-                <div>
-                  <p className="text-sm font-medium text-muted-foreground">Statut</p>
-                  <div className="mt-1">
-                    {selectedRequest.status === 'pending' ? (
-                      <Badge variant="outline" className="border-0  bg-amber-500/15 text-amber-700 dark:bg-amber-500/10 dark:text-amber-400 text-base px-4 py-1">
-                        En attente
-                      </Badge>
+                  <div className="flex items-center gap-3 rounded-lg border p-3">
+                    <Linkedin className="size-4 shrink-0 text-muted-foreground" />
+                    {selectedRequest.linkedin_url ? (
+                      <a
+                        href={selectedRequest.linkedin_url}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="flex flex-1 items-center gap-1 truncate text-sm text-orange-600 hover:underline"
+                      >
+                        <span className="truncate">{selectedRequest.linkedin_url}</span>
+                        <ExternalLink className="size-3 shrink-0" />
+                      </a>
                     ) : (
-                      getStatusBadge(selectedRequest.status)
+                      <span className="text-sm italic text-muted-foreground">Non renseigné</span>
+                    )}
+                  </div>
+
+                  <div className="flex items-center gap-3 rounded-lg border p-3">
+                    <FolderGit2 className="size-4 shrink-0 text-muted-foreground" />
+                    {selectedRequest.project_url ? (
+                      <Link
+                        href={selectedRequest.project_url}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="flex flex-1 items-center gap-1 truncate text-sm text-orange-600 hover:underline"
+                      >
+                        <span className="truncate">{selectedRequest.project_url}</span>
+                        <ExternalLink className="size-3 shrink-0" />
+                      </Link>
+                    ) : (
+                      <span className="text-sm italic text-muted-foreground">Non renseigné</span>
                     )}
                   </div>
                 </div>
 
-                <div>
-                  <p className="text-sm font-medium text-muted-foreground">Date soumission</p>
-                  <p className="mt-1">
-                    {new Date(selectedRequest.created_at).toLocaleString('fr-FR', {
-                      dateStyle: 'long',
-                      timeStyle: 'short',
-                    })}
+                {/* Motivation */}
+                <div className="space-y-2">
+                  <p className="flex items-center gap-1.5 text-xs font-medium uppercase tracking-wide text-muted-foreground">
+                    <MessageSquareText className="size-3.5" />
+                    Lettre de motivation
                   </p>
-                </div>
-              </div>
-
-              <div className="space-y-4 border-t pt-5">
-                <div>
-                  <p className="text-sm font-medium text-muted-foreground">Profil LinkedIn</p>
-                  {selectedRequest.linkedin_url ? (
-                    <a
-                      href={selectedRequest.linkedin_url}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="text-orange-600 hover:underline break-all"
-                    >
-                      {selectedRequest.linkedin_url}
-                    </a>
-                  ) : (
-                    <p className="text-muted-foreground italic">Non renseigné</p>
-                  )}
-                </div>
-
-                <div>
-                  <p className="text-sm font-medium text-muted-foreground">Projet / Portfolio</p>
-                  {selectedRequest.project_url ? (
-                    <Link
-                      href={selectedRequest.project_url}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="text-orange-600 hover:underline break-all"
-                    >
-                      {selectedRequest.project_url}
-                    </Link>
-                  ) : (
-                    <p className="text-muted-foreground italic">Non renseigné</p>
-                  )}
-                </div>
-              </div>
-
-              <div className="border-t pt-5">
-                <p className="text-sm font-medium text-muted-foreground mb-2">Lettre de motivation</p>
-                <div className="prose prose-slate max-w-none bg-muted/60 p-6 rounded-lg">
-                  {selectedRequest.motivation || "Aucune lettre de motivation n'a été fournie."}
-                </div>
-              </div>
-
-              {selectedRequest.admin_comment && (
-                <div className="border-t pt-5">
-                  <p className="text-sm font-medium text-muted-foreground mb-2">
-                    Commentaire de l&apos;administrateur
-                  </p>
-                  <div className="bg-rose-50 p-4 rounded-lg border border-rose-200">
-                    {selectedRequest.admin_comment}
+                  <div className="rounded-lg border bg-muted/30 p-4 text-sm leading-relaxed">
+                    {selectedRequest.motivation || "Aucune lettre de motivation n'a été fournie."}
                   </div>
                 </div>
-              )}
-            </div>
+
+                {/* Commentaire admin */}
+                {selectedRequest.admin_comment && (
+                  <div className="space-y-2">
+                    <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
+                      Commentaire de l&apos;administrateur
+                    </p>
+                    <div className="rounded-lg border border-rose-200 bg-rose-50 p-4 text-sm leading-relaxed dark:border-rose-900/40 dark:bg-rose-950/30">
+                      {selectedRequest.admin_comment}
+                    </div>
+                  </div>
+                )}
+              </div>
+            </>
           ) : (
-            <div className="py-10 space-y-4">
-              <Skeleton className="h-8 w-2/3" />
-              <Skeleton className="h-40 w-full" />
-              <Skeleton className="h-24 w-full" />
+            <div className="space-y-4 py-10">
+              <div className="h-8 w-2/3 animate-pulse rounded bg-muted" />
+              <div className="h-40 w-full animate-pulse rounded bg-muted" />
+              <div className="h-24 w-full animate-pulse rounded bg-muted" />
             </div>
           )}
 
-          <SheetFooter className="mt-8 pt-4 border-t">
+          <SheetFooter className="mt-8 border-t pt-4">
             <Button variant="outline" onClick={closeDetails} className="w-full sm:w-auto">
               Fermer
             </Button>

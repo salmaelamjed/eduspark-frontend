@@ -1,10 +1,9 @@
-import { LayoutDashboard, Users, Settings, UserPlus,  PenBox, MessageCircleIcon, Bell, Plug, Puzzle, Workflow, Network, CloudLightning, Webhook, Sliders, Link } from 'lucide-react';
+import { LayoutDashboard, Users, Settings, UserPlus,  PenBox, MessageCircleIcon, Bell, Link } from 'lucide-react';
 import { BookOpen, FileText } from 'lucide-react';
 
 export const adminNavItems = [
   { title: 'Dashboard', href: '/dashboard', icon: <LayoutDashboard /> },
-  { title: 'Enseignants', href: '/dashboard/teachers', icon: <Users /> },
-  { title: 'Etudiants', href: '/dashboard/students', icon: <Users /> },
+  { title: 'Users', href: '/dashboard/users', icon: <Users /> },
   { title: ' Domains', href: '/dashboard/domains', icon: <PenBox /> }, 
   { title: ' Demandes', href: '/dashboard/requests', icon: <UserPlus /> },
 

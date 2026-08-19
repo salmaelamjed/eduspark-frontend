@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { motion, Variants } from "framer-motion";
 import { Button } from "@/components/ui/button";
-import { ArrowRight, Sparkles, Briefcase, Percent, GraduationCap } from "lucide-react";
+import { ArrowRight, Sparkles } from "lucide-react";
 
 const containerVariants: Variants = {
   hidden: { opacity: 0 },
@@ -38,7 +38,7 @@ export const BecomeTeacherHeroSection = () => {
   return (
     <section className="py-20 px-4 sm:px-6 lg:px-8 bg-slate-50/60 relative overflow-hidden border-y border-slate-200/60">
       {/* Halos d'arrière-plan */}
-      <div className="absolute top-1/3 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[500px] h-[500px] bg-orange-500/10 rounded-full blur-3xl pointer-events-none" />
+      <div className="absolute top-1/3 left-1/2 -translate-x-1/2 -translate-y-1/2 w-125 h-25 bg-orange-500/10 rounded-full blur-3xl pointer-events-none" />
 
       <div className="max-w-5xl mx-auto relative z-10">
         <motion.div
@@ -60,45 +60,16 @@ export const BecomeTeacherHeroSection = () => {
           <motion.div variants={itemVariants} className="max-w-3xl mx-auto space-y-4">
             <h2 className="text-3xl sm:text-4xl md:text-5xl font-extrabold text-slate-900 tracking-tight leading-tight">
               Devenez enseignant sur{" "}
-              <span className="text-transparent bg-clip-text bg-gradient-to-r from-orange-600 to-orange-500">
+              <span className="text-transparent bg-clip-text bg-linear-to-r from-orange-600 to-orange-500">
                 EduSpark
               </span>
             </h2>
             <p className="text-base sm:text-lg text-slate-600 leading-relaxed max-w-2xl mx-auto">
               Partagez votre expertise avec notre communauté. Créez vos cours en toute autonomie, 
-              générez des revenus et accompagnez des milliers d'apprenants dans leur réussite.
+              générez des revenus et accompagnez des milliers{" d'apprenants"} dans leur réussite.
             </p>
           </motion.div>
 
-          {/* Cartes d'avantages rapides */}
-          <motion.div 
-            variants={itemVariants}
-            className="grid grid-cols-1 sm:grid-cols-3 gap-4 text-left max-w-4xl mx-auto pt-4"
-          >
-            <div className="p-4 rounded-2xl bg-white/80 backdrop-blur-sm border border-slate-200/60 shadow-xs hover:border-orange-500/30 transition-colors">
-              <div className="w-9 h-9 rounded-xl bg-orange-500/10 text-orange-600 flex items-center justify-center mb-3">
-                <Briefcase className="w-4 h-4" />
-              </div>
-              <h4 className="text-sm font-bold text-slate-900">Flexibilité totale</h4>
-              <p className="text-xs text-slate-500 mt-1">Créez selon votre propre rythme et vos horaires.</p>
-            </div>
-
-            <div className="p-4 rounded-2xl bg-white/80 backdrop-blur-sm border border-slate-200/60 shadow-xs hover:border-orange-500/30 transition-colors">
-              <div className="w-9 h-9 rounded-xl bg-orange-500/10 text-orange-600 flex items-center justify-center mb-3">
-                <Percent className="w-4 h-4" />
-              </div>
-              <h4 className="text-sm font-bold text-slate-900">Revenus attractifs</h4>
-              <p className="text-xs text-slate-500 mt-1">Gagnez des revenus réguliers grâce à vos cours.</p>
-            </div>
-
-            <div className="p-4 rounded-2xl bg-white/80 backdrop-blur-sm border border-slate-200/60 shadow-xs hover:border-orange-500/30 transition-colors">
-              <div className="w-9 h-9 rounded-xl bg-orange-500/10 text-orange-600 flex items-center justify-center mb-3">
-                <GraduationCap className="w-4 h-4" />
-              </div>
-              <h4 className="text-sm font-bold text-slate-900">Support Pédagogique</h4>
-              <p className="text-xs text-slate-500 mt-1">Notre équipe vous aide à structurer vos contenus.</p>
-            </div>
-          </motion.div>
 
           {/* Bouton CTA avec lien enrichi d'un query parameter */}
           <motion.div variants={itemVariants} className="pt-4 flex justify-center">

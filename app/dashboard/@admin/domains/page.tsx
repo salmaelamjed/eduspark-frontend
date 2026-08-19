@@ -1,4 +1,3 @@
-// app/domains/page.tsx
 "use client";
 
 import { Button } from "@/components/ui/button";
@@ -24,6 +23,7 @@ import {
 import CreateDomainForm from "@/components/create-domain";
 import { DomainsTable } from "@/components/domains/domains-table";
 import { useDomainsManagement } from "@/hooks/domains/use-domain";
+import {DomainsTableSkeleton} from "./domains-table-skeleton";
 
 export default function DomainPage() {
   const [open, setOpen] = useState(false);
@@ -87,9 +87,13 @@ export default function DomainPage() {
       </div>
 
       <div className="flex flex-col flex-1 min-h-0">
-        <div className="flex-1 overflow-auto">
-          <DomainsTable domains={domains} loading={isPageLoading} />
+        {isPageLoading ? (
+          <DomainsTableSkeleton/>
+        ):(
+          <div className="flex-1 overflow-auto">
+          <DomainsTable domains={domains}  />
         </div>
+        )}
 
         {hasPagination && (
           <div className="py-6 mt-auto bg-background">

@@ -26,6 +26,7 @@ import { useState } from "react";
 import { useTeacherDashboard } from "@/hooks/teacher/use-dashboard";
 import { ChartRevenueTrend } from "@/components/teacher/chart-revenue-trend"
 import { ChartEnrollmentTrend } from "@/components/teacher/chart-enrollment-trend"
+import DashboardSkeleton from "../skeletonDash";
 
 type Period = 7 | 30 | 90 | 365;
 
@@ -111,20 +112,7 @@ export default function TeacherDashboardPage() {
       {/* KPIs Cards */}
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
         {isLoading ? (
-          <>
-            {[...Array(4)].map((_, i) => (
-              <Card key={i}>
-                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                  <Skeleton className="h-25" />
-                  <Skeleton className="h-8 w-8 rounded-full" />
-                </CardHeader>
-                <CardContent>
-                  <Skeleton className="h-8 w-30 mb-2" />
-                  <Skeleton className="h-4 w-30" />
-                </CardContent>
-              </Card>
-            ))}
-          </>
+          <DashboardSkeleton/>
         ) : (
           <>
             <Card>
